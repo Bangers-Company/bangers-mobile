@@ -12,14 +12,27 @@ interface AuthState {
   logout: () => void;
 }
 
+const isWeb = typeof window !== "undefined";
+
 const SecureStorage = {
   getItem: async (name: string): Promise<string | null> => {
+    if (isWeb) {
+      return localStorage.getItem(name);
+    }
     return await SecureStore.getItemAsync(name);
   },
   setItem: async (name: string, value: string): Promise<void> => {
+    if (isWeb) {
+      localStorage.setItem(name, value);
+      return;
+    }
     await SecureStore.setItemAsync(name, value);
   },
   removeItem: async (name: string): Promise<void> => {
+    if (isWeb) {
+      localStorage.removeItem(name);
+      return;
+    }
     await SecureStore.deleteItemAsync(name);
   },
 };

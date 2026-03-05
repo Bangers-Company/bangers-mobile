@@ -58,6 +58,32 @@ Establish a robust, type-safe communication layer with the backend and implement
 
 ---
 
+## Phase 3: Authentication UI
+
+### Objective
+
+Provide a high-energy, secure onboarding experience with full registration, login, and password recovery flows.
+
+### Structural Changes
+
+#### 1. Auth Stack (`app/(auth)/`)
+
+- **[login.tsx](<file:///home/voss/Projects/Bangers/bangers-mobile/app/(auth)/login.tsx>)**: Main entry point with email/password and social login placeholders.
+- **[register.tsx](<file:///home/voss/Projects/Bangers/bangers-mobile/app/(auth)/register.tsx>)**: New user onboarding flow.
+- **[forgot-password.tsx](<file:///home/voss/Projects/Bangers/bangers-mobile/app/(auth)/forgot-password.tsx>)**: Password recovery request.
+- **[\_layout.tsx](<file:///home/voss/Projects/Bangers/bangers-mobile/app/(auth)/_layout.tsx>)**: Stack navigator for auth screens.
+
+#### 2. Root Navigation
+
+- **[\_layout.tsx](file:///home/voss/Projects/Bangers/bangers-mobile/app/_layout.tsx)**: Updated with an `useEffect` hook that monitors `accessToken` and automatically switches between `(auth)` and `(tabs)` segments.
+
+### Configuration & Modification Points
+
+- **Validation**: Modify validation logic in `handleLogin` or `handleRegister` within the respective screen files.
+- **Redirects**: Adjust the redirect paths in the root `_layout.tsx` if the tab structure changes.
+
+---
+
 ## Phase 2: Dynamic Theming & Material YOU
 
 ### Objective

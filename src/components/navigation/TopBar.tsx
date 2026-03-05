@@ -14,8 +14,6 @@ export const TopBar: React.FC = () => {
   const [menuVisible, setMenuVisible] = React.useState(false);
 
   const isEventPage = pathname.startsWith("/event/");
-  const isDashboard =
-    pathname === "/" || pathname === "/home" || pathname.includes("(tabs)");
 
   if (isEventPage) {
     return (
@@ -73,7 +71,7 @@ export const TopBar: React.FC = () => {
             }
           >
             <Menu.Item
-              onPress={() => router.push("/profile")}
+              onPress={() => router.push("/(tabs)/explore" as any)}
               title="Profile"
             />
             <Menu.Item onPress={() => {}} title="Settings" />
