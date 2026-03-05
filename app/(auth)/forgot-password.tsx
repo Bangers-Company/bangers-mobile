@@ -6,10 +6,15 @@ import {
     Platform,
     ScrollView,
     StyleSheet,
-    TouchableOpacity,
-    View,
+    View
 } from "react-native";
-import { Button, Text, TextInput, useTheme } from "react-native-paper";
+import {
+    Button,
+    Text,
+    TextInput,
+    TouchableRipple,
+    useTheme,
+} from "react-native-paper";
 
 export default function ForgotPasswordScreen() {
   const theme = useTheme();
@@ -83,16 +88,20 @@ export default function ForgotPasswordScreen() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        <TouchableOpacity
-          style={styles.backButton}
+        <TouchableRipple
           onPress={() => router.back()}
+          style={[
+            styles.backButtonCircular,
+            { backgroundColor: theme.colors.surface },
+          ]}
+          rippleColor="rgba(0, 0, 0, .1)"
         >
           <ArrowLeft
             size={24}
             color={theme.colors.onSurface}
             strokeWidth={2.5}
           />
-        </TouchableOpacity>
+        </TouchableRipple>
 
         <View style={styles.header}>
           <Text variant="displaySmall" style={styles.title}>
@@ -154,8 +163,18 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 40,
   },
-  backButton: {
+  backButtonCircular: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: 32,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   header: {
     marginBottom: 40,

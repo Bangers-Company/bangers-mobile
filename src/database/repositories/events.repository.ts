@@ -60,4 +60,44 @@ export const eventsRepository = {
     const db = await getDb();
     await db.runAsync("DELETE FROM events WHERE id = ?", [id]);
   },
+
+  getAttendingCount: async (): Promise<number> => {
+    const db = await getDb();
+    const result: any = await db.getFirstAsync(
+      "SELECT COUNT(*) as count FROM user_event_attendance WHERE status = 'going'",
+    );
+    return result?.count || 0;
+  },
+
+  getAttendingEvents: async (): Promise<Event[]> => {
+    const db = await getDb();
+    const now = new Date().toISOString();
+    const rows = await db.getAllAsync(
+      `SELECT e.* FROM events e 
+       JOIN user_event_attendance a ON e.id = a.event_id 
+       WHERE a.status = 'going' AND e.end_date >= ? AND e.deleted_at IS NULL
+       ORDER BY e.start_date ASC`,
+      [now],
+    );
+    return rows.map((row: any) => ({
+      ...row,
+      banner: row.banner_url ? { url: row.banner_url } : null,
+    }));
+  },
+
+  getPastEvents: async (): Promise<Event[]> => {
+    const db = await getDb();
+    const now = new Date().toISOString();
+    const rows = await db.getAllAsync(
+      `SELECT e.* FROM events e 
+       JOIN user_event_attendance a ON e.id = a.event_id 
+       WHERE a.status = 'going' AND e.end_date < ? AND e.deleted_at IS NULL
+       ORDER BY e.end_date DESC`,
+      [now],
+    );
+    return rows.map((row: any) => ({
+      ...row,
+      banner: row.banner_url ? { url: row.banner_url } : null,
+    }));
+  },
 };

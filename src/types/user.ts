@@ -8,6 +8,12 @@ export interface Media {
   height?: number;
 }
 
+export interface UserStats {
+  attended_count: number;
+  favorites_count: number;
+  vibe_score: number;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -20,6 +26,12 @@ export interface User {
   roles: string[];
   permissions: string[];
   profile_media?: Media | null;
+  profile_media_url?: string | null;
+  stats?: UserStats;
+  past_events?: { data: import("./event").Event[] } | import("./event").Event[];
+  upcoming_events?:
+    | { data: import("./event").Event[] }
+    | import("./event").Event[];
   created_at: string;
   updated_at: string;
 }

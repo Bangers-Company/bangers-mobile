@@ -2,8 +2,8 @@ import { Event } from "../types/event";
 import apiClient from "./client";
 
 export interface DashboardData {
-  attending_events: Event[];
-  upcoming_events: Event[];
+  attending_events: { data: Event[] } | Event[];
+  upcoming_events: { data: Event[] } | Event[];
   sync_timestamp: string;
 }
 

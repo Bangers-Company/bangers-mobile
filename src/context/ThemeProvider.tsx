@@ -6,12 +6,18 @@ import {
 import React, { useMemo } from "react";
 import { useColorScheme } from "react-native";
 import {
+    adaptNavigationTheme,
+    MD3DarkTheme,
+    MD3LightTheme,
     PaperProvider,
-    adaptNavigationTheme
 } from "react-native-paper";
-import { useMaterialYou } from "../hooks/useMaterialYou";
 import { useUIStore } from "../store/useUIStore";
-import { AppAmoledTheme, AppDarkTheme, AppLightTheme } from "../utils/theme";
+import {
+    addAlpha,
+    COLORS,
+    getDynamicBackground,
+    getDynamicSurface,
+} from "../utils/theme";
 
 const { LightTheme: AdaptedLight, DarkTheme: AdaptedDark } =
   adaptNavigationTheme({
@@ -24,7 +30,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const systemColorScheme = useColorScheme();
   const themeMode = useUIStore((state) => state.themeMode);
-  const { primary: accentColor } = useMaterialYou();
+  const accentColor =
+    useUIStore((state) => state.accentColor) || COLORS.primary;
 
   const isDark =
     themeMode === "system"
@@ -32,21 +39,28 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
       : themeMode !== "light";
 
   const theme = useMemo(() => {
-    let baseTheme;
-    if (themeMode === "amoled") {
-      baseTheme = AppAmoledTheme;
-    } else if (isDark) {
-      baseTheme = AppDarkTheme;
-    } else {
-      baseTheme = AppLightTheme;
-    }
+    const mode = themeMode === "amoled" ? "amoled" : isDark ? "dark" : "light";
+    const baseTheme = isDark ? MD3DarkTheme : MD3LightTheme;
 
-    // Apply Material YOU accent if applicable (stubbed in useMaterialYou)
+    const bgColor = getDynamicBackground(accentColor, mode);
+    const surfaceColor = getDynamicSurface(accentColor, mode);
+
     return {
       ...baseTheme,
       colors: {
         ...baseTheme.colors,
         primary: accentColor,
+        background: bgColor,
+        surface: surfaceColor,
+        surfaceVariant: addAlpha(surfaceColor, 0.7),
+        primaryContainer: addAlpha(accentColor, 0.1),
+        onPrimaryContainer: accentColor,
+        onSurface: isDark ? COLORS.text.dark : COLORS.text.light,
+        elevation: {
+          ...baseTheme.colors.elevation,
+          level1: surfaceColor,
+          level2: addAlpha(surfaceColor, 0.9),
+        },
       },
     };
   }, [themeMode, isDark, accentColor]);
@@ -58,9 +72,17 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
         ...(isDark ? AdaptedDark.colors : AdaptedLight.colors),
         primary: accentColor,
         background: theme.colors.background,
+        card: theme.colors.surface,
+        text: theme.colors.onSurface,
       },
     }),
-    [isDark, accentColor, theme.colors.background],
+    [
+      isDark,
+      accentColor,
+      theme.colors.background,
+      theme.colors.surface,
+      theme.colors.onSurface,
+    ],
   );
 
   return (

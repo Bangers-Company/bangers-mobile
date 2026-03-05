@@ -16,16 +16,6 @@ export default function RootLayout() {
   const segments = useSegments();
   const router = useRouter();
   const [isHydrated, setIsHydrated] = useState(false);
-
-  console.log(
-    "[RootLayout] Render - accessToken:",
-    !!accessToken,
-    "segments:",
-    segments,
-    "isHydrated:",
-    isHydrated,
-  );
-
   // Handle store hydration
   useEffect(() => {
     console.log("[RootLayout] Starting hydration check...");
@@ -62,19 +52,10 @@ export default function RootLayout() {
     if (!isHydrated) return;
 
     const inAuthGroup = segments[0] === "(auth)";
-    console.log(
-      "[RootLayout] Auth Check - inAuthGroup:",
-      inAuthGroup,
-      "path:",
-      segments.join("/"),
-    );
-
     const handleRedirect = () => {
       if (!accessToken && !inAuthGroup) {
-        console.log("[RootLayout] Redirecting to /login");
         router.replace("/login" as any);
       } else if (accessToken && inAuthGroup) {
-        console.log("[RootLayout] Redirecting to / (dashboard)");
         router.replace("/" as any);
       }
     };

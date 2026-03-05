@@ -1,0 +1,372 @@
+import { useRouter } from "expo-router";
+import {
+  ChevronDown,
+  ChevronUp,
+  LogOut,
+  Bell as Notifications,
+  Palette,
+  Shield,
+  User,
+} from "lucide-react-native";
+import React, { useState } from "react";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+  Divider,
+  SegmentedButtons,
+  Text,
+  TouchableRipple,
+  useTheme,
+} from "react-native-paper";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAuthStore } from "../src/store/useAuthStore";
+import { useUIStore } from "../src/store/useUIStore";
+import { addAlpha, COLORS } from "../src/utils/theme";
+
+const ACCENT_COLORS = [
+  "#2196F3", // Blue
+  "#F44336", // Red
+  "#a60df2", // Primary Purple
+  "#10b981", // Emerald
+  "#f59e0b", // Amber
+  "#ec4899", // Pink
+];
+
+export default function SettingsScreen() {
+  const { top, bottom } = useSafeAreaInsets();
+  const theme = useTheme();
+  const router = useRouter();
+  const { themeMode, setThemeMode, accentColor, setAccentColor } = useUIStore();
+  const logout = useAuthStore((state) => state.logout);
+
+  const [expandedSection, setExpandedSection] = useState<string | null>(
+    "appearance",
+  );
+
+  const toggleSection = (section: string) => {
+    setExpandedSection(expandedSection === section ? null : section);
+  };
+
+  const handleLogout = () => {
+    logout();
+    router.replace("/(auth)/login");
+  };
+
+  const renderSection = (
+    id: string,
+    title: string,
+    icon: React.ReactNode,
+    children: React.ReactNode,
+  ) => {
+    const isExpanded = expandedSection === id;
+    return (
+      <View style={styles.section}>
+        <TouchableRipple
+          onPress={() => toggleSection(id)}
+          rippleColor="rgba(0, 0, 0, .1)"
+        >
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitleWrapper}>
+              {icon}
+              <Text variant="titleLarge" style={styles.sectionTitle}>
+                {title}
+              </Text>
+            </View>
+            {isExpanded ? (
+              <ChevronUp size={24} color={theme.colors.onSurfaceVariant} />
+            ) : (
+              <ChevronDown size={24} color={theme.colors.onSurfaceVariant} />
+            )}
+          </View>
+        </TouchableRipple>
+        {isExpanded && <View style={styles.sectionContent}>{children}</View>}
+        <Divider style={styles.divider} />
+      </View>
+    );
+  };
+
+  return (
+    <View
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
+      {/* Centered Top Bar */}
+      <View
+        style={[
+          styles.topBar,
+          {
+            paddingTop: top + 10,
+            backgroundColor: theme.colors.background,
+          },
+        ]}
+      >
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={[
+            styles.backButtonCircular,
+            { backgroundColor: theme.colors.surface },
+          ]}
+        >
+          <ChevronDown
+            size={24}
+            color={theme.colors.onSurface}
+            style={{ transform: [{ rotate: "90deg" }] }}
+          />
+        </TouchableOpacity>
+
+        <Text variant="titleLarge" style={styles.headerTitle}>
+          Settings
+        </Text>
+
+        <View style={{ width: 44 }} />
+      </View>
+
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: bottom + 100 },
+        ]}
+      >
+        {/* Appearance */}
+        {renderSection(
+          "appearance",
+          "Appearance",
+          <Palette size={24} color={theme.colors.primary} />,
+          <View style={styles.appearanceContent}>
+            <View
+              style={[
+                styles.settingRow,
+                { flexDirection: "column", alignItems: "flex-start", gap: 12 },
+              ]}
+            >
+              <View>
+                <Text variant="bodyLarge" style={styles.settingLabel}>
+                  Theme Mode
+                </Text>
+                <Text variant="bodySmall" style={styles.settingSubtext}>
+                  Choose your preferred look
+                </Text>
+              </View>
+              <SegmentedButtons
+                value={themeMode === "system" ? "light" : themeMode}
+                onValueChange={(val) => setThemeMode(val as any)}
+                buttons={[
+                  { value: "light", label: "Light" },
+                  { value: "dark", label: "Dark" },
+                  { value: "amoled", label: "AMOLED" },
+                ]}
+                style={styles.segmentedButtons}
+              />
+            </View>
+
+            <View style={styles.accentSection}>
+              <Text variant="bodyLarge" style={styles.settingLabel}>
+                Accent Color
+              </Text>
+              <View style={styles.colorGrid}>
+                {ACCENT_COLORS.map((color) => {
+                  const isSelected = (accentColor || COLORS.primary) === color;
+                  return (
+                    <TouchableOpacity
+                      key={color}
+                      onPress={() => setAccentColor(color)}
+                      style={[
+                        styles.colorCircle,
+                        { backgroundColor: color },
+                        isSelected && [
+                          styles.selectedColorCircle,
+                          { borderColor: theme.colors.onSurface },
+                        ],
+                      ]}
+                    >
+                      {isSelected && (
+                        <View
+                          style={[styles.selectionRing, { borderColor: color }]}
+                        />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          </View>,
+        )}
+
+        {/* Notifications */}
+        {renderSection(
+          "notifications",
+          "Notifications",
+          <Notifications size={24} color={theme.colors.primary} />,
+          <Text variant="bodyMedium" style={styles.placeholderText}>
+            Manage your alerts, push notifications, and email preferences.
+          </Text>,
+        )}
+
+        {/* Account */}
+        {renderSection(
+          "account",
+          "Account",
+          <User size={24} color={theme.colors.primary} />,
+          <Text variant="bodyMedium" style={styles.placeholderText}>
+            Update your email, password, and subscription details.
+          </Text>,
+        )}
+
+        {/* Privacy */}
+        {renderSection(
+          "privacy",
+          "Privacy",
+          <Shield size={24} color={theme.colors.primary} />,
+          <Text variant="bodyMedium" style={styles.placeholderText}>
+            Control your visibility and security settings.
+          </Text>,
+        )}
+
+        {/* Logout */}
+        <TouchableRipple
+          style={[
+            styles.logoutButton,
+            {
+              backgroundColor: addAlpha(theme.colors.error, 0.1),
+              borderColor: addAlpha(theme.colors.error, 0.2),
+            },
+          ]}
+          onPress={handleLogout}
+          rippleColor={addAlpha(theme.colors.error, 0.2)}
+        >
+          <View style={styles.logoutContent}>
+            <LogOut size={20} color={theme.colors.error} />
+            <Text style={[styles.logoutText, { color: theme.colors.error }]}>
+              Logout
+            </Text>
+          </View>
+        </TouchableRipple>
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    zIndex: 10,
+    borderBottomWidth: 0,
+  },
+  backButtonCircular: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerTitle: {
+    fontWeight: "800",
+    letterSpacing: -0.5,
+    textAlign: "center",
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 16,
+  },
+  section: {
+    marginBottom: 8,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 16,
+  },
+  sectionTitleWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  sectionTitle: {
+    fontWeight: "600",
+  },
+  sectionContent: {
+    paddingBottom: 16,
+    paddingLeft: 36,
+  },
+  divider: {
+    opacity: 0.1,
+  },
+  appearanceContent: {
+    paddingTop: 8,
+  },
+  settingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
+  settingLabel: {
+    fontWeight: "600",
+  },
+  settingSubtext: {
+    opacity: 0.6,
+  },
+  segmentedButtons: {
+    width: "100%",
+  },
+  accentSection: {
+    marginTop: 8,
+  },
+  colorGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 16,
+    marginTop: 12,
+  },
+  colorCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
+  selectedColorCircle: {
+    borderWidth: 2,
+    transform: [{ scale: 1.2 }],
+  },
+  selectionRing: {
+    position: "absolute",
+    top: -6,
+    left: -6,
+    right: -6,
+    bottom: -6,
+    borderRadius: 22,
+    borderWidth: 2,
+    opacity: 0.5,
+  },
+  placeholderText: {
+    opacity: 0.6,
+    lineHeight: 20,
+  },
+  logoutButton: {
+    marginTop: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  logoutContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    padding: 16,
+  },
+  logoutText: {
+    fontWeight: "700",
+    fontSize: 16,
+  },
+});

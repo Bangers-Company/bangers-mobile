@@ -14,10 +14,15 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  TouchableOpacity,
-  View,
+  View
 } from "react-native";
-import { Button, Text, TextInput, useTheme } from "react-native-paper";
+import {
+  Button,
+  Text,
+  TextInput,
+  TouchableRipple,
+  useTheme,
+} from "react-native-paper";
 import {
   DatePickerInput,
   en,
@@ -113,16 +118,20 @@ export default function RegisterScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <TouchableOpacity
-          style={styles.backButton}
+        <TouchableRipple
           onPress={() => router.back()}
+          style={[
+            styles.backButtonCircular,
+            { backgroundColor: theme.colors.surface },
+          ]}
+          rippleColor="rgba(0, 0, 0, .1)"
         >
           <ArrowLeft
             size={24}
             color={theme.colors.onSurface}
             strokeWidth={2.5}
           />
-        </TouchableOpacity>
+        </TouchableRipple>
 
         <View style={styles.header}>
           <Text variant="displaySmall" style={styles.title}>
@@ -352,34 +361,40 @@ export default function RegisterScreen() {
         </View>
 
         <View style={styles.socialRow}>
-          <TouchableOpacity
+          <TouchableRipple
+            onPress={() => {}}
             style={[
               styles.socialButton,
               { borderColor: theme.colors.outlineVariant },
             ]}
           >
-            <View style={styles.socialIcon}>
-              <Bolt size={20} color={theme.colors.primary} />
+            <View style={styles.socialContent}>
+              <View style={styles.socialIcon}>
+                <Bolt size={20} color={theme.colors.primary} />
+              </View>
+              <Text variant="labelLarge" style={styles.socialLabel}>
+                Google
+              </Text>
             </View>
-            <Text variant="labelLarge" style={styles.socialLabel}>
-              Google
-            </Text>
-          </TouchableOpacity>
+          </TouchableRipple>
 
           {Platform.OS === "ios" && (
-            <TouchableOpacity
+            <TouchableRipple
+              onPress={() => {}}
               style={[
                 styles.socialButton,
                 { borderColor: theme.colors.outlineVariant },
               ]}
             >
-              <View style={styles.socialIcon}>
-                <Lock size={20} color="#000" />
+              <View style={styles.socialContent}>
+                <View style={styles.socialIcon}>
+                  <Lock size={20} color="#000" />
+                </View>
+                <Text variant="labelLarge" style={styles.socialLabel}>
+                  Apple
+                </Text>
               </View>
-              <Text variant="labelLarge" style={styles.socialLabel}>
-                Apple
-              </Text>
-            </TouchableOpacity>
+            </TouchableRipple>
           )}
         </View>
 
@@ -387,8 +402,9 @@ export default function RegisterScreen() {
           <Text variant="bodyMedium" style={styles.footerText}>
             Already have an account?{" "}
           </Text>
-          <TouchableOpacity
+          <TouchableRipple
             onPress={() => router.replace("/(auth)/login" as any)}
+            style={styles.footerRipple}
           >
             <Text
               variant="bodyMedium"
@@ -396,7 +412,7 @@ export default function RegisterScreen() {
             >
               Sign In
             </Text>
-          </TouchableOpacity>
+          </TouchableRipple>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -413,8 +429,18 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 40,
   },
-  backButton: {
+  backButtonCircular: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: 32,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   header: {
     marginBottom: 40,
@@ -483,12 +509,15 @@ const styles = StyleSheet.create({
   },
   socialButton: {
     flex: 1,
+    borderWidth: 1,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  socialContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 12,
-    borderWidth: 1,
-    borderRadius: 12,
   },
   socialLabel: {
     fontWeight: "700",
@@ -503,6 +532,9 @@ const styles = StyleSheet.create({
   },
   footerText: {
     opacity: 0.6,
+  },
+  footerRipple: {
+    borderRadius: 4,
   },
   footerLink: {
     fontWeight: "800",

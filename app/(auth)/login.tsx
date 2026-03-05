@@ -6,19 +6,18 @@ import {
     Platform,
     ScrollView,
     StyleSheet,
-    TouchableOpacity,
-    View,
+    View
 } from "react-native";
 import {
     Button,
     Checkbox,
     Text,
     TextInput,
+    TouchableRipple,
     useTheme,
 } from "react-native-paper";
 import Animated, {
     useAnimatedStyle,
-    useSharedValue,
     withSpring,
 } from "react-native-reanimated";
 import { authApi } from "../../src/api/auth";
@@ -31,8 +30,6 @@ function AnimatedInput({
   children: React.ReactNode;
   isFocused: boolean;
 }) {
-  const scale = useSharedValue(1);
-
   const animatedStyle = useAnimatedStyle(() => {
     return {
       transform: [{ scale: withSpring(isFocused ? 1.02 : 1) }],
@@ -205,8 +202,9 @@ export default function LoginScreen() {
                 Remember me
               </Text>
             </View>
-            <TouchableOpacity
+            <TouchableRipple
               onPress={() => router.push("/(auth)/forgot-password" as any)}
+              style={styles.forgotRipple}
             >
               <Text
                 variant="bodySmall"
@@ -214,7 +212,7 @@ export default function LoginScreen() {
               >
                 Forgot password?
               </Text>
-            </TouchableOpacity>
+            </TouchableRipple>
           </View>
 
           <Button
@@ -249,34 +247,40 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.socialRow}>
-          <TouchableOpacity
+          <TouchableRipple
+            onPress={() => {}}
             style={[
               styles.socialButton,
               { borderColor: theme.colors.outlineVariant },
             ]}
           >
-            <View style={styles.socialIcon}>
-              <Bolt size={20} color={theme.colors.primary} />
+            <View style={styles.socialContent}>
+              <View style={styles.socialIcon}>
+                <Bolt size={20} color={theme.colors.primary} />
+              </View>
+              <Text variant="labelLarge" style={styles.socialLabel}>
+                Google
+              </Text>
             </View>
-            <Text variant="labelLarge" style={styles.socialLabel}>
-              Google
-            </Text>
-          </TouchableOpacity>
+          </TouchableRipple>
 
           {Platform.OS === "ios" && (
-            <TouchableOpacity
+            <TouchableRipple
+              onPress={() => {}}
               style={[
                 styles.socialButton,
                 { borderColor: theme.colors.outlineVariant },
               ]}
             >
-              <View style={styles.socialIcon}>
-                <Lock size={20} color="#000" />
+              <View style={styles.socialContent}>
+                <View style={styles.socialIcon}>
+                  <Lock size={20} color="#000" />
+                </View>
+                <Text variant="labelLarge" style={styles.socialLabel}>
+                  Apple
+                </Text>
               </View>
-              <Text variant="labelLarge" style={styles.socialLabel}>
-                Apple
-              </Text>
-            </TouchableOpacity>
+            </TouchableRipple>
           )}
         </View>
 
@@ -284,8 +288,9 @@ export default function LoginScreen() {
           <Text variant="bodyMedium" style={styles.footerText}>
             Don&apos;t have an account?{" "}
           </Text>
-          <TouchableOpacity
+          <TouchableRipple
             onPress={() => router.push("/(auth)/register" as any)}
+            style={styles.footerRipple}
           >
             <Text
               variant="bodyMedium"
@@ -293,7 +298,7 @@ export default function LoginScreen() {
             >
               Create Account
             </Text>
-          </TouchableOpacity>
+          </TouchableRipple>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -363,6 +368,10 @@ const styles = StyleSheet.create({
   rememberText: {
     opacity: 0.6,
   },
+  forgotRipple: {
+    padding: 4,
+    borderRadius: 4,
+  },
   forgotText: {
     fontWeight: "700",
   },
@@ -403,12 +412,15 @@ const styles = StyleSheet.create({
   },
   socialButton: {
     flex: 1,
+    borderWidth: 1,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  socialContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 12,
-    borderWidth: 1,
-    borderRadius: 12,
   },
   socialLabel: {
     fontWeight: "700",
@@ -423,6 +435,9 @@ const styles = StyleSheet.create({
   },
   footerText: {
     opacity: 0.6,
+  },
+  footerRipple: {
+    borderRadius: 4,
   },
   footerLink: {
     fontWeight: "800",

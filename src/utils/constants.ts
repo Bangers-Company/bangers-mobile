@@ -1,5 +1,5 @@
 export const API_CONFIG = {
-  BASE_URL: "http://localhost/api/mobile",
+  BASE_URL: "http://localhost:8080/api/mobile",
   TIMEOUT: 10000,
 };
 

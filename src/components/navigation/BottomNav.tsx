@@ -1,16 +1,22 @@
 import { usePathname, useRouter } from "expo-router";
 import {
-    Calendar,
-    Home,
-    LucideIcon,
-    Music2,
-    Search,
-    User,
-    Users,
+  Calendar,
+  Home,
+  LucideIcon,
+  Music2,
+  Search,
+  User,
+  Users,
 } from "lucide-react-native";
 import React from "react";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
-import { Text, useTheme } from "react-native-paper";
+import { StyleSheet, View } from "react-native";
+import { Text, TouchableRipple, useTheme } from "react-native-paper";
+import Animated, {
+  interpolate,
+  useAnimatedStyle,
+} from "react-native-reanimated";
+import { useUIStore } from "../../store/useUIStore";
+import { addAlpha } from "../../utils/theme";
 
 interface NavItem {
   label: string;
@@ -22,11 +28,12 @@ export const BottomNav: React.FC = () => {
   const theme = useTheme();
   const pathname = usePathname();
   const router = useRouter();
+  const scrollOffset = useUIStore((state) => state.scrollOffset);
 
   const isEventPage = pathname.startsWith("/event/");
 
   const dashboardItems: NavItem[] = [
-    { label: "Home", icon: Home, route: "/(tabs)/home" },
+    { label: "Home", icon: Home, route: "/(tabs)/" },
     { label: "Search", icon: Search, route: "/(tabs)/search" },
     { label: "Profile", icon: User, route: "/(tabs)/profile" },
   ];
@@ -42,59 +49,86 @@ export const BottomNav: React.FC = () => {
 
   const renderItem = (item: NavItem, index: number) => {
     const isActive =
-      pathname === item.route || (item.route === "/" && pathname === "/home");
+      pathname === item.route ||
+      (item.route === "/(tabs)/" &&
+        (pathname === "/" || pathname === "/home")) ||
+      (item.route === "/(tabs)/search" && pathname === "/search") ||
+      (item.route === "/(tabs)/profile" && pathname === "/profile");
     const Icon = item.icon;
 
     return (
-      <TouchableOpacity
+      <TouchableRipple
         key={index}
         onPress={() => router.push(item.route as any)}
+        rippleColor={
+          isEventPage
+            ? addAlpha(theme.colors.primary, 0.2)
+            : "rgba(255, 255, 255, .2)"
+        }
         style={[
           styles.item,
-          isActive &&
-            !isEventPage && {
-              backgroundColor: theme.colors.primary,
-              borderRadius: 100,
-            },
+          isActive && {
+            backgroundColor: isEventPage
+              ? addAlpha(theme.colors.primary, 0.1)
+              : theme.colors.primary,
+          },
         ]}
       >
-        <Icon
-          size={24}
-          color={
-            isActive
-              ? isEventPage
-                ? theme.colors.primary
-                : "white"
-              : theme.colors.outline
-          }
-          strokeWidth={isActive ? 2.5 : 2}
-        />
-        {(isActive || isEventPage) && (
-          <Text
-            variant="labelSmall"
-            style={[
-              styles.label,
-              {
-                color: isActive
-                  ? isEventPage
-                    ? theme.colors.primary
-                    : "white"
-                  : theme.colors.outline,
-              },
-            ]}
-          >
-            {item.label}
-          </Text>
-        )}
-      </TouchableOpacity>
+        <View style={styles.itemContent}>
+          <Icon
+            size={24}
+            color={
+              isActive
+                ? isEventPage
+                  ? theme.colors.primary
+                  : "white"
+                : theme.colors.outline
+            }
+            strokeWidth={isActive ? 2.5 : 2}
+          />
+          {isActive && (
+            <Text
+              variant="labelSmall"
+              style={[
+                styles.label,
+                {
+                  color: isActive
+                    ? isEventPage
+                      ? theme.colors.primary
+                      : "white"
+                    : theme.colors.outline,
+                },
+              ]}
+            >
+              {item.label}
+            </Text>
+          )}
+        </View>
+      </TouchableRipple>
     );
   };
 
+  const animatedContainerStyle = useAnimatedStyle(() => {
+    const margin = interpolate(scrollOffset, [0, 50], [0, 24], "clamp");
+    const borderRadius = interpolate(scrollOffset, [0, 50], [0, 100], "clamp");
+    const bottom = interpolate(scrollOffset, [0, 50], [0, 24], "clamp");
+    const opacity = interpolate(scrollOffset, [0, 50], [0, 0.2], "clamp");
+
+    return {
+      marginHorizontal: margin,
+      borderRadius: borderRadius,
+      bottom: bottom,
+      shadowOpacity: opacity,
+      left: margin,
+      right: margin,
+    };
+  });
+
   return (
-    <View
+    <Animated.View
       style={[
         styles.container,
-        isEventPage ? styles.eventContainer : styles.dashboardContainer,
+        animatedContainerStyle,
         {
           backgroundColor: theme.colors.background,
           borderColor: theme.colors.outlineVariant,
@@ -103,29 +137,16 @@ export const BottomNav: React.FC = () => {
       ]}
     >
       <View style={styles.inner}>{items.map(renderItem)}</View>
-    </View>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    bottom: 24,
-    left: 24,
-    right: 24,
-    borderRadius: 100,
-    borderWidth: 1,
     elevation: 8,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
     shadowRadius: 8,
-  },
-  dashboardContainer: {
-    marginHorizontal: 32,
-  },
-  eventContainer: {
-    marginHorizontal: 16,
-    borderRadius: 24,
   },
   inner: {
     flexDirection: "row",
@@ -134,6 +155,10 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   item: {
+    borderRadius: 100,
+    overflow: "hidden",
+  },
+  itemContent: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,

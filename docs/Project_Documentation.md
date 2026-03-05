@@ -118,3 +118,41 @@ Implement a sophisticated theming system supporting multiple modes and Android-s
 - **Theme Logic**: Adjust theme priority (System vs User Override) in `src/context/ThemeProvider.tsx`.
 
 ---
+
+## Phase 4: Dashboard, Search & Profile
+
+### Objective
+
+Build the core post-login user experience focusing on event discovery, personalized statistics, and intuitive navigation across the app's primary sections. High-fidelity UI and real-time data integration are prioritized.
+
+### Structural Changes
+
+#### 1. Core Tab Screens (`app/(tabs)/`)
+
+- **[index.tsx](<file:///home/voss/Projects/Bangers/bangers-mobile/app/(tabs)/index.tsx>)**: Re-engineered Dashboard.
+  - Aggregated data from local SQLite and Remote API via `useDashboardData`.
+  - Integrated `MyEventsCarousel` for active engagements.
+  - Scroll-aware UI with the `Droplet` component.
+- **[search.tsx](<file:///home/voss/Projects/Bangers/bangers-mobile/app/(tabs)/search.tsx>)**: Discovery-focused search.
+  - Category filtering using theme-aware `Chip` components.
+  - Real-time search state management.
+- **[profile.tsx](<file:///home/voss/Projects/Bangers/bangers-mobile/app/(tabs)/profile.tsx>)**: User control center.
+  - Dynamic user statistics rendering.
+  - Grouped settings sections with consistent iconography.
+
+#### 2. Advanced UI Components (`src/components/`)
+
+- **[MyEventsCarousel.tsx](file:///home/voss/Projects/Bangers/bangers-mobile/src/components/dashboard/MyEventsCarousel.tsx)**: Uses `react-native-reanimated` for smooth parallax effects.
+- **[EventCard.tsx](file:///home/voss/Projects/Bangers/bangers-mobile/src/components/event/EventCard.tsx)**: Highly customizable card with "Featured" and "Compact" variants.
+- **[Droplet.tsx](file:///home/voss/Projects/Bangers/bangers-mobile/src/components/ui/Droplet.tsx)**: Reanimated-powered scroll-to-top interaction.
+
+#### 3. Data Utilities
+
+- **[format.ts](file:///home/voss/Projects/Bangers/bangers-mobile/src/utils/format.ts)**: Added `resolveMediaUrl` to bridges the gap between backend asset paths and mobile image URI requirements.
+
+### Configuration & Modification Points
+
+- **Dashboard Layout**: Adjust the number of suggested events or section order in `app/(tabs)/index.tsx`.
+- **Search Categories**: Modify the `filters` array in `search.tsx` to add/remove event categories.
+- **User Stats**: Update the `statItems` array in `profile.tsx` to display different metrics.
+- **Scroll Thresholds**: Change the `offsetY` threshold in `index.tsx` for `Droplet` visibility.

@@ -1,0 +1,305 @@
+import { useRouter } from "expo-router";
+import { Calendar, History } from "lucide-react-native";
+import React from "react";
+import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import {
+  Avatar,
+  Button,
+  Surface,
+  Text,
+  TouchableRipple,
+  useTheme,
+} from "react-native-paper";
+import { useProfile } from "../../src/hooks/useProfile";
+import { useUIStore } from "../../src/store/useUIStore";
+import { resolveMediaUrl } from "../../src/utils/format";
+
+export default function ProfileScreen() {
+  const theme = useTheme();
+  const router = useRouter();
+  const { user, attendingEvents, pastEvents, loading, refreshProfile } =
+    useProfile();
+  const setScrollOffset = useUIStore((state) => state.setScrollOffset);
+
+  const handleScroll = (event: any) => {
+    setScrollOffset(event.nativeEvent.contentOffset.y);
+  };
+
+  const statItems = [
+    {
+      label: "Attending Events",
+      value: attendingEvents.length.toString() || "0",
+      icon: Calendar,
+    },
+    {
+      label: "Past events",
+      value: pastEvents.length.toString() || "0",
+      icon: History,
+    },
+  ];
+
+  return (
+    <ScrollView
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      refreshControl={
+        <RefreshControl refreshing={loading} onRefresh={refreshProfile} />
+      }
+      onScroll={handleScroll}
+      scrollEventThrottle={16}
+    >
+      <View style={styles.header}>
+        <View style={styles.profileHeader}>
+          {user?.profile_media_url ? (
+            <Avatar.Image
+              size={80}
+              source={{
+                uri: resolveMediaUrl(user.profile_media_url) || undefined,
+              }}
+            />
+          ) : (
+            <Avatar.Text
+              size={80}
+              label={user?.first_name?.charAt(0) || "U"}
+              style={{ backgroundColor: theme.colors.primary }}
+            />
+          )}
+          <View style={styles.profileInfo}>
+            <Text variant="headlineSmall" style={styles.userName}>
+              {user?.first_name} {user?.last_name}
+            </Text>
+            <Text variant="bodyMedium" style={styles.userEmail}>
+              @{user?.username}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.statsContainer}>
+          {statItems.map((item, index) => (
+            <TouchableRipple
+              key={index}
+              onPress={() => {}}
+              style={styles.statItemRipple}
+              rippleColor="rgba(0, 0, 0, .05)"
+            >
+              <View style={styles.statItem}>
+                <item.icon
+                  size={20}
+                  color={theme.colors.primary}
+                  style={{ marginBottom: 4 }}
+                />
+                <Text variant="titleMedium" style={styles.statValue}>
+                  {item.value}
+                </Text>
+                <Text variant="labelSmall" style={styles.statLabel}>
+                  {item.label}
+                </Text>
+              </View>
+            </TouchableRipple>
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text variant="titleLarge" style={styles.sectionTitle}>
+            Attending Events
+          </Text>
+          <Button
+            mode="text"
+            onPress={() => {}}
+            textColor={theme.colors.primary}
+          >
+            View All
+          </Button>
+        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.horizontalScroll}
+        >
+          {attendingEvents.length > 0 ? (
+            attendingEvents.map((event) => (
+              <Surface key={event.id} style={styles.eventCard} elevation={1}>
+                <TouchableRipple
+                  onPress={() => router.push(`/event/${event.id}` as any)}
+                  style={StyleSheet.absoluteFill}
+                  rippleColor="rgba(0, 0, 0, .05)"
+                >
+                  <View style={styles.eventCardContent}>
+                    <View style={styles.eventInfo}>
+                      <Text variant="titleMedium" numberOfLines={1}>
+                        {event.name}
+                      </Text>
+                      <Text variant="bodySmall" numberOfLines={1}>
+                        {event.location}
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableRipple>
+              </Surface>
+            ))
+          ) : (
+            <Text style={styles.emptyText}>No upcoming events</Text>
+          )}
+        </ScrollView>
+      </View>
+
+      <View style={styles.section}>
+        <Text variant="titleLarge" style={styles.sectionTitle}>
+          Past Events
+        </Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.horizontalScroll}
+        >
+          {pastEvents.length > 0 ? (
+            pastEvents.map((event) => (
+              <Surface key={event.id} style={styles.eventCard} elevation={1}>
+                <TouchableRipple
+                  onPress={() => router.push(`/event/${event.id}` as any)}
+                  style={StyleSheet.absoluteFill}
+                  rippleColor="rgba(0, 0, 0, .05)"
+                >
+                  <View style={styles.eventCardContent}>
+                    <View style={styles.eventInfo}>
+                      <Text variant="titleMedium" numberOfLines={1}>
+                        {event.name}
+                      </Text>
+                      <Text variant="bodySmall" numberOfLines={1}>
+                        {new Date(event.start_date).toLocaleDateString()}
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableRipple>
+              </Surface>
+            ))
+          ) : (
+            <Text style={styles.emptyText}>No past events recorded</Text>
+          )}
+        </ScrollView>
+      </View>
+
+      <View style={styles.footer}>
+        <Text variant="labelSmall" style={styles.versionText}>
+          Version 1.0.0 (Beta)
+        </Text>
+      </View>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    padding: 24,
+    paddingTop: 40,
+    alignItems: "center",
+  },
+  profileHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 20,
+    width: "100%",
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  userName: {
+    fontWeight: "800",
+    letterSpacing: -0.5,
+  },
+  userEmail: {
+    opacity: 0.6,
+  },
+  statsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    marginTop: 32,
+    backgroundColor: "rgba(0,0,0,0.03)",
+    padding: 20,
+    borderRadius: 24,
+  },
+  statItemRipple: {
+    flex: 1,
+    borderRadius: 16,
+  },
+  statItem: {
+    alignItems: "center",
+    paddingVertical: 12,
+  },
+  statValue: {
+    fontWeight: "bold",
+  },
+  statLabel: {
+    opacity: 0.5,
+    textTransform: "uppercase",
+    fontSize: 10,
+  },
+  section: {
+    paddingHorizontal: 24,
+    marginTop: 24,
+  },
+  sectionTitle: {
+    fontWeight: "bold",
+    marginBottom: 12,
+    marginLeft: 4,
+  },
+  listSection: {
+    backgroundColor: "rgba(0,0,0,0.02)",
+    borderRadius: 20,
+    overflow: "hidden",
+  },
+  footer: {
+    padding: 40,
+    alignItems: "center",
+    gap: 16,
+    paddingBottom: 120,
+  },
+  logoutButton: {
+    width: "100%",
+    borderRadius: 16,
+  },
+  versionText: {
+    opacity: 0.3,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  horizontalScroll: {
+    paddingRight: 24,
+    gap: 16,
+  },
+  eventCard: {
+    width: 200,
+    height: 120,
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  eventCardContent: {
+    flex: 1,
+    padding: 16,
+    justifyContent: "flex-end",
+  },
+  eventInfo: {
+    gap: 4,
+  },
+  pastEventsList: {
+    gap: 12,
+  },
+  pastEventItem: {
+    backgroundColor: "rgba(0,0,0,0.02)",
+    borderRadius: 16,
+  },
+  emptyText: {
+    opacity: 0.5,
+    fontStyle: "italic",
+    paddingVertical: 12,
+  },
+});

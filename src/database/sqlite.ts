@@ -79,6 +79,13 @@ export const initDatabase = async () => {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS user_event_attendance (
+      event_id TEXT NOT NULL,
+      status TEXT NOT NULL,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (event_id)
+    );
+
     CREATE TABLE IF NOT EXISTS sync_metadata (
       entity_type TEXT PRIMARY KEY NOT NULL,
       last_sync_timestamp TEXT
