@@ -1,4 +1,4 @@
-import { Stack } from "expo-router";
+import { Tabs } from "expo-router";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { BottomNav } from "../../src/components/navigation/BottomNav";
@@ -8,16 +8,17 @@ export default function TabLayout() {
   return (
     <View style={styles.container}>
       <TopBar />
-      <Stack
+      <Tabs
         screenOptions={{
           headerShown: false,
-          animation: "slide_from_right",
+          tabBarStyle: { display: "none" },
+          animation: "shift",
         }}
       >
-        <Stack.Screen name="index" options={{ title: "Home" }} />
-        <Stack.Screen name="search" options={{ title: "Search" }} />
-        <Stack.Screen name="profile" options={{ title: "Profile" }} />
-      </Stack>
+        <Tabs.Screen name="index" options={{ title: "Home" }} />
+        <Tabs.Screen name="search" options={{ title: "Search" }} />
+        <Tabs.Screen name="profile" options={{ title: "Profile" }} />
+      </Tabs>
       <BottomNav />
     </View>
   );
