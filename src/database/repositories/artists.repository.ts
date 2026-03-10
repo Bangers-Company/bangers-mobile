@@ -1,14 +1,14 @@
 import { Artist } from "../../types/artist";
-import { getDb } from "../sqlite";
+import { getDb, sanitizeParams } from "../sqlite";
 
 export const artistsRepository = {
   upsert: async (artist: Artist) => {
     const db = await getDb();
     await db.runAsync(
       `INSERT OR REPLACE INTO artists (
-        id, name, bio, genre, version, image_url, created_at, updated_at, deleted_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
+          id, name, bio, genre, version, image_url, created_at, updated_at, deleted_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sanitizeParams([
         artist.id,
         artist.name,
         artist.bio || null,
@@ -18,7 +18,7 @@ export const artistsRepository = {
         artist.created_at,
         artist.updated_at,
         artist.deleted_at || null,
-      ],
+      ]),
     );
   },
 
@@ -50,12 +50,12 @@ export const artistsRepository = {
     const db = await getDb();
     await db.runAsync(
       "UPDATE artists SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?",
-      [id],
+      sanitizeParams([id]),
     );
   },
 
   hardDelete: async (id: string) => {
     const db = await getDb();
-    await db.runAsync("DELETE FROM artists WHERE id = ?", [id]);
+    await db.runAsync("DELETE FROM artists WHERE id = ?", sanitizeParams([id]));
   },
 };

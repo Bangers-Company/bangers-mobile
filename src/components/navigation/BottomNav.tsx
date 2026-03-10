@@ -1,20 +1,21 @@
 import { usePathname, useRouter } from "expo-router";
 import {
-  Calendar,
-  Home,
-  LucideIcon,
-  Music2,
-  Search,
-  User,
-  Users,
+    Calendar,
+    Home,
+    LucideIcon,
+    Music2,
+    Search,
+    User,
+    Users,
 } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { Text, TouchableRipple, useTheme } from "react-native-paper";
 import Animated, {
-  interpolate,
-  useAnimatedStyle,
+    interpolate,
+    useAnimatedStyle,
 } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useUIStore } from "../../store/useUIStore";
 import { addAlpha } from "../../utils/theme";
 
@@ -29,6 +30,7 @@ export const BottomNav: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
   const scrollOffset = useUIStore((state) => state.scrollOffset);
+  const insets = useSafeAreaInsets();
 
   const isEventPage = pathname.startsWith("/event/");
 
@@ -111,13 +113,25 @@ export const BottomNav: React.FC = () => {
   const animatedContainerStyle = useAnimatedStyle(() => {
     const margin = interpolate(scrollOffset, [0, 50], [0, 24], "clamp");
     const borderRadius = interpolate(scrollOffset, [0, 50], [0, 100], "clamp");
-    const bottom = interpolate(scrollOffset, [0, 50], [0, 24], "clamp");
+    const bottomPos = interpolate(
+      scrollOffset,
+      [0, 50],
+      [0, insets.bottom + 16],
+      "clamp",
+    );
+    const paddingBottom = interpolate(
+      scrollOffset,
+      [0, 50],
+      [insets.bottom + 8, 8],
+      "clamp",
+    );
     const opacity = interpolate(scrollOffset, [0, 50], [0, 0.2], "clamp");
 
     return {
       marginHorizontal: margin,
       borderRadius: borderRadius,
-      bottom: bottom,
+      bottom: bottomPos,
+      paddingBottom: paddingBottom,
       shadowOpacity: opacity,
       left: margin,
       right: margin,

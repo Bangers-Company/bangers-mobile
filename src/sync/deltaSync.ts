@@ -12,34 +12,40 @@ export const runDeltaSync = async () => {
     const eventsResponse = await syncApi.getEvents(
       lastSyncTimestamp.events || undefined,
     );
-    if (eventsResponse.data.data.length > 0) {
+    if (eventsResponse.data?.data && eventsResponse.data.data.length > 0) {
       await syncHelpers.processEntityUpdates(
         "events",
         eventsResponse.data.data,
       );
     }
-    setLastSyncTimestamp("events", eventsResponse.data.sync_timestamp);
+    if (eventsResponse.data?.sync_timestamp) {
+      setLastSyncTimestamp("events", eventsResponse.data.sync_timestamp);
+    }
 
     // 2. Sync Artists
     const artistsResponse = await syncApi.getArtists(
       lastSyncTimestamp.artists || undefined,
     );
-    if (artistsResponse.data.data.length > 0) {
+    if (artistsResponse.data?.data && artistsResponse.data.data.length > 0) {
       await syncHelpers.processEntityUpdates(
         "artists",
         artistsResponse.data.data,
       );
     }
-    setLastSyncTimestamp("artists", artistsResponse.data.sync_timestamp);
+    if (artistsResponse.data?.sync_timestamp) {
+      setLastSyncTimestamp("artists", artistsResponse.data.sync_timestamp);
+    }
 
     // 3. Sync Acts
     const actsResponse = await syncApi.getActs(
       lastSyncTimestamp.acts || undefined,
     );
-    if (actsResponse.data.data.length > 0) {
+    if (actsResponse.data?.data && actsResponse.data.data.length > 0) {
       await syncHelpers.processEntityUpdates("acts", actsResponse.data.data);
     }
-    setLastSyncTimestamp("acts", actsResponse.data.sync_timestamp);
+    if (actsResponse.data?.sync_timestamp) {
+      setLastSyncTimestamp("acts", actsResponse.data.sync_timestamp);
+    }
   } catch (error) {
     console.error("Delta Sync failed:", error);
     throw error;

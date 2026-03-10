@@ -1,17 +1,17 @@
 import { Act } from "../../types/act";
-import { getDb } from "../sqlite";
+import { getDb, sanitizeParams } from "../sqlite";
 
 export const actsRepository = {
   upsert: async (act: Act) => {
     const db = await getDb();
 
     // Use transaction for act and its artists
-    await db.withTransactionAsync(async () => {
-      await db.runAsync(
+    await db.withExclusiveTransactionAsync(async (txn) => {
+      await txn.runAsync(
         `INSERT OR REPLACE INTO acts (
             id, name, description, version, stage_id, date, created_at, updated_at, deleted_at
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
+        sanitizeParams([
           act.id,
           act.name,
           act.description || null,
@@ -21,17 +21,19 @@ export const actsRepository = {
           act.created_at,
           act.updated_at,
           act.deleted_at || null,
-        ],
+        ]),
       );
 
       if (act.artists) {
         // Clear existing relations
-        await db.runAsync("DELETE FROM act_artists WHERE act_id = ?", [act.id]);
+        await txn.runAsync("DELETE FROM act_artists WHERE act_id = ?", [
+          act.id,
+        ]);
 
         for (const artist of act.artists) {
-          await db.runAsync(
+          await txn.runAsync(
             "INSERT INTO act_artists (act_id, artist_id) VALUES (?, ?)",
-            [act.id, artist.id],
+            sanitizeParams([act.id, artist.id]),
           );
         }
       }
@@ -58,8 +60,8 @@ export const actsRepository = {
     // Fetch artists
     const artistRows = await db.getAllAsync(
       `SELECT a.* FROM artists a 
-         JOIN act_artists aa ON a.id = aa.artist_id 
-         WHERE aa.act_id = ?`,
+           JOIN act_artists aa ON a.id = aa.artist_id 
+           WHERE aa.act_id = ?`,
       [id],
     );
 
@@ -73,12 +75,12 @@ export const actsRepository = {
     const db = await getDb();
     await db.runAsync(
       "UPDATE acts SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?",
-      [id],
+      sanitizeParams([id]),
     );
   },
 
   hardDelete: async (id: string) => {
     const db = await getDb();
-    await db.runAsync("DELETE FROM acts WHERE id = ?", [id]);
+    await db.runAsync("DELETE FROM acts WHERE id = ?", sanitizeParams([id]));
   },
 };

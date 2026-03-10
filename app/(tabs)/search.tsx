@@ -1,28 +1,34 @@
 import { useRouter } from "expo-router";
-import { Search as SearchIcon, SlidersHorizontal, ShieldAlert, ShieldCheck } from "lucide-react-native";
+import {
+    Search as SearchIcon,
+    ShieldAlert,
+    ShieldCheck,
+    SlidersHorizontal,
+} from "lucide-react-native";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  Modal,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  View,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import {
-  Avatar,
-  Button,
-  Checkbox,
-  Divider,
-  IconButton,
-  Searchbar,
-  Surface,
-  Text,
-  TouchableRipple,
-  useTheme,
+    Avatar,
+    Button,
+    Checkbox,
+    Divider,
+    IconButton,
+    Searchbar,
+    Surface,
+    Text,
+    TouchableRipple,
+    useTheme,
 } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { searchApi, SearchResponse } from "../../src/api/search";
 import { EventCard } from "../../src/components/event/EventCard";
+import { resolveMediaUrl } from "../../src/utils/format";
 import { addAlpha } from "../../src/utils/theme";
 
 export default function SearchScreen() {
@@ -109,23 +115,57 @@ export default function SearchScreen() {
                   style={styles.artistRipple}
                   rippleColor="rgba(0,0,0,0.05)"
                 >
-                  <View style={[styles.artistContent, { flexDirection: 'row', alignItems: 'center', gap: 16 }]}>
+                  <View
+                    style={[
+                      styles.artistContent,
+                      { flexDirection: "row", alignItems: "center", gap: 16 },
+                    ]}
+                  >
                     <Avatar.Image
                       size={40}
-                      source={{ uri: item.profile_media?.url || "https://via.placeholder.com/40" }}
+                      source={{
+                        uri:
+                          resolveMediaUrl(item.profile_media_url) ||
+                          "https://via.placeholder.com/40",
+                      }}
                     />
                     <View>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                        <Text variant="titleMedium">{item.first_name} {item.last_name}</Text>
-                        {item.roles?.some((r: any) => (typeof r === 'string' ? r === 'admin' : r?.name === 'admin')) && (
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 6,
+                        }}
+                      >
+                        <Text variant="titleMedium">
+                          {item.first_name} {item.last_name}
+                        </Text>
+                        {item.roles?.some((r: any) =>
+                          typeof r === "string"
+                            ? r === "admin"
+                            : r?.name === "admin",
+                        ) && (
                           <ShieldAlert size={16} color={theme.colors.error} />
                         )}
-                        {!item.roles?.some((r: any) => (typeof r === 'string' ? r === 'admin' : r?.name === 'admin')) &&
-                          item.roles?.some((r: any) => (typeof r === 'string' ? r === 'moderator' : r?.name === 'moderator')) && (
-                            <ShieldCheck size={16} color={theme.colors.primary} />
+                        {!item.roles?.some((r: any) =>
+                          typeof r === "string"
+                            ? r === "admin"
+                            : r?.name === "admin",
+                        ) &&
+                          item.roles?.some((r: any) =>
+                            typeof r === "string"
+                              ? r === "moderator"
+                              : r?.name === "moderator",
+                          ) && (
+                            <ShieldCheck
+                              size={16}
+                              color={theme.colors.primary}
+                            />
                           )}
                       </View>
-                      <Text variant="bodySmall" style={{ opacity: 0.6 }}>@{item.username}</Text>
+                      <Text variant="bodySmall" style={{ opacity: 0.6 }}>
+                        @{item.username}
+                      </Text>
                     </View>
                   </View>
                 </TouchableRipple>
@@ -139,7 +179,7 @@ export default function SearchScreen() {
                 elevation={1}
               >
                 <TouchableRipple
-                  onPress={() => { }}
+                  onPress={() => {}}
                   style={styles.artistRipple}
                   rippleColor="rgba(0,0,0,0.05)"
                 >
@@ -162,7 +202,7 @@ export default function SearchScreen() {
     <View
       style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+      <View style={[styles.header, { paddingTop: 16 }]}>
         <View style={styles.searchRow}>
           <Searchbar
             placeholder="Search..."
@@ -197,10 +237,10 @@ export default function SearchScreen() {
             {renderSection("Acts", results.acts?.data, "acts")}
             {renderSection("Users", results.users?.data, "users")}
 
-            {(!results.events?.data?.length) &&
-              (!results.artists?.data?.length) &&
-              (!results.acts?.data?.length) &&
-              (!results.users?.data?.length) && (
+            {!results.events?.data?.length &&
+              !results.artists?.data?.length &&
+              !results.acts?.data?.length &&
+              !results.users?.data?.length && (
                 <View style={styles.emptyContainer}>
                   <Text variant="bodyLarge">
                     No results found for &quot;{searchQuery}&quot;

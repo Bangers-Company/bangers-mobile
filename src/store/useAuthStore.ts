@@ -1,4 +1,5 @@
 import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { User } from "../types/user";
@@ -12,7 +13,7 @@ interface AuthState {
   logout: () => void;
 }
 
-const isWeb = typeof window !== "undefined";
+const isWeb = Platform.OS === "web";
 
 const SecureStorage = {
   getItem: async (name: string): Promise<string | null> => {

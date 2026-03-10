@@ -19,8 +19,9 @@ export const useDashboardData = () => {
         eventsRepository.getAll(),
       ]);
 
-      const sortedAttending = [...attendingEvents].sort((a, b) =>
-        new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+      const sortedAttending = [...attendingEvents].sort(
+        (a, b) =>
+          new Date(a.start_date).getTime() - new Date(b.start_date).getTime(),
       );
 
       const upcomingEvents = allEvents
@@ -48,21 +49,26 @@ export const useDashboardData = () => {
         dashboardApi.getSuggestedEvents(),
       ]);
 
-      const dashboardData = dashboardRes.data.data;
-      const suggestedEvents = suggestedRes.data.data;
+      const dashboardData = dashboardRes.data?.data;
+      const suggestedEvents = suggestedRes.data?.data || [];
 
-      setData({
-        ...dashboardData,
-        suggested_events: suggestedEvents,
-      });
+      if (dashboardData) {
+        setData({
+          ...dashboardData,
+          suggested_events: suggestedEvents,
+        });
 
-      // Upsert events to local DB for offline access
-      const upcomingEventsRaw = dashboardData.upcoming_events;
-      const upcomingEvents = Array.isArray(upcomingEventsRaw)
-        ? upcomingEventsRaw
-        : upcomingEventsRaw?.data || [];
-      for (const event of upcomingEvents) {
-        await eventsRepository.upsert(event);
+        // Upsert events to local DB for offline access
+        const upcomingEventsRaw = dashboardData.upcoming_events;
+        const upcomingEvents = Array.isArray(upcomingEventsRaw)
+          ? upcomingEventsRaw
+          : upcomingEventsRaw?.data || [];
+
+        for (const event of upcomingEvents) {
+          if (event && typeof event === "object") {
+            await eventsRepository.upsert(event);
+          }
+        }
       }
     } catch (err: any) {
       setError(err);
@@ -73,24 +79,34 @@ export const useDashboardData = () => {
   }, []);
 
   const refresh = useCallback(async () => {
+    if (refreshing) return;
     setRefreshing(true);
     try {
+      // Manual refresh pulls everything
       await runDeltaSync();
       await fetchRemoteData();
+    } catch (err) {
+      console.error("Manual refresh failed:", err);
     } finally {
       setRefreshing(false);
     }
-  }, [fetchRemoteData]);
+  }, [refreshing, fetchRemoteData]);
 
+  // Initial load
   useEffect(() => {
-    // 1. Load local data immediately for fast UX
     loadLocalData().then(() => {
-      // 2. Fetch remote data if not syncing
-      if (!isSyncing) {
-        fetchRemoteData();
-      }
+      fetchRemoteData();
     });
-  }, [loadLocalData, fetchRemoteData, isSyncing]);
+    // We only want this on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Reload local data when background sync finishes
+  useEffect(() => {
+    if (!isSyncing) {
+      loadLocalData();
+    }
+  }, [isSyncing, loadLocalData]);
 
   return { data, loading, refreshing, error, refresh };
 };

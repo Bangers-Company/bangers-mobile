@@ -1,41 +1,41 @@
 import { Timetable } from "../../types/timetable";
-import { getDb } from "../sqlite";
+import { getDb, sanitizeParams } from "../sqlite";
 
 export const timetablesRepository = {
   upsert: async (timetable: Timetable) => {
     const db = await getDb();
 
-    await db.withTransactionAsync(async () => {
-      await db.runAsync(
+    await db.withExclusiveTransactionAsync(async (txn) => {
+      await txn.runAsync(
         "INSERT OR REPLACE INTO timetables (id, event_id, name, is_official, is_public) VALUES (?, ?, ?, ?, ?)",
-        [
+        sanitizeParams([
           timetable.id,
           timetable.event_id,
           timetable.name,
           timetable.is_official ? 1 : 0,
           timetable.is_public ? 1 : 0,
-        ],
+        ]),
       );
 
       if (timetable.entries) {
         // Clear existing entries for this timetable
-        await db.runAsync(
+        await txn.runAsync(
           "DELETE FROM timetable_entries WHERE timetable_id = ?",
-          [timetable.id],
+          sanitizeParams([timetable.id]),
         );
 
         for (const entry of timetable.entries) {
-          await db.runAsync(
+          await txn.runAsync(
             `INSERT INTO timetable_entries (id, timetable_id, act_id, stage_id, start_time, end_time) 
-             VALUES (?, ?, ?, ?, ?, ?)`,
-            [
+               VALUES (?, ?, ?, ?, ?, ?)`,
+            sanitizeParams([
               entry.id,
               timetable.id,
               entry.act.id,
               entry.stage.id,
               entry.start_time,
               entry.end_time,
-            ],
+            ]),
           );
         }
       }
@@ -52,10 +52,10 @@ export const timetablesRepository = {
 
     const entries = await db.getAllAsync(
       `SELECT te.*, a.name as act_name, s.name as stage_name 
-       FROM timetable_entries te
-       LEFT JOIN acts a ON te.act_id = a.id
-       LEFT JOIN stages s ON te.stage_id = s.id
-       WHERE te.timetable_id = ?`,
+         FROM timetable_entries te
+         LEFT JOIN acts a ON te.act_id = a.id
+         LEFT JOIN stages s ON te.stage_id = s.id
+         WHERE te.timetable_id = ?`,
       [id],
     );
 

@@ -1,14 +1,14 @@
 import { Event } from "../../types/event";
-import { getDb } from "../sqlite";
+import { getDb, sanitizeParams } from "../sqlite";
 
 export const eventsRepository = {
   upsert: async (event: Event) => {
     const db = await getDb();
     await db.runAsync(
       `INSERT OR REPLACE INTO events (
-        id, name, description, location, start_date, end_date, version, banner_url, created_at, updated_at, deleted_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
+          id, name, description, location, start_date, end_date, version, banner_url, created_at, updated_at, deleted_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sanitizeParams([
         event.id,
         event.name,
         event.description,
@@ -20,7 +20,7 @@ export const eventsRepository = {
         event.created_at,
         event.updated_at,
         event.deleted_at || null,
-      ],
+      ]),
     );
   },
 
@@ -74,9 +74,9 @@ export const eventsRepository = {
     const now = new Date().toISOString();
     const rows = await db.getAllAsync(
       `SELECT e.* FROM events e 
-       JOIN user_event_attendance a ON e.id = a.event_id 
-       WHERE a.status = 'going' AND e.end_date >= ? AND e.deleted_at IS NULL
-       ORDER BY e.start_date ASC`,
+         JOIN user_event_attendance a ON e.id = a.event_id 
+         WHERE a.status = 'going' AND e.end_date >= ? AND e.deleted_at IS NULL
+         ORDER BY e.start_date ASC`,
       [now],
     );
     return rows.map((row: any) => ({
@@ -90,9 +90,9 @@ export const eventsRepository = {
     const now = new Date().toISOString();
     const rows = await db.getAllAsync(
       `SELECT e.* FROM events e 
-       JOIN user_event_attendance a ON e.id = a.event_id 
-       WHERE a.status = 'going' AND e.end_date < ? AND e.deleted_at IS NULL
-       ORDER BY e.end_date DESC`,
+         JOIN user_event_attendance a ON e.id = a.event_id 
+         WHERE a.status = 'going' AND e.end_date < ? AND e.deleted_at IS NULL
+         ORDER BY e.end_date DESC`,
       [now],
     );
     return rows.map((row: any) => ({

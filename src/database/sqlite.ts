@@ -1,12 +1,25 @@
 import * as SQLite from "expo-sqlite";
 
 const DB_NAME = "bangers.db";
+let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
+
+export const getDb = (): Promise<SQLite.SQLiteDatabase> => {
+  if (!dbPromise) {
+    dbPromise = SQLite.openDatabaseAsync(DB_NAME);
+  }
+  return dbPromise;
+};
 
 export const initDatabase = async () => {
-  const db = await SQLite.openDatabaseAsync(DB_NAME);
+  const db = await getDb();
 
+  // Basic configuration for better concurrency and stability
   await db.execAsync(`
     PRAGMA journal_mode = WAL;
+    PRAGMA synchronous = NORMAL;
+    PRAGMA busy_timeout = 5000;
+    PRAGMA journal_size_limit = 67108864;
+    PRAGMA foreign_keys = ON;
     
     CREATE TABLE IF NOT EXISTS events (
       id TEXT PRIMARY KEY NOT NULL,
@@ -95,4 +108,6 @@ export const initDatabase = async () => {
   return db;
 };
 
-export const getDb = () => SQLite.openDatabaseAsync(DB_NAME);
+export const sanitizeParams = (params: any[]) => {
+  return params.map((p) => (p === undefined ? null : p));
+};

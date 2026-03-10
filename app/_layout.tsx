@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import "react-native-reanimated";
 import { ThemeProvider } from "../src/context/ThemeProvider";
+import { initDatabase } from "../src/database/sqlite";
 import "../src/global.css";
 import { useAuthStore } from "../src/store/useAuthStore";
 
@@ -16,6 +17,22 @@ export default function RootLayout() {
   const segments = useSegments();
   const router = useRouter();
   const [isHydrated, setIsHydrated] = useState(false);
+  const [isDbReady, setIsDbReady] = useState(false);
+  // Handle database initialization
+  useEffect(() => {
+    initDatabase()
+      .then(() => {
+        console.log("[RootLayout] Database initialized successfully.");
+        setIsDbReady(true);
+      })
+      .catch((err) => {
+        console.error("[RootLayout] Database initialization failed:", err);
+        // Still set to ready to avoid blocking app indefinitely,
+        // though queries will likely fail.
+        setIsDbReady(true);
+      });
+  }, []);
+
   // Handle store hydration
   useEffect(() => {
     console.log("[RootLayout] Starting hydration check...");
@@ -65,7 +82,7 @@ export default function RootLayout() {
     return () => clearTimeout(timer);
   }, [accessToken, segments, isHydrated, router]);
 
-  if (!isHydrated) {
+  if (!isHydrated || !isDbReady) {
     return (
       <View
         style={{
