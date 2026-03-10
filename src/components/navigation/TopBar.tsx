@@ -23,6 +23,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuthStore } from "../../store/useAuthStore";
 import { friendsApi, Friendship } from "../../api/friends";
+import { resolveMediaUrl } from "../../utils/format";
 
 export const TopBar: React.FC = () => {
   const { top } = useSafeAreaInsets();
@@ -223,14 +224,20 @@ export const TopBar: React.FC = () => {
                 style={styles.avatarWrapper}
                 rippleColor="rgba(0, 0, 0, .1)"
               >
-                <Avatar.Image
-                  size={40}
-                  source={{
-                    uri:
-                      user?.profile_media?.url ||
-                      "https://via.placeholder.com/40",
-                  }}
-                />
+                {user?.profile_media_url ? (
+                  <Avatar.Image
+                    size={40}
+                    source={{
+                      uri: resolveMediaUrl(user.profile_media_url) || "https://via.placeholder.com/40",
+                    }}
+                  />
+                ) : (
+                  <Avatar.Text
+                    size={40}
+                    label={user?.first_name?.charAt(0) || "U"}
+                    style={{ backgroundColor: theme.colors.primary }}
+                  />
+                )}
               </TouchableRipple>
             }
           >

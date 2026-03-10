@@ -154,10 +154,10 @@ export default function PublicProfileScreen() {
                     onPress={() => router.back()}
                 />
                 <View style={styles.profileHeader}>
-                    {profileUser.profile_media?.url ? (
+                    {profileUser.profile_media_url ? (
                         <Avatar.Image
                             size={100}
-                            source={{ uri: resolveMediaUrl(profileUser.profile_media.url) || undefined }}
+                            source={{ uri: resolveMediaUrl(profileUser.profile_media_url) || undefined }}
                         />
                     ) : (
                         <Avatar.Text
