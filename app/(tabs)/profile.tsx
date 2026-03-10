@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { Calendar, History } from "lucide-react-native";
+import { Calendar, History, Users } from "lucide-react-native";
 import React from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import {
@@ -21,7 +21,7 @@ import {
 export default function ProfileScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { user, attendingEvents, pastEvents, loading, refreshProfile } =
+  const { user, attendingEvents, pastEvents, friendsCount, loading, refreshProfile } =
     useProfile();
   const setScrollOffset = useUIStore((state) => state.setScrollOffset);
 
@@ -34,11 +34,19 @@ export default function ProfileScreen() {
       label: "Attending Events",
       value: attendingEvents.length.toString() || "0",
       icon: Calendar,
+      route: null,
     },
     {
       label: "Past events",
       value: pastEvents.length.toString() || "0",
       icon: History,
+      route: null,
+    },
+    {
+      label: "Friends",
+      value: friendsCount.toString() || "0",
+      icon: Users,
+      route: `/friends/me`,
     },
   ];
 
@@ -81,7 +89,11 @@ export default function ProfileScreen() {
           {statItems.map((item, index) => (
             <TouchableRipple
               key={index}
-              onPress={() => { }}
+              onPress={() => {
+                if (item.route) {
+                  router.push(item.route as any);
+                }
+              }}
               style={styles.statItemRipple}
               rippleColor="rgba(0, 0, 0, .05)"
             >
@@ -223,6 +235,7 @@ const styles = StyleSheet.create({
   },
   statItem: {
     alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 12,
   },
   statValue: {
@@ -232,6 +245,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
     textTransform: "uppercase",
     fontSize: 10,
+    textAlign: "center",
   },
   section: {
     paddingHorizontal: 24,

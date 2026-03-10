@@ -12,6 +12,7 @@ import React, { useState } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import {
   Divider,
+  IconButton,
   SegmentedButtons,
   Text,
   TouchableRipple,
@@ -105,10 +106,9 @@ export default function SettingsScreen() {
             { backgroundColor: theme.colors.surface },
           ]}
         >
-          <ChevronDown
-            size={24}
-            color={theme.colors.onSurface}
-            style={{ transform: [{ rotate: "90deg" }] }}
+          <IconButton
+            icon="arrow-left"
+            onPress={() => router.back()}
           />
         </TouchableOpacity>
 

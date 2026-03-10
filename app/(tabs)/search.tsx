@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import {
+  Avatar,
   Button,
   Checkbox,
   Divider,
@@ -38,6 +39,7 @@ export default function SearchScreen() {
     "events",
     "artists",
     "acts",
+    "users",
   ]);
 
   const performSearch = useCallback(
@@ -78,7 +80,7 @@ export default function SearchScreen() {
   const renderSection = (
     title: string,
     data: any[],
-    type: "events" | "artists" | "acts",
+    type: "events" | "artists" | "acts" | "users",
   ) => {
     if (!data || data.length === 0) return null;
 
@@ -94,6 +96,31 @@ export default function SearchScreen() {
                 event={item}
                 onPress={(ev) => router.push(`/event/${ev.id}` as any)}
               />
+            ) : type === "users" ? (
+              <Surface
+                style={[
+                  styles.artistCard,
+                  { backgroundColor: theme.colors.surface },
+                ]}
+                elevation={1}
+              >
+                <TouchableRipple
+                  onPress={() => router.push(`/user/${item.id}` as any)}
+                  style={styles.artistRipple}
+                  rippleColor="rgba(0,0,0,0.05)"
+                >
+                  <View style={[styles.artistContent, { flexDirection: 'row', alignItems: 'center', gap: 16 }]}>
+                    <Avatar.Image
+                      size={40}
+                      source={{ uri: item.profile_media?.url || "https://via.placeholder.com/40" }}
+                    />
+                    <View>
+                      <Text variant="titleMedium">{item.first_name} {item.last_name}</Text>
+                      <Text variant="bodySmall" style={{ opacity: 0.6 }}>@{item.username}</Text>
+                    </View>
+                  </View>
+                </TouchableRipple>
+              </Surface>
             ) : (
               <Surface
                 style={[
@@ -103,7 +130,7 @@ export default function SearchScreen() {
                 elevation={1}
               >
                 <TouchableRipple
-                  onPress={() => {}}
+                  onPress={() => { }}
                   style={styles.artistRipple}
                   rippleColor="rgba(0,0,0,0.05)"
                 >
@@ -156,13 +183,15 @@ export default function SearchScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {results ? (
           <>
-            {renderSection("Events", results.events.data, "events")}
-            {renderSection("Artists", results.artists.data, "artists")}
-            {renderSection("Acts", results.acts.data, "acts")}
+            {renderSection("Events", results.events?.data, "events")}
+            {renderSection("Artists", results.artists?.data, "artists")}
+            {renderSection("Acts", results.acts?.data, "acts")}
+            {renderSection("Users", results.users?.data, "users")}
 
-            {results.events.data.length === 0 &&
-              results.artists.data.length === 0 &&
-              results.acts.data.length === 0 && (
+            {(!results.events?.data?.length) &&
+              (!results.artists?.data?.length) &&
+              (!results.acts?.data?.length) &&
+              (!results.users?.data?.length) && (
                 <View style={styles.emptyContainer}>
                   <Text variant="bodyLarge">
                     No results found for &quot;{searchQuery}&quot;
@@ -237,6 +266,11 @@ export default function SearchScreen() {
                   label="Acts"
                   status={entities.includes("acts") ? "checked" : "unchecked"}
                   onPress={() => toggleEntity("acts")}
+                />
+                <Checkbox.Item
+                  label="Users"
+                  status={entities.includes("users") ? "checked" : "unchecked"}
+                  onPress={() => toggleEntity("users")}
                 />
               </View>
             </View>

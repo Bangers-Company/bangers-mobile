@@ -1,6 +1,7 @@
 import { Act } from "../types/act";
 import { Artist } from "../types/artist";
 import { Event } from "../types/event";
+import { User } from "../types/user";
 import apiClient from "./client";
 
 export interface SearchData {
@@ -19,6 +20,11 @@ export interface SearchData {
     meta: any;
     links: any;
   };
+  users: {
+    data: User[];
+    meta: any;
+    links: any;
+  };
 }
 
 export interface SearchResponse {
@@ -28,7 +34,7 @@ export interface SearchResponse {
 export const searchApi = {
   search: (
     query: string,
-    entities: string[] = ["events", "artists", "acts"],
+    entities: string[] = ["events", "artists", "acts", "users"],
     perPage: number = 20,
   ) =>
     apiClient.get<SearchResponse>("/search", {
