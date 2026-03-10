@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { Search as SearchIcon, SlidersHorizontal } from "lucide-react-native";
+import { Search as SearchIcon, SlidersHorizontal, ShieldAlert, ShieldCheck } from "lucide-react-native";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   Modal,
@@ -115,7 +115,16 @@ export default function SearchScreen() {
                       source={{ uri: item.profile_media?.url || "https://via.placeholder.com/40" }}
                     />
                     <View>
-                      <Text variant="titleMedium">{item.first_name} {item.last_name}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text variant="titleMedium">{item.first_name} {item.last_name}</Text>
+                        {item.roles?.some((r: any) => (typeof r === 'string' ? r === 'admin' : r?.name === 'admin')) && (
+                          <ShieldAlert size={16} color={theme.colors.error} />
+                        )}
+                        {!item.roles?.some((r: any) => (typeof r === 'string' ? r === 'admin' : r?.name === 'admin')) &&
+                          item.roles?.some((r: any) => (typeof r === 'string' ? r === 'moderator' : r?.name === 'moderator')) && (
+                            <ShieldCheck size={16} color={theme.colors.primary} />
+                          )}
+                      </View>
                       <Text variant="bodySmall" style={{ opacity: 0.6 }}>@{item.username}</Text>
                     </View>
                   </View>

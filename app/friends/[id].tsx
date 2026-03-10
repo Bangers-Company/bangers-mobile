@@ -1,4 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { Calendar, History, ShieldAlert, ShieldCheck } from "lucide-react-native";
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, View, KeyboardAvoidingView, Platform, Animated } from "react-native";
 import {
@@ -114,9 +115,18 @@ export default function FriendsListScreen() {
                         />
                     )}
                     <View style={styles.friendInfo}>
-                        <Text variant="titleMedium" style={styles.friendName}>
-                            {item.first_name} {item.last_name}
-                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            <Text variant="titleMedium" style={styles.friendName}>
+                                {item.first_name} {item.last_name}
+                            </Text>
+                            {item.roles?.some((r: any) => (typeof r === 'string' ? r === 'admin' : r?.name === 'admin')) && (
+                                <ShieldAlert size={16} color={theme.colors.error} />
+                            )}
+                            {!item.roles?.some((r: any) => (typeof r === 'string' ? r === 'admin' : r?.name === 'admin')) &&
+                                item.roles?.some((r: any) => (typeof r === 'string' ? r === 'moderator' : r?.name === 'moderator')) && (
+                                    <ShieldCheck size={16} color={theme.colors.primary} />
+                                )}
+                        </View>
                         <Text variant="bodyMedium" style={{ opacity: 0.6 }}>
                             @{item.username}
                         </Text>

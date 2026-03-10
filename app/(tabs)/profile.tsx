@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { Calendar, History, Users } from "lucide-react-native";
+import { Calendar, History, Users, ShieldAlert, ShieldCheck } from "lucide-react-native";
 import React from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import {
@@ -10,6 +10,7 @@ import {
   TouchableRipple,
   useTheme,
 } from "react-native-paper";
+import ContentLoader, { Rect } from "react-content-loader/native";
 import { useProfile } from "../../src/hooks/useProfile";
 import { useUIStore } from "../../src/store/useUIStore";
 import { resolveMediaUrl } from "../../src/utils/format";
@@ -76,9 +77,18 @@ export default function ProfileScreen() {
             />
           )}
           <View style={styles.profileInfo}>
-            <Text variant="headlineSmall" style={styles.userName}>
-              {user?.first_name} {user?.last_name}
-            </Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <Text variant="headlineSmall" style={styles.userName}>
+                {user?.first_name} {user?.last_name}
+              </Text>
+              {user?.roles?.some((r: any) => (typeof r === 'string' ? r === 'admin' : r?.name === 'admin')) && (
+                <ShieldAlert size={24} color={theme.colors.error} />
+              )}
+              {!user?.roles?.some((r: any) => (typeof r === 'string' ? r === 'admin' : r?.name === 'admin')) &&
+                user?.roles?.some((r: any) => (typeof r === 'string' ? r === 'moderator' : r?.name === 'moderator')) && (
+                  <ShieldCheck size={24} color={theme.colors.primary} />
+                )}
+            </View>
             <Text variant="bodyMedium" style={styles.userEmail}>
               @{user?.username}
             </Text>
@@ -103,9 +113,21 @@ export default function ProfileScreen() {
                   color={theme.colors.primary}
                   style={{ marginBottom: 4 }}
                 />
-                <Text variant="titleMedium" style={styles.statValue}>
-                  {item.value}
-                </Text>
+                {loading ? (
+                  <ContentLoader
+                    viewBox="0 0 40 20"
+                    width={40}
+                    height={20}
+                    backgroundColor="rgba(128,128,128,0.2)"
+                    foregroundColor="rgba(128,128,128,0.4)"
+                  >
+                    <Rect x="0" y="0" rx="4" ry="4" width="40" height="20" />
+                  </ContentLoader>
+                ) : (
+                  <Text variant="titleMedium" style={styles.statValue}>
+                    {item.value}
+                  </Text>
+                )}
                 <Text variant="labelSmall" style={styles.statLabel}>
                   {item.label}
                 </Text>

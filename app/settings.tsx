@@ -9,7 +9,7 @@ import {
   User,
 } from "lucide-react-native";
 import React, { useState } from "react";
-import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, TouchableOpacity, View, LayoutAnimation } from "react-native";
 import {
   Divider,
   IconButton,
@@ -44,6 +44,7 @@ export default function SettingsScreen() {
   );
 
   const toggleSection = (section: string) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpandedSection(expandedSection === section ? null : section);
   };
 

@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Calendar, History, UserPlus, UserCheck, UserMinus, Clock, Users } from "lucide-react-native";
+import { Calendar, History, UserPlus, UserCheck, UserMinus, Clock, Users, ShieldAlert, ShieldCheck } from "lucide-react-native";
 import React, { useEffect, useState, useCallback } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import {
@@ -11,6 +11,7 @@ import {
     ActivityIndicator,
     IconButton,
 } from "react-native-paper";
+import ContentLoader, { Rect } from "react-content-loader/native";
 import { userApi } from "../../src/api/user";
 import { friendsApi, Friendship } from "../../src/api/friends";
 import { useAuthStore } from "../../src/store/useAuthStore";
@@ -167,9 +168,18 @@ export default function PublicProfileScreen() {
                         />
                     )}
                     <View style={styles.profileInfo}>
-                        <Text variant="headlineMedium" style={styles.userName}>
-                            {profileUser.first_name} {profileUser.last_name}
-                        </Text>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                            <Text variant="headlineMedium" style={styles.userName}>
+                                {profileUser.first_name} {profileUser.last_name}
+                            </Text>
+                            {profileUser.roles?.some((r: any) => (typeof r === 'string' ? r === 'admin' : r?.name === 'admin')) && (
+                                <ShieldAlert size={24} color={theme.colors.error} />
+                            )}
+                            {!profileUser.roles?.some((r: any) => (typeof r === 'string' ? r === 'admin' : r?.name === 'admin')) &&
+                                profileUser.roles?.some((r: any) => (typeof r === 'string' ? r === 'moderator' : r?.name === 'moderator')) && (
+                                    <ShieldCheck size={24} color={theme.colors.primary} />
+                                )}
+                        </View>
                         <Text variant="titleMedium" style={styles.userEmail}>
                             @{profileUser.username}
                         </Text>
@@ -204,12 +214,24 @@ export default function PublicProfileScreen() {
                 <View style={styles.statsContainer}>
                     <View style={styles.statItem}>
                         <Calendar size={24} color={theme.colors.primary} style={{ marginBottom: 4 }} />
-                        <Text variant="titleMedium" style={styles.statValue}>{stats.upcoming}</Text>
+                        {loading ? (
+                            <ContentLoader viewBox="0 0 40 20" width={40} height={20} backgroundColor="rgba(128,128,128,0.2)" foregroundColor="rgba(128,128,128,0.4)">
+                                <Rect x="0" y="0" rx="4" ry="4" width="40" height="20" />
+                            </ContentLoader>
+                        ) : (
+                            <Text variant="titleMedium" style={styles.statValue}>{stats.upcoming}</Text>
+                        )}
                         <Text variant="labelSmall" style={styles.statLabel}>Events</Text>
                     </View>
                     <View style={styles.statItem}>
                         <History size={24} color={theme.colors.primary} style={{ marginBottom: 4 }} />
-                        <Text variant="titleMedium" style={styles.statValue}>{stats.past}</Text>
+                        {loading ? (
+                            <ContentLoader viewBox="0 0 40 20" width={40} height={20} backgroundColor="rgba(128,128,128,0.2)" foregroundColor="rgba(128,128,128,0.4)">
+                                <Rect x="0" y="0" rx="4" ry="4" width="40" height="20" />
+                            </ContentLoader>
+                        ) : (
+                            <Text variant="titleMedium" style={styles.statValue}>{stats.past}</Text>
+                        )}
                         <Text variant="labelSmall" style={styles.statLabel}>Past</Text>
                     </View>
                     <TouchableRipple onPress={() => {
@@ -220,7 +242,13 @@ export default function PublicProfileScreen() {
                     }}>
                         <View style={styles.statItem}>
                             <Users size={24} color={theme.colors.primary} style={{ marginBottom: 4 }} />
-                            <Text variant="titleMedium" style={styles.statValue}>{friendsCount}</Text>
+                            {loading ? (
+                                <ContentLoader viewBox="0 0 40 20" width={40} height={20} backgroundColor="rgba(128,128,128,0.2)" foregroundColor="rgba(128,128,128,0.4)">
+                                    <Rect x="0" y="0" rx="4" ry="4" width="40" height="20" />
+                                </ContentLoader>
+                            ) : (
+                                <Text variant="titleMedium" style={styles.statValue}>{friendsCount}</Text>
+                            )}
                             <Text variant="labelSmall" style={styles.statLabel}>Friends</Text>
                         </View>
                     </TouchableRipple>
