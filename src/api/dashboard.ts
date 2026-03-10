@@ -4,6 +4,7 @@ import apiClient from "./client";
 export interface DashboardData {
   attending_events: { data: Event[] } | Event[];
   upcoming_events: { data: Event[] } | Event[];
+  suggested_events?: { data: Event[] } | Event[];
   sync_timestamp: string;
 }
 

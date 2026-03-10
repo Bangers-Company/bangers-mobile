@@ -3,12 +3,12 @@ import React from "react";
 import { Image, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Card, Text, useTheme } from "react-native-paper";
 import Animated, {
-    Extrapolate,
-    SharedValue,
-    interpolate,
-    useAnimatedScrollHandler,
-    useAnimatedStyle,
-    useSharedValue,
+  Extrapolate,
+  SharedValue,
+  interpolate,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
 } from "react-native-reanimated";
 import { Event } from "../../types/event";
 import { resolveMediaUrl } from "../../utils/format";
@@ -74,7 +74,12 @@ const CarouselItem: React.FC<CarouselItemProps> = ({
     <Animated.View
       style={[
         animatedStyle,
-        { width: cardWidth, marginHorizontal: cardMargin },
+        {
+          width: cardWidth,
+          marginHorizontal: cardMargin,
+          // @ts-ignore - Web only
+          scrollSnapAlign: "center",
+        },
       ]}
     >
       <Card style={styles.card} onPress={() => onPress?.(event)}>
@@ -119,7 +124,9 @@ export const MyEventsCarousel: React.FC<MyEventsCarouselProps> = ({
   const cardMargin = 12;
   const snapToInterval = cardWidth + cardMargin * 2;
 
-  const onScroll = useAnimatedScrollHandler((event) => {
+  const snapOffsets = events.map((_, index) => index * snapToInterval);
+
+  const scrollHandler = useAnimatedScrollHandler((event) => {
     scrollX.value = event.contentOffset.x;
   });
 
@@ -133,12 +140,19 @@ export const MyEventsCarousel: React.FC<MyEventsCarouselProps> = ({
       <Animated.ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        onScroll={onScroll}
+        onScroll={scrollHandler}
         scrollEventThrottle={16}
-        snapToInterval={snapToInterval}
-        decelerationRate="fast"
+        snapToOffsets={snapOffsets}
+        snapToAlignment="center"
+        decelerationRate={0.9}
+        disableIntervalMomentum={true}
+        pagingEnabled={false}
         contentContainerStyle={{
           paddingHorizontal: (windowWidth - snapToInterval) / 2,
+        }}
+        style={{
+          // @ts-ignore - Web only
+          scrollSnapType: "x mandatory",
         }}
       >
         {events.map((event, index) => (

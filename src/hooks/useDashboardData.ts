@@ -14,14 +14,17 @@ export const useDashboardData = () => {
 
   const loadLocalData = useCallback(async () => {
     try {
-      const attendingEvents = await eventsRepository.getAll(); // Simplified for now
-      // In a real scenario, we'd filter for attending/upcoming
-      const upcomingEvents = attendingEvents.filter(
+      // Sort by start_date ascending
+      const sortedEvents = [...attendingEvents].sort((a, b) =>
+        new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+      );
+
+      const upcomingEvents = sortedEvents.filter(
         (e) => new Date(e.start_date) > new Date(),
       );
 
       setData({
-        attending_events: attendingEvents.filter((_, index) => index % 2 === 0), // Mock attendance for now
+        attending_events: sortedEvents.filter((_, index) => index % 2 === 0), // Mock attendance for now
         upcoming_events: upcomingEvents,
         sync_timestamp: new Date().toISOString(),
       });
@@ -33,11 +36,21 @@ export const useDashboardData = () => {
   const fetchRemoteData = useCallback(async () => {
     try {
       setError(null);
-      const response = await dashboardApi.getDashboard();
-      setData(response.data.data);
+      const [dashboardRes, suggestedRes] = await Promise.all([
+        dashboardApi.getDashboard(),
+        dashboardApi.getSuggestedEvents(),
+      ]);
+
+      const dashboardData = dashboardRes.data.data;
+      const suggestedEvents = suggestedRes.data.data;
+
+      setData({
+        ...dashboardData,
+        suggested_events: suggestedEvents,
+      });
 
       // Upsert events to local DB for offline access
-      const upcomingEventsRaw = response.data.data.upcoming_events;
+      const upcomingEventsRaw = dashboardData.upcoming_events;
       const upcomingEvents = Array.isArray(upcomingEventsRaw)
         ? upcomingEventsRaw
         : upcomingEventsRaw?.data || [];

@@ -71,10 +71,17 @@ export default function HomeScreen() {
     ? rawAttending
     : rawAttending?.data || [];
 
+  console.log(data);
+
   const rawUpcoming = data?.upcoming_events;
   const upcomingEvents = Array.isArray(rawUpcoming)
     ? rawUpcoming
     : rawUpcoming?.data || [];
+
+  const rawSuggested = data?.suggested_events;
+  const suggestedEvents = Array.isArray(rawSuggested)
+    ? rawSuggested
+    : rawSuggested?.data || [];
 
   return (
     <View
@@ -99,7 +106,7 @@ export default function HomeScreen() {
         {/* Attending Section */}
         {attendingEvents.length > 0 && (
           <MyEventsCarousel
-            title="My Events"
+            title="Going"
             events={attendingEvents}
             onPress={(ev) => router.push(`/event/${ev.id}` as any)}
           />
@@ -108,7 +115,7 @@ export default function HomeScreen() {
         {/* Upcoming Section */}
         {upcomingEvents.length > 0 && (
           <MyEventsCarousel
-            title="Upcoming Events"
+            title="Interested"
             events={upcomingEvents}
             onPress={(ev) => router.push(`/event/${ev.id}` as any)}
           />
@@ -116,7 +123,7 @@ export default function HomeScreen() {
 
         {/* Suggested Section */}
         <SuggestedEvents
-          events={upcomingEvents.slice(0, 3)}
+          events={suggestedEvents}
           onRefresh={refresh}
           refreshing={refreshing}
           onEventPress={(ev) => router.push(`/event/${ev.id}` as any)}
