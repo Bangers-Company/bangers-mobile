@@ -59,7 +59,7 @@ export const BottomNav: React.FC = () => {
     return (
       <TouchableRipple
         key={index}
-        onPress={() => router.push(item.route as any)}
+        onPress={() => router.navigate(item.route as any)}
         rippleColor={
           isEventPage
             ? addAlpha(theme.colors.primary, 0.2)

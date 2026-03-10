@@ -37,7 +37,7 @@ export default function HomeScreen() {
         <TopBar />
         <View style={styles.loadingWrapper}>
           <Text variant="bodyLarge" style={{ color: theme.colors.error }}>
-            Failed to load vibe
+            Failed to load events
           </Text>
           <Text variant="bodySmall" style={styles.loadingText}>
             {error.message}
@@ -55,11 +55,10 @@ export default function HomeScreen() {
       <View
         style={[styles.center, { backgroundColor: theme.colors.background }]}
       >
-        <TopBar />
         <View style={styles.loadingWrapper}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
           <Text variant="bodyMedium" style={styles.loadingText}>
-            Loading your vibe...
+            Loading your events...
           </Text>
         </View>
       </View>
@@ -70,8 +69,6 @@ export default function HomeScreen() {
   const attendingEvents = Array.isArray(rawAttending)
     ? rawAttending
     : rawAttending?.data || [];
-
-  console.log(data);
 
   const rawUpcoming = data?.upcoming_events;
   const upcomingEvents = Array.isArray(rawUpcoming)
@@ -103,10 +100,11 @@ export default function HomeScreen() {
           { paddingBottom: bottom + 100 },
         ]}
       >
+        <Droplet visible={showDroplet} onPress={scrollToTop} />
         {/* Attending Section */}
         {attendingEvents.length > 0 && (
           <MyEventsCarousel
-            title="Going"
+            title="My Events"
             events={attendingEvents}
             onPress={(ev) => router.push(`/event/${ev.id}` as any)}
           />
@@ -115,7 +113,7 @@ export default function HomeScreen() {
         {/* Upcoming Section */}
         {upcomingEvents.length > 0 && (
           <MyEventsCarousel
-            title="Interested"
+            title="Maybe interested in"
             events={upcomingEvents}
             onPress={(ev) => router.push(`/event/${ev.id}` as any)}
           />
@@ -130,7 +128,7 @@ export default function HomeScreen() {
         />
       </ScrollView>
 
-      <Droplet visible={showDroplet} onPress={scrollToTop} />
+
     </View>
   );
 }

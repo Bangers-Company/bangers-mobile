@@ -9,9 +9,8 @@ export interface Media {
 }
 
 export interface UserStats {
-  attended_count: number;
-  favorites_count: number;
-  vibe_score: number;
+  upcoming_count: number;
+  past_count: number;
 }
 
 export interface User {
@@ -30,8 +29,8 @@ export interface User {
   stats?: UserStats;
   past_events?: { data: import("./event").Event[] } | import("./event").Event[];
   upcoming_events?:
-    | { data: import("./event").Event[] }
-    | import("./event").Event[];
+  | { data: import("./event").Event[] }
+  | import("./event").Event[];
   created_at: string;
   updated_at: string;
 }

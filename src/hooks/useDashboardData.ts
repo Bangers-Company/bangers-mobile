@@ -14,17 +14,24 @@ export const useDashboardData = () => {
 
   const loadLocalData = useCallback(async () => {
     try {
-      // Sort by start_date ascending
-      const sortedEvents = [...attendingEvents].sort((a, b) =>
+      const [attendingEvents, allEvents] = await Promise.all([
+        eventsRepository.getAttendingEvents(),
+        eventsRepository.getAll(),
+      ]);
+
+      const sortedAttending = [...attendingEvents].sort((a, b) =>
         new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
       );
 
-      const upcomingEvents = sortedEvents.filter(
-        (e) => new Date(e.start_date) > new Date(),
-      );
+      const upcomingEvents = allEvents
+        .filter((e) => new Date(e.start_date) > new Date())
+        .sort(
+          (a, b) =>
+            new Date(a.start_date).getTime() - new Date(b.start_date).getTime(),
+        );
 
       setData({
-        attending_events: sortedEvents.filter((_, index) => index % 2 === 0), // Mock attendance for now
+        attending_events: sortedAttending,
         upcoming_events: upcomingEvents,
         sync_timestamp: new Date().toISOString(),
       });

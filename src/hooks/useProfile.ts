@@ -25,15 +25,12 @@ export function useProfile() {
         throw new Error("User data not found in response");
       }
 
-      // Fetch local favorites
-      const favoriteIds = await favoritesRepository.getAll();
-
       const stats: UserStats = {
-        attended_count: userData.past_events?.length || 0,
-        favorites_count: favoriteIds.length,
-        vibe_score:
-          (userData.past_events?.length || 0) * 10 + favoriteIds.length * 2,
+        upcoming_count: userData.upcoming_events?.length || 0,
+        past_count: userData.past_events?.length || 0,
       };
+
+      console.log(userData)
 
       setAttendingEvents(
         userData.upcoming_events?.data || userData.upcoming_events || [],

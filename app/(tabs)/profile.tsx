@@ -13,6 +13,10 @@ import {
 import { useProfile } from "../../src/hooks/useProfile";
 import { useUIStore } from "../../src/store/useUIStore";
 import { resolveMediaUrl } from "../../src/utils/format";
+import {
+  EventCard,
+  EventCardSkeleton,
+} from "../../src/components/event/EventCard";
 
 export default function ProfileScreen() {
   const theme = useTheme();
@@ -77,7 +81,7 @@ export default function ProfileScreen() {
           {statItems.map((item, index) => (
             <TouchableRipple
               key={index}
-              onPress={() => {}}
+              onPress={() => { }}
               style={styles.statItemRipple}
               rippleColor="rgba(0, 0, 0, .05)"
             >
@@ -106,7 +110,7 @@ export default function ProfileScreen() {
           </Text>
           <Button
             mode="text"
-            onPress={() => {}}
+            onPress={() => { }}
             textColor={theme.colors.primary}
           >
             View All
@@ -117,26 +121,21 @@ export default function ProfileScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.horizontalScroll}
         >
-          {attendingEvents.length > 0 ? (
+          {loading ? (
+            <>
+              <EventCardSkeleton variant="horizontal" style={{ marginRight: 16 }} />
+              <EventCardSkeleton variant="horizontal" style={{ marginRight: 16 }} />
+              <EventCardSkeleton variant="horizontal" style={{ marginRight: 16 }} />
+            </>
+          ) : attendingEvents.length > 0 ? (
             attendingEvents.map((event) => (
-              <Surface key={event.id} style={styles.eventCard} elevation={1}>
-                <TouchableRipple
-                  onPress={() => router.push(`/event/${event.id}` as any)}
-                  style={StyleSheet.absoluteFill}
-                  rippleColor="rgba(0, 0, 0, .05)"
-                >
-                  <View style={styles.eventCardContent}>
-                    <View style={styles.eventInfo}>
-                      <Text variant="titleMedium" numberOfLines={1}>
-                        {event.name}
-                      </Text>
-                      <Text variant="bodySmall" numberOfLines={1}>
-                        {event.location}
-                      </Text>
-                    </View>
-                  </View>
-                </TouchableRipple>
-              </Surface>
+              <EventCard
+                key={event.id}
+                event={event}
+                variant="horizontal"
+                style={{ marginRight: 16 }}
+                onPress={(e: any) => router.push(`/event/${e.id}` as any)}
+              />
             ))
           ) : (
             <Text style={styles.emptyText}>No upcoming events</Text>
@@ -153,26 +152,21 @@ export default function ProfileScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.horizontalScroll}
         >
-          {pastEvents.length > 0 ? (
+          {loading ? (
+            <>
+              <EventCardSkeleton variant="horizontal" style={{ marginRight: 16 }} />
+              <EventCardSkeleton variant="horizontal" style={{ marginRight: 16 }} />
+              <EventCardSkeleton variant="horizontal" style={{ marginRight: 16 }} />
+            </>
+          ) : pastEvents.length > 0 ? (
             pastEvents.map((event) => (
-              <Surface key={event.id} style={styles.eventCard} elevation={1}>
-                <TouchableRipple
-                  onPress={() => router.push(`/event/${event.id}` as any)}
-                  style={StyleSheet.absoluteFill}
-                  rippleColor="rgba(0, 0, 0, .05)"
-                >
-                  <View style={styles.eventCardContent}>
-                    <View style={styles.eventInfo}>
-                      <Text variant="titleMedium" numberOfLines={1}>
-                        {event.name}
-                      </Text>
-                      <Text variant="bodySmall" numberOfLines={1}>
-                        {new Date(event.start_date).toLocaleDateString()}
-                      </Text>
-                    </View>
-                  </View>
-                </TouchableRipple>
-              </Surface>
+              <EventCard
+                key={event.id}
+                event={event}
+                variant="horizontal"
+                style={{ marginRight: 16 }}
+                onPress={(e: any) => router.push(`/event/${e.id}` as any)}
+              />
             ))
           ) : (
             <Text style={styles.emptyText}>No past events recorded</Text>
@@ -274,7 +268,7 @@ const styles = StyleSheet.create({
   },
   horizontalScroll: {
     paddingRight: 24,
-    gap: 16,
+    minHeight: 130,
   },
   eventCard: {
     width: 200,
