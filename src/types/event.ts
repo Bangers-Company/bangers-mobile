@@ -44,6 +44,8 @@ export interface Event {
   attendees?: User[];
   attendee_count?: number;
   user_status?: "going" | "interested" | null;
+  official_timetable?: { id: string; name: string } | null;
+  personal_timetable?: { id: string; name: string } | null;
   created_at: string;
   updated_at: string;
   deleted_at?: string | null;
