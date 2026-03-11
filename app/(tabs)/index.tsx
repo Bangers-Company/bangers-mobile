@@ -52,9 +52,7 @@ export default function HomeScreen() {
 
   if (loading && !data) {
     return (
-      <View
-        style={[styles.center, { backgroundColor: theme.colors.background }]}
-      >
+      <View style={styles.center}>
         <View style={styles.loadingWrapper}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
           <Text variant="bodyMedium" style={styles.loadingText}>
@@ -81,9 +79,7 @@ export default function HomeScreen() {
     : rawSuggested?.data || [];
 
   return (
-    <View
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-    >
+    <View style={styles.container}>
       <ScrollView
         ref={scrollRef}
         onScroll={handleScroll}

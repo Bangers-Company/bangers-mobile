@@ -199,9 +199,7 @@ export default function SearchScreen() {
   };
 
   return (
-    <View
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-    >
+    <View style={styles.container}>
       <View style={[styles.header, { paddingTop: 16 }]}>
         <View style={styles.searchRow}>
           <Searchbar

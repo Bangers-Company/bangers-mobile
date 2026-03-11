@@ -37,18 +37,48 @@ export const getDynamicBackground = (
   const b = parseInt(accent.slice(5, 7), 16);
 
   if (mode === "light") {
-    // For light mode: mix 99% white with 1% accent
-    const nr = Math.round(255 * 0.99 + r * 0.01);
-    const ng = Math.round(255 * 0.99 + g * 0.01);
-    const nb = Math.round(255 * 0.99 + b * 0.01);
+    // Subtler background tint (4% mix)
+    const nr = Math.round(255 * 0.96 + r * 0.04);
+    const ng = Math.round(255 * 0.96 + g * 0.04);
+    const nb = Math.round(255 * 0.96 + b * 0.04);
     return `rgb(${nr}, ${ng}, ${nb})`;
   } else {
-    // For dark mode: mix 97% near-black with 3% accent
-    // Using a base dark color of #0a050c (very dark)
-    const nr = Math.round(10 * 0.97 + r * 0.03);
-    const ng = Math.round(5 * 0.97 + g * 0.03);
-    const nb = Math.round(12 * 0.97 + b * 0.03);
+    // Dark mode: Use neutral base (18, 18, 18) to avoid color clashing
+    // Mix 7% accent for slightly more visible tint
+    const nr = Math.round(18 * 0.93 + r * 0.07);
+    const ng = Math.round(18 * 0.93 + g * 0.07);
+    const nb = Math.round(18 * 0.93 + b * 0.07);
     return `rgb(${nr}, ${ng}, ${nb})`;
+  }
+};
+
+/**
+ * Generates gradient colors based on the accent color and theme mode.
+ * @returns [color1, color2]
+ */
+export const getGradientColors = (
+  accentColor: string | null,
+  mode: "light" | "dark" | "amoled",
+): string[] => {
+  if (mode === "amoled") return ["#000000", "#000000"];
+
+  const accent = accentColor || COLORS.primary;
+  
+  // Simple hex to rgb
+  const r = parseInt(accent.slice(1, 3), 16);
+  const g = parseInt(accent.slice(3, 5), 16);
+  const b = parseInt(accent.slice(5, 7), 16);
+
+  if (mode === "light") {
+    // Light mode: More pronounced tint mix
+    const start = `rgba(255, 255, 255, 1)`;
+    const end = `rgba(${Math.round(255 * 0.85 + r * 0.15)}, ${Math.round(255 * 0.85 + g * 0.15)}, ${Math.round(255 * 0.85 + b * 0.15)}, 1)`;
+    return [start, end];
+  } else {
+    // Dark mode: Deeper, more visible accent start
+    const start = `rgba(${Math.round(r * 0.2)}, ${Math.round(g * 0.2)}, ${Math.round(b * 0.2)}, 1)`;
+    const end = "#0a050c"; 
+    return [start, end];
   }
 };
 
@@ -67,16 +97,17 @@ export const getDynamicSurface = (
   const b = parseInt(accent.slice(5, 7), 16);
 
   if (mode === "light") {
-    // Even more subtle highlight for surface
-    const nr = Math.round(255 * 0.98 + r * 0.02);
-    const ng = Math.round(255 * 0.98 + g * 0.02);
-    const nb = Math.round(255 * 0.98 + b * 0.02);
+    // Subtler surface (4% mix)
+    const nr = Math.round(255 * 0.96 + r * 0.04);
+    const ng = Math.round(255 * 0.96 + g * 0.04);
+    const nb = Math.round(255 * 0.96 + b * 0.04);
     return `rgb(${nr}, ${ng}, ${nb})`;
   } else {
-    // Slightly lighter than background for dark mode surface
-    const nr = Math.round(25 * 0.95 + r * 0.05);
-    const ng = Math.round(15 * 0.95 + g * 0.05);
-    const nb = Math.round(30 * 0.95 + b * 0.05);
+    // Use neutral dark surface base (30, 30, 30)
+    // Mix 12% accent for vibrant surfaces (popovers, cards)
+    const nr = Math.round(30 * 0.88 + r * 0.12);
+    const ng = Math.round(30 * 0.88 + g * 0.12);
+    const nb = Math.round(30 * 0.88 + b * 0.12);
     return `rgb(${nr}, ${ng}, ${nb})`;
   }
 };

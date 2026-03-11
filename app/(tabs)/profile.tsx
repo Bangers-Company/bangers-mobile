@@ -53,7 +53,7 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      style={styles.container}
       refreshControl={
         <RefreshControl refreshing={loading} onRefresh={refreshProfile} />
       }

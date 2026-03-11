@@ -23,6 +23,7 @@ import {
     EventCardSkeleton,
 } from "../../src/components/event/EventCard";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { PageContainer } from "../../src/components/PageContainer";
 
 export default function PublicProfileScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -117,18 +118,18 @@ export default function PublicProfileScreen() {
 
     if (loading && !profileUser) {
         return (
-            <View style={[styles.center, { backgroundColor: theme.colors.background }]}>
+            <PageContainer style={styles.center}>
                 <ActivityIndicator size="large" color={theme.colors.primary} />
-            </View>
+            </PageContainer>
         );
     }
 
     if (error || !profileUser) {
         return (
-            <View style={[styles.center, { backgroundColor: theme.colors.background }]}>
+            <PageContainer style={styles.center}>
                 <Text variant="titleMedium" style={{ color: theme.colors.error }}>{error || "User not found"}</Text>
                 <Button mode="contained" onPress={() => router.back()} style={{ marginTop: 16 }}>Go Back</Button>
-            </View>
+            </PageContainer>
         );
     }
 
@@ -144,10 +145,11 @@ export default function PublicProfileScreen() {
     };
 
     return (
-        <ScrollView
-            style={[styles.container, { backgroundColor: theme.colors.background }]}
-            refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchProfileAndFriendship} />}
-        >
+        <PageContainer withPadding={false} withSafeArea={false}>
+            <ScrollView
+                style={styles.container}
+                refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchProfileAndFriendship} />}
+            >
             <View style={[styles.header, { paddingTop: insets.top + 40 }]}>
                 <IconButton
                     icon="arrow-left"
@@ -293,7 +295,8 @@ export default function PublicProfileScreen() {
                 </ScrollView>
             </View>
             <View style={{ height: 100 }} />
-        </ScrollView>
+            </ScrollView>
+        </PageContainer>
     );
 }
 

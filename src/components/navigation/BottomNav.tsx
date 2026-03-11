@@ -13,6 +13,7 @@ import { StyleSheet, View } from "react-native";
 import { Text, TouchableRipple, useTheme } from "react-native-paper";
 import Animated, {
     interpolate,
+    interpolateColor,
     useAnimatedStyle,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -127,6 +128,18 @@ export const BottomNav: React.FC = () => {
     );
     const opacity = interpolate(scrollOffset, [0, 50], [0, 0.2], "clamp");
 
+    // Dynamic color values
+    const bgColor = interpolateColor(
+      scrollOffset,
+      [0, 50],
+      [theme.colors.surface, addAlpha(theme.colors.surface, 0.85)]
+    );
+    const borderColor = interpolateColor(
+      scrollOffset,
+      [0, 50],
+      [theme.colors.outlineVariant, addAlpha(theme.colors.outlineVariant, 0.3)]
+    );
+
     return {
       marginHorizontal: margin,
       borderRadius: borderRadius,
@@ -135,6 +148,8 @@ export const BottomNav: React.FC = () => {
       shadowOpacity: opacity,
       left: margin,
       right: margin,
+      backgroundColor: bgColor,
+      borderColor: borderColor,
     };
   });
 
@@ -144,8 +159,6 @@ export const BottomNav: React.FC = () => {
         styles.container,
         animatedContainerStyle,
         {
-          backgroundColor: theme.colors.background,
-          borderColor: theme.colors.outlineVariant,
           shadowColor: theme.colors.shadow,
         },
       ]}

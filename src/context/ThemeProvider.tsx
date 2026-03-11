@@ -29,17 +29,18 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const systemColorScheme = useColorScheme();
-  const themeMode = useUIStore((state) => state.themeMode);
+  const { themeMode, isAmoled } = useUIStore();
   const accentColor =
     useUIStore((state) => state.accentColor) || COLORS.primary;
 
   const isDark =
     themeMode === "system"
       ? systemColorScheme === "dark"
-      : themeMode !== "light";
+      : themeMode === "dark";
 
   const theme = useMemo(() => {
-    const mode = themeMode === "amoled" ? "amoled" : isDark ? "dark" : "light";
+    const effectiveAmoled = isDark && isAmoled;
+    const mode = effectiveAmoled ? "amoled" : isDark ? "dark" : "light";
     const baseTheme = isDark ? MD3DarkTheme : MD3LightTheme;
 
     const bgColor = getDynamicBackground(accentColor, mode);
@@ -63,7 +64,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
         },
       },
     };
-  }, [themeMode, isDark, accentColor]);
+  }, [themeMode, isDark, accentColor, isAmoled]);
 
   const navigationTheme = useMemo(
     () => ({
@@ -71,7 +72,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
       colors: {
         ...(isDark ? AdaptedDark.colors : AdaptedLight.colors),
         primary: accentColor,
-        background: theme.colors.background,
+        background: "transparent",
         card: theme.colors.surface,
         text: theme.colors.onSurface,
       },

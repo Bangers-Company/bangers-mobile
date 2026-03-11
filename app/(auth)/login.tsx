@@ -22,6 +22,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { authApi } from "../../src/api/auth";
 import { useAuthStore } from "../../src/store/useAuthStore";
+import { PageContainer } from "../../src/components/PageContainer";
 
 function AnimatedInput({
   children,
@@ -77,194 +78,177 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+    <PageContainer withPadding={false} withSafeArea={false}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.container}
       >
-        <View style={styles.header}>
-          <View
-            style={[
-              styles.logoContainer,
-              { backgroundColor: theme.colors.primary },
-            ]}
-          >
-            <Bolt size={36} color="white" fill="white" />
-          </View>
-          <Text variant="displayMedium" style={styles.title}>
-            Bangers
-          </Text>
-          <Text variant="titleMedium" style={styles.subtitle}>
-            The ultimate high-energy experience
-          </Text>
-        </View>
-
-        <View style={styles.form}>
-          <View style={styles.inputGroup}>
-            <Text variant="labelLarge" style={styles.label}>
-              Email
-            </Text>
-            <AnimatedInput isFocused={focusedField === "email"}>
-              <TextInput
-                mode="outlined"
-                placeholder="Enter your email"
-                value={email}
-                onChangeText={setEmail}
-                onFocus={() => setFocusedField("email")}
-                onBlur={() => setFocusedField(null)}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                outlineColor={theme.colors.outlineVariant}
-                activeOutlineColor={theme.colors.primary}
-                style={styles.input}
-                left={
-                  <TextInput.Icon
-                    icon={() => (
-                      <Mail
-                        size={20}
-                        color={
-                          focusedField === "email"
-                            ? theme.colors.primary
-                            : theme.colors.outline
-                        }
-                      />
-                    )}
-                  />
-                }
-              />
-            </AnimatedInput>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text variant="labelLarge" style={styles.label}>
-              Password
-            </Text>
-            <AnimatedInput isFocused={focusedField === "password"}>
-              <TextInput
-                mode="outlined"
-                placeholder="Enter your password"
-                value={password}
-                onChangeText={setPassword}
-                onFocus={() => setFocusedField("password")}
-                onBlur={() => setFocusedField(null)}
-                secureTextEntry={!showPassword}
-                outlineColor={theme.colors.outlineVariant}
-                activeOutlineColor={theme.colors.primary}
-                style={styles.input}
-                left={
-                  <TextInput.Icon
-                    icon={() => (
-                      <Lock
-                        size={20}
-                        color={
-                          focusedField === "password"
-                            ? theme.colors.primary
-                            : theme.colors.outline
-                        }
-                      />
-                    )}
-                  />
-                }
-                right={
-                  <TextInput.Icon
-                    icon={() =>
-                      showPassword ? (
-                        <EyeOff size={20} color={theme.colors.outline} />
-                      ) : (
-                        <Eye size={20} color={theme.colors.outline} />
-                      )
-                    }
-                    onPress={() => setShowPassword(!showPassword)}
-                  />
-                }
-              />
-            </AnimatedInput>
-          </View>
-
-          {error && (
-            <Text style={[styles.errorText, { color: theme.colors.error }]}>
-              {error}
-            </Text>
-          )}
-
-          <View style={styles.forgotRow}>
-            <View style={styles.rememberMe}>
-              <Checkbox.Android
-                status={rememberMe ? "checked" : "unchecked"}
-                onPress={() => setRememberMe(!rememberMe)}
-                color={theme.colors.primary}
-              />
-              <Text variant="bodySmall" style={styles.rememberText}>
-                Remember me
-              </Text>
-            </View>
-            <TouchableRipple
-              onPress={() => router.push("/(auth)/forgot-password" as any)}
-              style={styles.forgotRipple}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.header}>
+            <View
+              style={[
+                styles.logoContainer,
+                { backgroundColor: theme.colors.primary },
+              ]}
             >
-              <Text
-                variant="bodySmall"
-                style={[styles.forgotText, { color: theme.colors.primary }]}
-              >
-                Forgot password?
-              </Text>
-            </TouchableRipple>
+              <Bolt size={36} color="white" fill="white" />
+            </View>
+            <Text variant="displayMedium" style={styles.title}>
+              Bangers
+            </Text>
+            <Text variant="titleMedium" style={styles.subtitle}>
+              The ultimate high-energy experience
+            </Text>
           </View>
 
-          <Button
-            mode="contained"
-            onPress={handleLogin}
-            loading={loading}
-            disabled={loading}
-            style={styles.loginButton}
-            contentStyle={styles.loginButtonContent}
-            labelStyle={styles.loginButtonLabel}
-          >
-            Sign In
-          </Button>
-        </View>
-
-        <View style={styles.dividerRow}>
-          <View
-            style={[
-              styles.divider,
-              { backgroundColor: theme.colors.outlineVariant },
-            ]}
-          />
-          <Text variant="labelSmall" style={styles.dividerText}>
-            OR CONTINUE WITH
-          </Text>
-          <View
-            style={[
-              styles.divider,
-              { backgroundColor: theme.colors.outlineVariant },
-            ]}
-          />
-        </View>
-
-        <View style={styles.socialRow}>
-          <TouchableRipple
-            onPress={() => {}}
-            style={[
-              styles.socialButton,
-              { borderColor: theme.colors.outlineVariant },
-            ]}
-          >
-            <View style={styles.socialContent}>
-              <View style={styles.socialIcon}>
-                <Bolt size={20} color={theme.colors.primary} />
-              </View>
-              <Text variant="labelLarge" style={styles.socialLabel}>
-                Google
+          <View style={styles.form}>
+            <View style={styles.inputGroup}>
+              <Text variant="labelLarge" style={styles.label}>
+                Email
               </Text>
+              <AnimatedInput isFocused={focusedField === "email"}>
+                <TextInput
+                  mode="outlined"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChangeText={setEmail}
+                  onFocus={() => setFocusedField("email")}
+                  onBlur={() => setFocusedField(null)}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  outlineColor={theme.colors.outlineVariant}
+                  activeOutlineColor={theme.colors.primary}
+                  style={styles.input}
+                  left={
+                    <TextInput.Icon
+                      icon={() => (
+                        <Mail
+                          size={20}
+                          color={
+                            focusedField === "email"
+                              ? theme.colors.primary
+                              : theme.colors.outline
+                          }
+                        />
+                      )}
+                    />
+                  }
+                />
+              </AnimatedInput>
             </View>
-          </TouchableRipple>
 
-          {Platform.OS === "ios" && (
+            <View style={styles.inputGroup}>
+              <Text variant="labelLarge" style={styles.label}>
+                Password
+              </Text>
+              <AnimatedInput isFocused={focusedField === "password"}>
+                <TextInput
+                  mode="outlined"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChangeText={setPassword}
+                  onFocus={() => setFocusedField("password")}
+                  onBlur={() => setFocusedField(null)}
+                  secureTextEntry={!showPassword}
+                  outlineColor={theme.colors.outlineVariant}
+                  activeOutlineColor={theme.colors.primary}
+                  style={styles.input}
+                  left={
+                    <TextInput.Icon
+                      icon={() => (
+                        <Lock
+                          size={20}
+                          color={
+                            focusedField === "password"
+                              ? theme.colors.primary
+                              : theme.colors.outline
+                          }
+                        />
+                      )}
+                    />
+                  }
+                  right={
+                    <TextInput.Icon
+                      icon={() =>
+                        showPassword ? (
+                          <EyeOff size={20} color={theme.colors.outline} />
+                        ) : (
+                          <Eye size={20} color={theme.colors.outline} />
+                        )
+                      }
+                      onPress={() => setShowPassword(!showPassword)}
+                    />
+                  }
+                />
+              </AnimatedInput>
+            </View>
+
+            {error && (
+              <Text style={[styles.errorText, { color: theme.colors.error }]}>
+                {error}
+              </Text>
+            )}
+
+            <View style={styles.forgotRow}>
+              <View style={styles.rememberMe}>
+                <Checkbox.Android
+                  status={rememberMe ? "checked" : "unchecked"}
+                  onPress={() => setRememberMe(!rememberMe)}
+                  color={theme.colors.primary}
+                />
+                <Text variant="bodySmall" style={styles.rememberText}>
+                  Remember me
+                </Text>
+              </View>
+              <TouchableRipple
+                onPress={() => router.push("/(auth)/forgot-password" as any)}
+                style={styles.forgotRipple}
+              >
+                <Text
+                  variant="bodySmall"
+                  style={[styles.forgotText, { color: theme.colors.primary }]}
+                >
+                  Forgot password?
+                </Text>
+              </TouchableRipple>
+            </View>
+
+            <Button
+              mode="contained"
+              onPress={handleLogin}
+              loading={loading}
+              disabled={loading}
+              style={styles.loginButton}
+              contentStyle={styles.loginButtonContent}
+              labelStyle={styles.loginButtonLabel}
+            >
+              Sign In
+            </Button>
+          </View>
+
+          <View style={styles.dividerRow}>
+            <View
+              style={[
+                styles.divider,
+                { backgroundColor: theme.colors.outlineVariant },
+              ]}
+            />
+            <Text variant="labelSmall" style={styles.dividerText}>
+              OR CONTINUE WITH
+            </Text>
+            <View
+              style={[
+                styles.divider,
+                { backgroundColor: theme.colors.outlineVariant },
+              ]}
+            />
+          </View>
+
+          <View style={styles.socialRow}>
             <TouchableRipple
               onPress={() => {}}
               style={[
@@ -274,34 +258,53 @@ export default function LoginScreen() {
             >
               <View style={styles.socialContent}>
                 <View style={styles.socialIcon}>
-                  <Lock size={20} color="#000" />
+                  <Bolt size={20} color={theme.colors.primary} />
                 </View>
                 <Text variant="labelLarge" style={styles.socialLabel}>
-                  Apple
+                  Google
                 </Text>
               </View>
             </TouchableRipple>
-          )}
-        </View>
 
-        <View style={styles.footer}>
-          <Text variant="bodyMedium" style={styles.footerText}>
-            Don&apos;t have an account?{" "}
-          </Text>
-          <TouchableRipple
-            onPress={() => router.push("/(auth)/register" as any)}
-            style={styles.footerRipple}
-          >
-            <Text
-              variant="bodyMedium"
-              style={[styles.footerLink, { color: theme.colors.primary }]}
-            >
-              Create Account
+            {Platform.OS === "ios" && (
+              <TouchableRipple
+                onPress={() => {}}
+                style={[
+                  styles.socialButton,
+                  { borderColor: theme.colors.outlineVariant },
+                ]}
+              >
+                <View style={styles.socialContent}>
+                  <View style={styles.socialIcon}>
+                    <Lock size={20} color="#000" />
+                  </View>
+                  <Text variant="labelLarge" style={styles.socialLabel}>
+                    Apple
+                  </Text>
+                </View>
+              </TouchableRipple>
+            )}
+          </View>
+
+          <View style={styles.footer}>
+            <Text variant="bodyMedium" style={styles.footerText}>
+              Don&apos;t have an account?{" "}
             </Text>
-          </TouchableRipple>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            <TouchableRipple
+              onPress={() => router.push("/(auth)/register" as any)}
+              style={styles.footerRipple}
+            >
+              <Text
+                variant="bodyMedium"
+                style={[styles.footerLink, { color: theme.colors.primary }]}
+              >
+                Create Account
+              </Text>
+            </TouchableRipple>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </PageContainer>
   );
 }
 const styles = StyleSheet.create({

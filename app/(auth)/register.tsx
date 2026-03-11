@@ -34,6 +34,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { authApi } from "../../src/api/auth";
 import { useAuthStore } from "../../src/store/useAuthStore";
+import { PageContainer } from "../../src/components/PageContainer";
 
 // Register English translation for the date picker
 registerTranslation("en", en);
@@ -109,10 +110,11 @@ export default function RegisterScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-    >
+    <PageContainer withPadding={false} withSafeArea={false}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.container}
+      >
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
@@ -416,6 +418,7 @@ export default function RegisterScreen() {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+    </PageContainer>
   );
 }
 

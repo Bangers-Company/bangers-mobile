@@ -89,7 +89,8 @@ export const TopBar: React.FC = () => {
         delete fadeAnimations[id];
 
         if (notifications.length <= 1) {
-          setNotifVisible(false);
+          // Wait for the last item's animation to finish before closing the menu
+          setTimeout(() => setNotifVisible(false), 100);
         }
       });
 
@@ -125,7 +126,7 @@ export const TopBar: React.FC = () => {
     <View
       style={[
         styles.container,
-        { paddingTop: top + 10, backgroundColor: theme.colors.background },
+        { paddingTop: top + 10, backgroundColor: "transparent" },
       ]}
     >
       <View style={styles.content}>
@@ -245,7 +246,8 @@ export const TopBar: React.FC = () => {
             <Menu.Item
               onPress={() => {
                 setMenuVisible(false);
-                router.push("/(tabs)/profile" as any);
+                // 400ms allows the full Paper menu closing animation (approx 250ms) to finish
+                setTimeout(() => router.push("/(tabs)/profile" as any), 400);
               }}
               leadingIcon={() => (
                 <User size={20} color={theme.colors.primary} />
@@ -284,7 +286,7 @@ export const TopBar: React.FC = () => {
             <Menu.Item
               onPress={() => {
                 setMenuVisible(false);
-                router.push("/settings");
+                setTimeout(() => router.push("/settings"), 400);
               }}
               leadingIcon={() => (
                 <Settings size={20} color={theme.colors.onSurfaceVariant} />
@@ -295,8 +297,10 @@ export const TopBar: React.FC = () => {
             <Menu.Item
               onPress={() => {
                 setMenuVisible(false);
-                useAuthStore.getState().logout();
-                router.replace("/(auth)/login");
+                setTimeout(() => {
+                  useAuthStore.getState().logout();
+                  router.replace("/(auth)/login");
+                }, 400);
               }}
               leadingIcon={() => (
                 <LogOut size={20} color={theme.colors.error} />

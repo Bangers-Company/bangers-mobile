@@ -9,7 +9,17 @@ import {
   User,
 } from "lucide-react-native";
 import React, { useState } from "react";
-import { ScrollView, StyleSheet, TouchableOpacity, View, LayoutAnimation } from "react-native";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useDerivedValue,
+  withTiming,
+  interpolate,
+  Layout,
+  FadeIn,
+  FadeOut,
+  LinearTransition,
+} from "react-native-reanimated";
 import {
   Divider,
   IconButton,
@@ -17,26 +27,52 @@ import {
   Text,
   TouchableRipple,
   useTheme,
+  Switch,
 } from "react-native-paper";
+import { useColorScheme } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuthStore } from "../src/store/useAuthStore";
 import { useUIStore } from "../src/store/useUIStore";
 import { addAlpha, COLORS } from "../src/utils/theme";
+import { PageContainer } from "../src/components/PageContainer";
 
 const ACCENT_COLORS = [
+  "#a60df2", // Primary Purple
   "#2196F3", // Blue
   "#F44336", // Red
-  "#a60df2", // Primary Purple
   "#10b981", // Emerald
   "#f59e0b", // Amber
   "#ec4899", // Pink
+  "#00BCD4", // Cyan
+  "#8BC34A", // Light Green
+  "#FF5722", // Deep Orange
+  "#607D8B", // Blue Grey
 ];
 
+const AnimatedSection = ({
+  isExpanded,
+  children,
+}: {
+  isExpanded: boolean;
+  children: React.ReactNode;
+}) => {
+  if (!isExpanded) return null;
+  return <View>{children}</View>;
+};
+
 export default function SettingsScreen() {
-  const { top, bottom } = useSafeAreaInsets();
+  const { bottom } = useSafeAreaInsets();
   const theme = useTheme();
   const router = useRouter();
-  const { themeMode, setThemeMode, accentColor, setAccentColor } = useUIStore();
+  const systemColorScheme = useColorScheme();
+  const {
+    themeMode,
+    setThemeMode,
+    isAmoled,
+    setIsAmoled,
+    accentColor,
+    setAccentColor,
+  } = useUIStore();
   const logout = useAuthStore((state) => state.logout);
 
   const [expandedSection, setExpandedSection] = useState<string | null>(
@@ -44,7 +80,6 @@ export default function SettingsScreen() {
   );
 
   const toggleSection = (section: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpandedSection(expandedSection === section ? null : section);
   };
 
@@ -52,6 +87,10 @@ export default function SettingsScreen() {
     logout();
     router.replace("/(auth)/login");
   };
+
+  const isSystemDark = systemColorScheme === "dark";
+  const isDarkActive =
+    themeMode === "system" ? isSystemDark : themeMode === "dark";
 
   const renderSection = (
     id: string,
@@ -73,30 +112,29 @@ export default function SettingsScreen() {
                 {title}
               </Text>
             </View>
-            {isExpanded ? (
-              <ChevronUp size={24} color={theme.colors.onSurfaceVariant} />
-            ) : (
-              <ChevronDown size={24} color={theme.colors.onSurfaceVariant} />
-            )}
+            <IconButton
+              icon={isExpanded ? "chevron-up" : "chevron-down"}
+              size={24}
+              iconColor={theme.colors.onSurfaceVariant}
+            />
           </View>
         </TouchableRipple>
-        {isExpanded && <View style={styles.sectionContent}>{children}</View>}
+        <AnimatedSection isExpanded={isExpanded}>
+          <View style={styles.sectionContent}>{children}</View>
+        </AnimatedSection>
         <Divider style={styles.divider} />
       </View>
     );
   };
 
   return (
-    <View
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-    >
+    <PageContainer withPadding={false}>
       {/* Centered Top Bar */}
       <View
         style={[
           styles.topBar,
           {
-            paddingTop: top + 10,
-            backgroundColor: theme.colors.background,
+            backgroundColor: "transparent",
           },
         ]}
       >
@@ -107,10 +145,7 @@ export default function SettingsScreen() {
             { backgroundColor: theme.colors.surface },
           ]}
         >
-          <IconButton
-            icon="arrow-left"
-            onPress={() => router.back()}
-          />
+          <IconButton icon="arrow-left" onPress={() => router.back()} />
         </TouchableOpacity>
 
         <Text variant="titleLarge" style={styles.headerTitle}>
@@ -147,14 +182,31 @@ export default function SettingsScreen() {
                 </Text>
               </View>
               <SegmentedButtons
-                value={themeMode === "system" ? "light" : themeMode}
+                value={themeMode}
                 onValueChange={(val) => setThemeMode(val as any)}
                 buttons={[
+                  { value: "system", label: "System" },
                   { value: "light", label: "Light" },
                   { value: "dark", label: "Dark" },
-                  { value: "amoled", label: "AMOLED" },
                 ]}
                 style={styles.segmentedButtons}
+              />
+            </View>
+
+            <View style={styles.settingRow}>
+              <View>
+                <Text variant="bodyLarge" style={styles.settingLabel}>
+                  AMOLED Mode
+                </Text>
+                <Text variant="bodySmall" style={styles.settingSubtext}>
+                  Pure black for OLED screens
+                </Text>
+              </View>
+              <Switch
+                value={isAmoled}
+                onValueChange={setIsAmoled}
+                disabled={!isDarkActive}
+                color={theme.colors.primary}
               />
             </View>
 
@@ -241,7 +293,7 @@ export default function SettingsScreen() {
           </View>
         </TouchableRipple>
       </ScrollView>
-    </View>
+    </PageContainer>
   );
 }
 
@@ -329,6 +381,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 16,
     marginTop: 12,
+    maxWidth: 240, // 5 * 32px + 4 * 16px gap = 224px, plus some buffer
   },
   colorCircle: {
     width: 32,

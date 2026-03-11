@@ -15,6 +15,7 @@ import {
     TouchableRipple,
     useTheme,
 } from "react-native-paper";
+import { PageContainer } from "../../src/components/PageContainer";
 
 export default function ForgotPasswordScreen() {
   const theme = useTheme();
@@ -42,17 +43,7 @@ export default function ForgotPasswordScreen() {
 
   if (submitted) {
     return (
-      <View
-        style={[
-          styles.container,
-          {
-            backgroundColor: theme.colors.background,
-            justifyContent: "center",
-            alignItems: "center",
-            padding: 24,
-          },
-        ]}
-      >
+      <PageContainer style={[styles.center, { padding: 24 }]}>
         <View
           style={[
             styles.successIcon,
@@ -75,87 +66,93 @@ export default function ForgotPasswordScreen() {
         >
           Back to Login
         </Button>
-      </View>
+      </PageContainer>
     );
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
+    <PageContainer withPadding={false} withSafeArea={false}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.container}
       >
-        <TouchableRipple
-          onPress={() => router.back()}
-          style={[
-            styles.backButtonCircular,
-            { backgroundColor: theme.colors.surface },
-          ]}
-          rippleColor="rgba(0, 0, 0, .1)"
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
         >
-          <ArrowLeft
-            size={24}
-            color={theme.colors.onSurface}
-            strokeWidth={2.5}
-          />
-        </TouchableRipple>
-
-        <View style={styles.header}>
-          <Text variant="displaySmall" style={styles.title}>
-            Reset Password
-          </Text>
-          <Text variant="titleMedium" style={styles.subtitle}>
-            Enter your email address and we&apos;ll send you a link to reset
-            your password.
-          </Text>
-        </View>
-
-        <View style={styles.form}>
-          <View style={styles.inputGroup}>
-            <Text variant="labelLarge" style={styles.label}>
-              Email Address
-            </Text>
-            <TextInput
-              mode="outlined"
-              placeholder="hello@example.com"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              outlineColor={theme.colors.outlineVariant}
-              activeOutlineColor={theme.colors.primary}
-              style={styles.input}
-              left={
-                <TextInput.Icon
-                  icon={() => <Mail size={20} color={theme.colors.outline} />}
-                />
-              }
+          <TouchableRipple
+            onPress={() => router.back()}
+            style={[
+              styles.backButtonCircular,
+              { backgroundColor: theme.colors.surface },
+            ]}
+            rippleColor="rgba(0, 0, 0, .1)"
+          >
+            <ArrowLeft
+              size={24}
+              color={theme.colors.onSurface}
+              strokeWidth={2.5}
             />
+          </TouchableRipple>
+
+          <View style={styles.header}>
+            <Text variant="displaySmall" style={styles.title}>
+              Reset Password
+            </Text>
+            <Text variant="titleMedium" style={styles.subtitle}>
+              Enter your email address and we&apos;ll send you a link to reset
+              your password.
+            </Text>
           </View>
 
-          <Button
-            mode="contained"
-            onPress={handleResetRequest}
-            loading={loading}
-            disabled={loading || !email}
-            style={styles.button}
-            contentStyle={styles.buttonContent}
-            labelStyle={styles.buttonLabel}
-          >
-            Send Reset Link
-          </Button>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          <View style={styles.form}>
+            <View style={styles.inputGroup}>
+              <Text variant="labelLarge" style={styles.label}>
+                Email Address
+              </Text>
+              <TextInput
+                mode="outlined"
+                placeholder="hello@example.com"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                outlineColor={theme.colors.outlineVariant}
+                activeOutlineColor={theme.colors.primary}
+                style={styles.input}
+                left={
+                  <TextInput.Icon
+                    icon={() => <Mail size={20} color={theme.colors.outline} />}
+                  />
+                }
+              />
+            </View>
+
+            <Button
+              mode="contained"
+              onPress={handleResetRequest}
+              loading={loading}
+              disabled={loading || !email}
+              style={styles.button}
+              contentStyle={styles.buttonContent}
+              labelStyle={styles.buttonLabel}
+            >
+              Send Reset Link
+            </Button>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </PageContainer>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  center: {
+    justifyContent: "center",
+    alignItems: "center",
   },
   scrollContent: {
     flexGrow: 1,

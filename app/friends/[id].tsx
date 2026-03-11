@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { friendsApi } from "../../src/api/friends";
 import { User } from "../../src/types/user";
 import { resolveMediaUrl } from "../../src/utils/format";
+import { PageContainer } from "../../src/components/PageContainer";
 
 export default function FriendsListScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -150,7 +151,7 @@ export default function FriendsListScreen() {
             style={{ flex: 1 }}
             behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
-            <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+            <PageContainer withPadding={false} style={styles.container}>
                 <View style={[styles.header, { paddingTop: insets.top }]}>
                     <View style={styles.headerTop}>
                         <IconButton
@@ -210,7 +211,7 @@ export default function FriendsListScreen() {
                         </Animated.View>
                     </View>
                 )}
-            </View>
+            </PageContainer>
         </KeyboardAvoidingView>
     );
 }

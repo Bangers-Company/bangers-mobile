@@ -102,16 +102,24 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider>
-      <Stack>
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack
+        screenOptions={{
+          animation: "slide_from_right",
+          headerShown: false,
+        }}
+      >
+        <Stack.Screen name="(auth)" options={{ animation: "fade" }} />
+        <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
         <Stack.Screen
           name="modal"
           options={{ presentation: "modal", title: "Modal" }}
         />
-        <Stack.Screen name="settings" options={{ headerShown: false }} />
-        <Stack.Screen name="user/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="friends/[id]" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="settings"
+          options={{ animation: "slide_from_bottom" }}
+        />
+        <Stack.Screen name="user/[id]" />
+        <Stack.Screen name="friends/[id]" />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
