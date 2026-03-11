@@ -68,17 +68,11 @@ export const BottomNav: React.FC = () => {
       <TouchableRipple
         key={index}
         onPress={() => router.navigate(item.route as any)}
-        rippleColor={
-          isEventPage
-            ? addAlpha(theme.colors.primary, 0.2)
-            : "rgba(255, 255, 255, .2)"
-        }
+        rippleColor={addAlpha(theme.colors.primary, 0.2)}
         style={[
           styles.item,
           isActive && {
-            backgroundColor: isEventPage
-              ? addAlpha(theme.colors.primary, 0.1)
-              : theme.colors.primary,
+            backgroundColor: addAlpha(theme.colors.primary, 0.1),
           },
         ]}
       >
@@ -87,9 +81,7 @@ export const BottomNav: React.FC = () => {
             size={24}
             color={
               isActive
-                ? isEventPage
-                  ? theme.colors.primary
-                  : "white"
+                ? theme.colors.primary
                 : theme.colors.outline
             }
             strokeWidth={isActive ? 2.5 : 2}
@@ -101,9 +93,7 @@ export const BottomNav: React.FC = () => {
                 styles.label,
                 {
                   color: isActive
-                    ? isEventPage
-                      ? theme.colors.primary
-                      : "white"
+                    ? theme.colors.primary
                     : theme.colors.outline,
                 },
               ]}
