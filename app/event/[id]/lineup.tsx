@@ -1,14 +1,14 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
+import ContentLoader, { Rect } from "react-content-loader/native";
 import {
   Dimensions,
   FlatList,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   StyleSheet,
   View,
-  NativeSyntheticEvent,
-  NativeScrollEvent,
 } from "react-native";
-import ContentLoader, { Rect } from "react-content-loader/native";
 import {
   Button,
   IconButton,
@@ -18,11 +18,10 @@ import {
   useTheme,
 } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Act, Event, Stage } from "../../../src/types/event";
 import { PageContainer } from "../../../src/components/PageContainer";
-import { addAlpha } from "../../../src/utils/theme";
-import { useUIStore } from "../../../src/store/useUIStore";
 import { useEventStore } from "../../../src/store/useEventStore";
+import { Act, Stage } from "../../../src/types/event";
+import { addAlpha } from "../../../src/utils/theme";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -31,7 +30,7 @@ export default function LineupScreen() {
   const theme = useTheme();
   const router = useRouter();
   const { top, bottom } = useSafeAreaInsets();
-  
+
   const cachedData = useEventStore((state) => state.events[id]);
   const loadingState = useEventStore((state) => state.loadingEvents[id]);
   const error = useEventStore((state) => state.errors[id]);
@@ -47,7 +46,7 @@ export default function LineupScreen() {
     const timer = setInterval(() => setNow(new Date()), 60000);
     return () => clearInterval(timer);
   }, []);
-  
+
   const horizontalListRef = useRef<FlatList>(null);
   const tabListRef = useRef<FlatList>(null);
   const isTappingTab = useRef(false);
@@ -55,8 +54,16 @@ export default function LineupScreen() {
   if (error && !event) {
     return (
       <PageContainer style={styles.center}>
-        <Text variant="titleMedium" style={{ color: theme.colors.error }}>{error || "Event not found"}</Text>
-        <Button mode="contained" onPress={() => router.push("/(tabs)")} style={{ marginTop: 16 }}>Go Back</Button>
+        <Text variant="titleMedium" style={{ color: theme.colors.error }}>
+          {error || "Event not found"}
+        </Text>
+        <Button
+          mode="contained"
+          onPress={() => router.push("/(tabs)")}
+          style={{ marginTop: 16 }}
+        >
+          Go Back
+        </Button>
       </PageContainer>
     );
   }
@@ -64,53 +71,105 @@ export default function LineupScreen() {
   if (loading || !event) {
     return (
       <PageContainer withPadding={false} withSafeArea={false}>
-        <View style={{ paddingTop: top + 10, paddingHorizontal: 16 }}>
-          <ContentLoader 
-            speed={2} 
-            width={SCREEN_WIDTH} 
-            height={800} 
+        <View style={{ paddingTop: top, paddingHorizontal: 16 }}>
+          <ContentLoader
+            speed={2}
+            width={SCREEN_WIDTH}
+            height={800}
             viewBox={`0 0 ${SCREEN_WIDTH} 800`}
             backgroundColor="rgba(128,128,128,0.2)"
             foregroundColor="rgba(128,128,128,0.4)"
           >
             {/* Header placeholder */}
-            <Rect x="0" y="0" rx="4" ry="4" width={SCREEN_WIDTH * 0.4} height="28" />
-            <Rect x="0" y="36" rx="4" ry="4" width={SCREEN_WIDTH * 0.2} height="16" />
-            
+            <Rect
+              x="0"
+              y="0"
+              rx="4"
+              ry="4"
+              width={SCREEN_WIDTH * 0.4}
+              height="28"
+            />
+            <Rect
+              x="0"
+              y="36"
+              rx="4"
+              ry="4"
+              width={SCREEN_WIDTH * 0.2}
+              height="16"
+            />
+
             {/* Tabs placeholder */}
             <Rect x="0" y="80" rx="16" ry="16" width="80" height="32" />
             <Rect x="90" y="80" rx="16" ry="16" width="100" height="32" />
             <Rect x="200" y="80" rx="16" ry="16" width="90" height="32" />
-            
+
             <Rect x="0" y="130" rx="16" ry="16" width="100" height="40" />
             <Rect x="110" y="130" rx="16" ry="16" width="120" height="40" />
-            
+
             {/* Acts placeholder */}
-            <Rect x="0" y="190" rx="12" ry="12" width={SCREEN_WIDTH - 32} height="65" />
-            <Rect x="0" y="263" rx="12" ry="12" width={SCREEN_WIDTH - 32} height="65" />
-            <Rect x="0" y="336" rx="12" ry="12" width={SCREEN_WIDTH - 32} height="65" />
-            <Rect x="0" y="409" rx="12" ry="12" width={SCREEN_WIDTH - 32} height="65" />
-            <Rect x="0" y="482" rx="12" ry="12" width={SCREEN_WIDTH - 32} height="65" />
+            <Rect
+              x="0"
+              y="190"
+              rx="12"
+              ry="12"
+              width={SCREEN_WIDTH - 32}
+              height="65"
+            />
+            <Rect
+              x="0"
+              y="263"
+              rx="12"
+              ry="12"
+              width={SCREEN_WIDTH - 32}
+              height="65"
+            />
+            <Rect
+              x="0"
+              y="336"
+              rx="12"
+              ry="12"
+              width={SCREEN_WIDTH - 32}
+              height="65"
+            />
+            <Rect
+              x="0"
+              y="409"
+              rx="12"
+              ry="12"
+              width={SCREEN_WIDTH - 32}
+              height="65"
+            />
+            <Rect
+              x="0"
+              y="482"
+              rx="12"
+              ry="12"
+              width={SCREEN_WIDTH - 32}
+              height="65"
+            />
           </ContentLoader>
         </View>
       </PageContainer>
     );
   }
 
-
-
   // Group acts by stage
   const stages: Stage[] = event?.stages || [];
   const acts: Act[] = event?.acts || [];
 
   // Extract unique dates for the Day selector
-  const uniqueDates = Array.from(new Set(acts.map(a => a.date).filter(Boolean))) as string[];
+  const uniqueDates = Array.from(
+    new Set(acts.map((a) => a.date).filter(Boolean)),
+  ) as string[];
   uniqueDates.sort();
 
-  const currentSelectedDate = uniqueDates.length > 0 ? uniqueDates[selectedDateIndex] : null;
-  
+  const currentSelectedDate =
+    uniqueDates.length > 0 ? uniqueDates[selectedDateIndex] : null;
+
   // Filter acts by the selected date (or all if no dates exist)
-  const currentDayActs = currentSelectedDate ? acts.filter(a => a.date === currentSelectedDate) : acts;
+  const currentDayActs = currentSelectedDate
+    ? acts.filter((a) => a.date === currentSelectedDate)
+    : acts;
 
   const groupedActs: { id: string; name: string; acts: Act[] }[] = [];
 
@@ -122,8 +181,10 @@ export default function LineupScreen() {
           id: stage.id,
           name: stage.name,
           acts: stageActs.sort((a, b) => {
-            const nameA = a.artists && a.artists.length > 0 ? a.artists[0].name : a.name;
-            const nameB = b.artists && b.artists.length > 0 ? b.artists[0].name : b.name;
+            const nameA =
+              a.artists && a.artists.length > 0 ? a.artists[0].name : a.name;
+            const nameB =
+              b.artists && b.artists.length > 0 ? b.artists[0].name : b.name;
             return nameA.localeCompare(nameB);
           }),
         });
@@ -132,17 +193,21 @@ export default function LineupScreen() {
   }
 
   // If there are acts without a known stage, or no stages defined, fallback to grouping by days or 'All'
-  const unassignedActs = currentDayActs.filter((a) => !stages.find(s => s.id === a.stage_id));
+  const unassignedActs = currentDayActs.filter(
+    (a) => !stages.find((s) => s.id === a.stage_id),
+  );
   if (unassignedActs.length > 0) {
-     groupedActs.push({
-        id: "all",
-        name: stages.length > 0 ? "Other / TBA" : "All Acts",
-        acts: unassignedActs.sort((a, b) => {
-           const nameA = a.artists && a.artists.length > 0 ? a.artists[0].name : a.name;
-           const nameB = b.artists && b.artists.length > 0 ? b.artists[0].name : b.name;
-           return nameA.localeCompare(nameB);
-        }),
-     });
+    groupedActs.push({
+      id: "all",
+      name: stages.length > 0 ? "Other / TBA" : "All Acts",
+      acts: unassignedActs.sort((a, b) => {
+        const nameA =
+          a.artists && a.artists.length > 0 ? a.artists[0].name : a.name;
+        const nameB =
+          b.artists && b.artists.length > 0 ? b.artists[0].name : b.name;
+        return nameA.localeCompare(nameB);
+      }),
+    });
   }
 
   const handleDaySelect = (index: number) => {
@@ -151,7 +216,11 @@ export default function LineupScreen() {
     // When day changes, horizontally scroll back to the first stage
     setTimeout(() => {
       horizontalListRef.current?.scrollToIndex({ index: 0, animated: false });
-      tabListRef.current?.scrollToIndex({ index: 0, animated: false, viewPosition: 0.5 });
+      tabListRef.current?.scrollToIndex({
+        index: 0,
+        animated: false,
+        viewPosition: 0.5,
+      });
     }, 100);
   };
 
@@ -159,8 +228,12 @@ export default function LineupScreen() {
     isTappingTab.current = true;
     setActiveTabIndex(index);
     horizontalListRef.current?.scrollToIndex({ index, animated: true });
-    tabListRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.5 });
-    
+    tabListRef.current?.scrollToIndex({
+      index,
+      animated: true,
+      viewPosition: 0.5,
+    });
+
     // Reset tap lock after animation typically finishes
     setTimeout(() => {
       isTappingTab.current = false;
@@ -169,13 +242,21 @@ export default function LineupScreen() {
 
   const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (isTappingTab.current) return;
-    
+
     const offsetX = e.nativeEvent.contentOffset.x;
     // Calculate the index based on the center of the screen
     const newIndex = Math.round(offsetX / SCREEN_WIDTH);
-    if (newIndex !== activeTabIndex && newIndex >= 0 && newIndex < groupedActs.length) {
+    if (
+      newIndex !== activeTabIndex &&
+      newIndex >= 0 &&
+      newIndex < groupedActs.length
+    ) {
       setActiveTabIndex(newIndex);
-      tabListRef.current?.scrollToIndex({ index: newIndex, animated: true, viewPosition: 0.5 });
+      tabListRef.current?.scrollToIndex({
+        index: newIndex,
+        animated: true,
+        viewPosition: 0.5,
+      });
     }
   };
 
@@ -185,37 +266,69 @@ export default function LineupScreen() {
     const [startH, startM] = act.start_time.split(":").map(Number);
     const [endH, endM] = act.end_time.split(":").map(Number);
 
-    if (isNaN(year) || isNaN(month) || isNaN(day) || isNaN(startH) || isNaN(endH)) return false;
+    if (
+      isNaN(year) ||
+      isNaN(month) ||
+      isNaN(day) ||
+      isNaN(startH) ||
+      isNaN(endH)
+    )
+      return false;
 
     const startDate = new Date(year, month - 1, day, startH, startM);
     let endDate = new Date(year, month - 1, day, endH, endM);
-    
+
     // Handle cross-midnight
     if (endDate < startDate) endDate.setDate(endDate.getDate() + 1);
-    
+
     return now >= startDate && now < endDate;
   };
 
   const renderAct = ({ item: act }: { item: Act }) => {
-    const actName = act.artists && act.artists.length > 0 ? act.artists[0].name : act.name;
+    const actName =
+      act.artists && act.artists.length > 0 ? act.artists[0].name : act.name;
     const isLive = isActLive(act);
 
     return (
-      <Surface style={[styles.actCard, { backgroundColor: theme.colors.surface }]} elevation={1}>
-        <TouchableRipple onPress={() => {}} style={styles.actRipple} rippleColor="rgba(0,0,0,0.1)">
+      <Surface
+        style={[styles.actCard, { backgroundColor: theme.colors.surface }]}
+        elevation={1}
+      >
+        <TouchableRipple
+          onPress={() => {}}
+          style={styles.actRipple}
+          rippleColor="rgba(0,0,0,0.1)"
+        >
           <View style={styles.actContent}>
             <View style={{ flex: 1, marginRight: 8 }}>
-              <Text variant="bodyLarge" style={styles.actName} numberOfLines={1}>{actName}</Text>
+              <Text
+                variant="bodyLarge"
+                style={styles.actName}
+                numberOfLines={1}
+              >
+                {actName}
+              </Text>
               {act.start_time && act.end_time && (
                 <Text variant="bodySmall" style={styles.actTime}>
-                  {act.start_time.substring(0, 5)} - {act.end_time.substring(0, 5)}
+                  {act.start_time.substring(0, 5)} -{" "}
+                  {act.end_time.substring(0, 5)}
                 </Text>
               )}
             </View>
             {isLive && (
               <View style={styles.liveBadge}>
-                <View style={[styles.liveDot, { backgroundColor: theme.colors.error }]} />
-                <Text variant="labelSmall" style={{ color: theme.colors.error, fontWeight: "bold" }}>LIVE</Text>
+                <View
+                  style={[
+                    styles.liveDot,
+                    { backgroundColor: theme.colors.error },
+                  ]}
+                />
+                <Text
+                  variant="labelSmall"
+                  style={{ color: theme.colors.error, fontWeight: "bold" }}
+                >
+                  LIVE
+                </Text>
               </View>
             )}
           </View>
@@ -226,15 +339,30 @@ export default function LineupScreen() {
 
   return (
     <PageContainer withPadding={false} withSafeArea={false}>
-      <View style={[styles.header, { paddingTop: top + 10, paddingBottom: 10 }]}>
+      <View style={[styles.header, { paddingTop: top / 4, paddingBottom: 10 }]}>
         <View style={styles.headerRow}>
-          <IconButton icon="chevron-left" onPress={() => router.push("/(tabs)")} />
+          <IconButton
+            icon="chevron-left"
+            onPress={() => router.push("/(tabs)")}
+          />
           <View style={{ flex: 1 }}>
-            <Text variant="titleLarge" style={styles.headerTitle} numberOfLines={1}>Line-up</Text>
-            <Text variant="bodySmall" style={styles.headerSubtitle} numberOfLines={1}>{event.name}</Text>
+            <Text
+              variant="titleLarge"
+              style={styles.headerTitle}
+              numberOfLines={1}
+            >
+              Line-up
+            </Text>
+            <Text
+              variant="bodySmall"
+              style={styles.headerSubtitle}
+              numberOfLines={1}
+            >
+              {event.name}
+            </Text>
           </View>
         </View>
-        
+
         {/* Day Selector */}
         {uniqueDates.length > 0 && (
           <View style={styles.dayContainer}>
@@ -249,19 +377,30 @@ export default function LineupScreen() {
                   onPress={() => handleDaySelect(index)}
                   style={[
                     styles.dayItem,
-                    selectedDateIndex === index && { borderBottomColor: theme.colors.primary, borderBottomWidth: 2 },
+                    selectedDateIndex === index && {
+                      borderBottomColor: theme.colors.primary,
+                      borderBottomWidth: 2,
+                    },
                   ]}
                   rippleColor="rgba(0,0,0,0.1)"
                 >
-                  <Text 
-                    variant="titleMedium" 
+                  <Text
+                    variant="titleMedium"
                     style={[
-                      selectedDateIndex === index ? { color: theme.colors.primary, fontWeight: "bold" } : { color: theme.colors.onSurface, opacity: 0.6 }
+                      selectedDateIndex === index
+                        ? { color: theme.colors.primary, fontWeight: "bold" }
+                        : { color: theme.colors.onSurface, opacity: 0.6 },
                     ]}
                   >
                     {(() => {
                       const d = new Date(item);
-                      return isNaN(d.getTime()) ? item : d.toLocaleDateString("en-US", { weekday: "short", month: "long", day: "numeric" });
+                      return isNaN(d.getTime())
+                        ? item
+                        : d.toLocaleDateString("en-US", {
+                            weekday: "short",
+                            month: "long",
+                            day: "numeric",
+                          });
                     })()}
                   </Text>
                 </TouchableRipple>
@@ -285,16 +424,22 @@ export default function LineupScreen() {
                   onPress={() => handleTabPress(index)}
                   style={[
                     styles.tabItem,
-                    activeTabIndex === index && { backgroundColor: theme.colors.primary },
-                    activeTabIndex !== index && { backgroundColor: addAlpha(theme.colors.onSurface, 0.05) }
+                    activeTabIndex === index && {
+                      backgroundColor: theme.colors.primary,
+                    },
+                    activeTabIndex !== index && {
+                      backgroundColor: addAlpha(theme.colors.onSurface, 0.05),
+                    },
                   ]}
                   rippleColor="rgba(255,255,255,0.2)"
                 >
-                  <Text 
-                    variant="labelLarge" 
+                  <Text
+                    variant="labelLarge"
                     style={[
                       styles.tabText,
-                      activeTabIndex === index ? { color: theme.colors.onPrimary } : { color: theme.colors.onSurface }
+                      activeTabIndex === index
+                        ? { color: theme.colors.onPrimary }
+                        : { color: theme.colors.onSurface },
                     ]}
                   >
                     {item.name}
@@ -332,14 +477,19 @@ export default function LineupScreen() {
                 data={item.acts}
                 keyExtractor={(act) => act.id}
                 renderItem={renderAct}
-                contentContainerStyle={[styles.actsListContent, { paddingBottom: bottom + 60 }]}
+                contentContainerStyle={[
+                  styles.actsListContent,
+                  { paddingBottom: bottom + 60 },
+                ]}
                 initialNumToRender={10}
                 maxToRenderPerBatch={10}
                 windowSize={5}
                 scrollEventThrottle={16}
                 ListEmptyComponent={
                   <View style={styles.emptyContainer}>
-                    <Text variant="bodyMedium" style={{ opacity: 0.5 }}>No acts scheduled yet.</Text>
+                    <Text variant="bodyMedium" style={{ opacity: 0.5 }}>
+                      No acts scheduled yet.
+                    </Text>
                   </View>
                 }
               />
@@ -348,7 +498,9 @@ export default function LineupScreen() {
         />
       ) : (
         <View style={styles.emptyContainer}>
-          <Text variant="titleMedium" style={{ opacity: 0.5 }}>Line-up has not been announced.</Text>
+          <Text variant="titleMedium" style={{ opacity: 0.5 }}>
+            Line-up has not been announced.
+          </Text>
         </View>
       )}
     </PageContainer>

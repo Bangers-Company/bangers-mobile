@@ -1,34 +1,31 @@
-import { usePathname, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import {
-  Bell,
-  Calendar,
-  History as HistoryIcon,
-  LogOut,
-  Settings,
-  User,
+    Bell,
+    Calendar,
+    History as HistoryIcon,
+    LogOut,
+    Settings,
+    User,
 } from "lucide-react-native";
 import React, { useRef } from "react";
-import { StyleSheet, View, Animated, Dimensions } from "react-native";
+import { Animated, Dimensions, StyleSheet, View } from "react-native";
 import {
-  Avatar,
-  Badge,
-  Button,
-  Divider,
-  IconButton,
-  Menu,
-  Text,
-  TouchableRipple,
-  useTheme,
+    Avatar,
+    Badge,
+    Button,
+    Divider,
+    IconButton,
+    Menu,
+    Text,
+    TouchableRipple,
+    useTheme,
 } from "react-native-paper";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAuthStore } from "../../store/useAuthStore";
 import { friendsApi, Friendship } from "../../api/friends";
+import { useAuthStore } from "../../store/useAuthStore";
 import { resolveMediaUrl } from "../../utils/format";
 
 export const TopBar: React.FC = () => {
-  const { top } = useSafeAreaInsets();
   const theme = useTheme();
-  const pathname = usePathname();
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const [menuVisible, setMenuVisible] = React.useState(false);
@@ -42,20 +39,26 @@ export const TopBar: React.FC = () => {
         setNotifications(user.friend_requests);
       } else {
         // Fallback fetch if data isn't in store yet
-        friendsApi.getRequests().then((res) => {
-          setNotifications(res.data.data);
-        }).catch(console.error);
+        friendsApi
+          .getRequests()
+          .then((res) => {
+            setNotifications(res.data.data);
+          })
+          .catch(console.error);
       }
     }
-  }, [user?.friend_requests]);
+  }, [user]);
 
   const [removingIds, setRemovingIds] = React.useState<Set<string>>(new Set());
   const slideAnimations = useRef<{ [key: string]: Animated.Value }>({}).current;
   const fadeAnimations = useRef<{ [key: string]: Animated.Value }>({}).current;
 
-  const handleNotificationAction = async (id: string, action: 'accept' | 'reject') => {
+  const handleNotificationAction = async (
+    id: string,
+    action: "accept" | "reject",
+  ) => {
     try {
-      if (action === 'accept') {
+      if (action === "accept") {
         await friendsApi.acceptRequest(id);
         useAuthStore.getState().updateFriendsCount(1);
       } else {
@@ -68,11 +71,11 @@ export const TopBar: React.FC = () => {
         fadeAnimations[id] = new Animated.Value(1);
       }
 
-      setRemovingIds(prev => new Set(prev).add(id));
+      setRemovingIds((prev) => new Set(prev).add(id));
 
       Animated.parallel([
         Animated.timing(slideAnimations[id], {
-          toValue: Dimensions.get('window').width, // Slide out to the right
+          toValue: Dimensions.get("window").width, // Slide out to the right
           duration: 300,
           useNativeDriver: true,
         }),
@@ -80,10 +83,10 @@ export const TopBar: React.FC = () => {
           toValue: 0,
           duration: 250,
           useNativeDriver: true,
-        })
+        }),
       ]).start(() => {
         setNotifications((prev) => prev.filter((r) => r.requester?.id !== id));
-        setRemovingIds(prev => {
+        setRemovingIds((prev) => {
           const next = new Set(prev);
           next.delete(id);
           return next;
@@ -98,19 +101,13 @@ export const TopBar: React.FC = () => {
           setTimeout(() => setNotifVisible(false), 100);
         }
       });
-
     } catch (e) {
       console.error("Failed request action", e);
     }
   };
 
   return (
-    <View
-      style={[
-        styles.container,
-        { paddingTop: top + 10, backgroundColor: "transparent" },
-      ]}
-    >
+    <View style={[styles.container, { backgroundColor: "transparent" }]}>
       <View style={styles.content}>
         <Text
           variant="headlineMedium"
@@ -123,21 +120,31 @@ export const TopBar: React.FC = () => {
           <Menu
             visible={notifVisible}
             onDismiss={() => setNotifVisible(false)}
-            contentStyle={[styles.notifContent, { backgroundColor: theme.colors.surface }]}
+            contentStyle={[
+              styles.notifContent,
+              { backgroundColor: theme.colors.surface },
+            ]}
             anchor={
               <View>
                 <IconButton
-                  icon={() => <Bell size={24} color={theme.colors.onSurfaceVariant} />}
+                  icon={() => (
+                    <Bell size={24} color={theme.colors.onSurfaceVariant} />
+                  )}
                   onPress={() => setNotifVisible(true)}
                 />
                 {notifications.length > 0 && (
-                  <Badge size={16} style={styles.badge}>{notifications.length}</Badge>
+                  <Badge size={16} style={styles.badge}>
+                    {notifications.length}
+                  </Badge>
                 )}
               </View>
             }
           >
             {notifications.length === 0 ? (
-              <Menu.Item title="No new notifications" titleStyle={{ opacity: 0.5 }} />
+              <Menu.Item
+                title="No new notifications"
+                titleStyle={{ opacity: 0.5 }}
+              />
             ) : (
               notifications.map((notif) => {
                 const id = notif.requester!.id;
@@ -155,19 +162,31 @@ export const TopBar: React.FC = () => {
                       styles.requestItem,
                       {
                         transform: [{ translateX: slideAnimations[id] }],
-                        opacity: fadeAnimations[id]
-                      }
+                        opacity: fadeAnimations[id],
+                      },
                     ]}
                   >
-                    <Avatar.Text size={36} label={notif.requester?.first_name?.charAt(0) || "U"} style={{ backgroundColor: theme.colors.primary, alignSelf: "flex-start", marginTop: 4 }} />
+                    <Avatar.Text
+                      size={36}
+                      label={notif.requester?.first_name?.charAt(0) || "U"}
+                      style={{
+                        backgroundColor: theme.colors.primary,
+                        alignSelf: "flex-start",
+                        marginTop: 4,
+                      }}
+                    />
                     <View style={styles.requestInfo}>
                       <Text variant="bodyMedium" style={styles.requestText}>
-                        <Text style={styles.requestName}>{notif.requester?.first_name} {notif.requester?.last_name}</Text> sent you a friend request.
+                        <Text style={styles.requestName}>
+                          {notif.requester?.first_name}{" "}
+                          {notif.requester?.last_name}
+                        </Text>{" "}
+                        sent you a friend request.
                       </Text>
                       <View style={styles.requestActions}>
                         <Button
                           mode="contained"
-                          onPress={() => handleNotificationAction(id, 'accept')}
+                          onPress={() => handleNotificationAction(id, "accept")}
                           contentStyle={{ paddingHorizontal: 0, height: 32 }}
                           labelStyle={{ fontSize: 12, marginHorizontal: 8 }}
                           style={{ borderRadius: 8, flex: 1 }}
@@ -177,10 +196,14 @@ export const TopBar: React.FC = () => {
                         </Button>
                         <Button
                           mode="outlined"
-                          onPress={() => handleNotificationAction(id, 'reject')}
+                          onPress={() => handleNotificationAction(id, "reject")}
                           contentStyle={{ paddingHorizontal: 0, height: 32 }}
                           labelStyle={{ fontSize: 12, marginHorizontal: 8 }}
-                          style={{ borderRadius: 8, flex: 1, borderColor: theme.colors.outlineVariant }}
+                          style={{
+                            borderRadius: 8,
+                            flex: 1,
+                            borderColor: theme.colors.outlineVariant,
+                          }}
                           textColor={theme.colors.onSurface}
                           disabled={removingIds.has(id)}
                         >
@@ -211,7 +234,9 @@ export const TopBar: React.FC = () => {
                   <Avatar.Image
                     size={40}
                     source={{
-                      uri: resolveMediaUrl(user.profile_media_url) || "https://via.placeholder.com/40",
+                      uri:
+                        resolveMediaUrl(user.profile_media_url) ||
+                        "https://via.placeholder.com/40",
                     }}
                   />
                 ) : (
@@ -301,11 +326,6 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
     paddingBottom: 8,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
     zIndex: 10,
   },
   content: {

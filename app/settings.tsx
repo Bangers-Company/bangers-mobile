@@ -1,40 +1,27 @@
 import { useRouter } from "expo-router";
 import {
-  ChevronDown,
-  ChevronUp,
   LogOut,
   Bell as Notifications,
   Palette,
   Shield,
-  User,
+  User
 } from "lucide-react-native";
 import React, { useState } from "react";
-import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useDerivedValue,
-  withTiming,
-  interpolate,
-  Layout,
-  FadeIn,
-  FadeOut,
-  LinearTransition,
-} from "react-native-reanimated";
+import { ScrollView, StyleSheet, TouchableOpacity, useColorScheme, View } from "react-native";
 import {
   Divider,
   IconButton,
   SegmentedButtons,
+  Switch,
   Text,
   TouchableRipple,
   useTheme,
-  Switch,
 } from "react-native-paper";
-import { useColorScheme } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { PageContainer } from "../src/components/PageContainer";
 import { useAuthStore } from "../src/store/useAuthStore";
 import { useUIStore } from "../src/store/useUIStore";
 import { addAlpha, COLORS } from "../src/utils/theme";
-import { PageContainer } from "../src/components/PageContainer";
 
 const ACCENT_COLORS = [
   "#a60df2", // Primary Purple

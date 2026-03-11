@@ -1,9 +1,9 @@
+import { format } from "date-fns";
 import React, { useMemo } from "react";
-import { StyleSheet, View, ScrollView, Dimensions } from "react-native";
-import { Text, useTheme, TouchableRipple } from "react-native-paper";
+import { ScrollView, StyleSheet, View } from "react-native";
+import { Text, TouchableRipple, useTheme } from "react-native-paper";
 import { Timetable, TimetableEntry } from "../../types/timetable";
 import { addAlpha } from "../../utils/theme";
-import { format } from "date-fns";
 
 interface VerticalGridProps {
   timetable: Timetable;
@@ -13,7 +13,7 @@ interface VerticalGridProps {
 }
 
 const HOUR_HEIGHT = 100;
-const STAGE_WIDTH = 150;
+const STAGE_WIDTH = 180;
 const TIME_COLUMN_WIDTH = 60;
 
 export const TimetableVerticalGrid: React.FC<VerticalGridProps> = ({
@@ -26,8 +26,11 @@ export const TimetableVerticalGrid: React.FC<VerticalGridProps> = ({
 
   // 1. Group by stage and calculate time range
   const stages = useMemo(() => {
-    const stageMap: Record<string, { id: string; name: string; entries: TimetableEntry[] }> = {};
-    timetable.entries.forEach(entry => {
+    const stageMap: Record<
+      string,
+      { id: string; name: string; entries: TimetableEntry[] }
+    > = {};
+    timetable.entries.forEach((entry) => {
       if (!stageMap[entry.stage.id]) {
         stageMap[entry.stage.id] = { ...entry.stage, entries: [] };
       }
@@ -45,8 +48,8 @@ export const TimetableVerticalGrid: React.FC<VerticalGridProps> = ({
     // Default range: 09:00 AM to 02:00 AM (next day = 26)
     let min = 9;
     let max = 26;
-    
-    timetable.entries.forEach(entry => {
+
+    timetable.entries.forEach((entry) => {
       const start = toFestivalHour(new Date(entry.start_time));
       const end = toFestivalHour(new Date(entry.end_time));
       if (start < min) min = Math.floor(start);
@@ -56,7 +59,10 @@ export const TimetableVerticalGrid: React.FC<VerticalGridProps> = ({
     return { start: min, end: max };
   }, [timetable.entries]);
 
-  const hours = Array.from({ length: timeRange.end - timeRange.start + 1 }, (_, i) => timeRange.start + i);
+  const hours = Array.from(
+    { length: timeRange.end - timeRange.start + 1 },
+    (_, i) => timeRange.start + i,
+  );
 
   const getPosition = (timeStr: string) => {
     const date = new Date(timeStr);
@@ -73,81 +79,164 @@ export const TimetableVerticalGrid: React.FC<VerticalGridProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Time Sidebar */}
-      <View style={[styles.timeSidebar, { backgroundColor: theme.colors.surface }]}>
-        {hours.map(hour => {
-          const displayHour = hour >= 24 ? hour - 24 : hour;
-          const displayString = `${displayHour.toString().padStart(2, "0")}:00`;
-          return (
-            <View key={hour} style={styles.timeLabelContainer}>
-              <Text variant="labelSmall" style={styles.timeLabel}>{displayString}</Text>
-            </View>
-          );
-        })}
-      </View>
-
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View>
-          {/* Stage Headers */}
-          <View style={styles.stageHeaders}>
-            {stages.map(stage => (
-              <View key={stage.id} style={[styles.stageHeader, { width: STAGE_WIDTH }]}>
-                <Text variant="labelLarge" style={styles.stageName} numberOfLines={1}>{stage.name}</Text>
-              </View>
-            ))}
+      <ScrollView style={{ flex: 1 }}>
+        <View style={{ flexDirection: "row" }}>
+          {/* Time Sidebar */}
+          <View
+            style={[
+              styles.timeSidebar,
+              { backgroundColor: theme.colors.surface },
+            ]}
+          >
+            {hours.map((hour) => {
+              const displayHour = hour >= 24 ? hour - 24 : hour;
+              const displayString = `${displayHour
+                .toString()
+                .padStart(2, "0")}:00`;
+              return (
+                <View key={hour} style={styles.timeLabelContainer}>
+                  <Text variant="labelSmall" style={styles.timeLabel}>
+                    {displayString}
+                  </Text>
+                </View>
+              );
+            })}
           </View>
 
-          {/* Grid Body */}
-          <View style={styles.gridBody}>
-            {/* Horizontal Grid Lines */}
-            {hours.map(hour => (
-              <View 
-                key={hour} 
-                style={[styles.gridLine, { top: (hour - timeRange.start) * HOUR_HEIGHT, width: stages.length * STAGE_WIDTH, borderTopColor: addAlpha(theme.colors.outline, 0.1) }]} 
-              />
-            ))}
-
-            {/* Stages Columns */}
-            {stages.map((stage, sIdx) => (
-              <View key={stage.id} style={[styles.stageColumn, { width: STAGE_WIDTH, left: sIdx * STAGE_WIDTH }]}>
-                {stage.entries.map(entry => {
-                  const top = getPosition(entry.start_time);
-                  const height = getDurationHeight(entry.start_time, entry.end_time);
-                  const isFavorited = isPersonal; // In this view context for now
-
-                  return (
-                    <TouchableRipple
-                      key={entry.id}
-                      style={[
-                        styles.entryCard,
-                        { 
-                          top, 
-                          height: height - 4, 
-                          backgroundColor: isFavorited ? theme.colors.primary : addAlpha(theme.colors.surfaceVariant, 0.8),
-                          borderColor: isFavorited ? theme.colors.primaryContainer : theme.colors.outlineVariant,
-                        }
-                      ]}
-                      onPress={() => onEntryPress(entry)}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View>
+              {/* Stage Headers */}
+              <View style={styles.stageHeaders}>
+                {stages.map((stage) => (
+                  <View
+                    key={stage.id}
+                    style={[styles.stageHeader, { width: STAGE_WIDTH }]}
+                  >
+                    <Text
+                      variant="labelLarge"
+                      style={styles.stageName}
+                      numberOfLines={1}
                     >
-                      <View style={styles.entryContent}>
-                        <Text variant="labelSmall" style={[styles.entryTitle, { color: isFavorited ? "white" : theme.colors.onSurface }]} numberOfLines={2}>
-                          {entry.act.name}
-                        </Text>
-                        <Text variant="labelSmall" style={[styles.entryTime, { color: isFavorited ? "rgba(255,255,255,0.8)" : theme.colors.outline }]}>
-                          {format(new Date(entry.start_time), "HH:mm")} - {format(new Date(entry.end_time), "HH:mm")}
-                        </Text>
-                      </View>
-                    </TouchableRipple>
-                  );
-                })}
+                      {stage.name}
+                    </Text>
+                  </View>
+                ))}
               </View>
-            ))}
 
-            {/* Current Time Indicator */}
-            {currentTime && toFestivalHour(currentTime) >= timeRange.start && toFestivalHour(currentTime) <= timeRange.end && (
-              <View style={[styles.currentTimeLine, { top: getPosition(currentTime.toISOString()), width: stages.length * STAGE_WIDTH, backgroundColor: theme.colors.error }]} />
-            )}
-          </View>
+              {/* Grid Body */}
+              <View
+                style={[
+                  styles.gridBody,
+                  {
+                    width: stages.length * STAGE_WIDTH,
+                    height: hours.length * HOUR_HEIGHT,
+                  },
+                ]}
+              >
+                {/* Horizontal Grid Lines */}
+                {hours.map((hour) => (
+                  <View
+                    key={hour}
+                    style={[
+                      styles.gridLine,
+                      {
+                        top: (hour - timeRange.start) * HOUR_HEIGHT,
+                        width: stages.length * STAGE_WIDTH,
+                        borderTopColor: addAlpha(theme.colors.outline, 0.1),
+                      },
+                    ]}
+                  />
+                ))}
+
+                {/* Stages Columns */}
+                {stages.map((stage, sIdx) => (
+                  <View
+                    key={stage.id}
+                    style={[
+                      styles.stageColumn,
+                      { width: STAGE_WIDTH, left: sIdx * STAGE_WIDTH },
+                    ]}
+                  >
+                    {stage.entries.map((entry) => {
+                      const top = getPosition(entry.start_time);
+                      const height = getDurationHeight(
+                        entry.start_time,
+                        entry.end_time,
+                      );
+                      const isFavorited = isPersonal; // In this view context for now
+
+                      return (
+                        <TouchableRipple
+                          key={entry.id}
+                          style={[
+                            styles.entryCard,
+                            {
+                              top,
+                              height: height - 4,
+                              backgroundColor: isFavorited
+                                ? theme.colors.primary
+                                : addAlpha(theme.colors.surfaceVariant, 0.8),
+                              borderColor: isFavorited
+                                ? theme.colors.primaryContainer
+                                : theme.colors.outlineVariant,
+                            },
+                          ]}
+                          onPress={() => onEntryPress(entry)}
+                        >
+                          <View style={styles.entryContent}>
+                            <Text
+                              variant="labelSmall"
+                              style={[
+                                styles.entryTitle,
+                                {
+                                  color: isFavorited
+                                    ? "white"
+                                    : theme.colors.onSurface,
+                                },
+                              ]}
+                              numberOfLines={2}
+                            >
+                              {entry.act.name}
+                            </Text>
+                            <Text
+                              variant="labelSmall"
+                              style={[
+                                styles.entryTime,
+                                {
+                                  color: isFavorited
+                                    ? "rgba(255,255,255,0.8)"
+                                    : theme.colors.outline,
+                                },
+                              ]}
+                            >
+                              {format(new Date(entry.start_time), "HH:mm")} -{" "}
+                              {format(new Date(entry.end_time), "HH:mm")}
+                            </Text>
+                          </View>
+                        </TouchableRipple>
+                      );
+                    })}
+                  </View>
+                ))}
+
+                {/* Current Time Indicator */}
+                {currentTime &&
+                  toFestivalHour(currentTime) >= timeRange.start &&
+                  toFestivalHour(currentTime) <= timeRange.end && (
+                    <View
+                      style={[
+                        styles.currentTimeLine,
+                        {
+                          top: getPosition(currentTime.toISOString()),
+                          width: stages.length * STAGE_WIDTH,
+                          backgroundColor: theme.colors.error,
+                        },
+                      ]}
+                    />
+                  )}
+              </View>
+            </View>
+          </ScrollView>
         </View>
       </ScrollView>
     </View>
@@ -164,7 +253,7 @@ const styles = StyleSheet.create({
     zIndex: 5,
     borderRightWidth: 1,
     borderRightColor: "rgba(0,0,0,0.05)",
-    paddingTop: 50, // Match header height
+    paddingTop: 40, // Match header height
   },
   timeLabelContainer: {
     height: HOUR_HEIGHT,
@@ -178,7 +267,7 @@ const styles = StyleSheet.create({
   },
   stageHeaders: {
     flexDirection: "row",
-    height: 50,
+    height: 40,
     alignItems: "center",
   },
   stageHeader: {

@@ -1,22 +1,22 @@
 import {
-    DarkTheme as NavDarkTheme,
-    DefaultTheme as NavDefaultTheme,
-    ThemeProvider as NavigationProvider,
+  DarkTheme as NavDarkTheme,
+  DefaultTheme as NavDefaultTheme,
+  ThemeProvider as NavigationProvider,
 } from "@react-navigation/native";
+import { useColorScheme } from "nativewind";
 import React, { useMemo } from "react";
-import { useColorScheme } from "react-native";
 import {
-    adaptNavigationTheme,
-    MD3DarkTheme,
-    MD3LightTheme,
-    PaperProvider,
+  adaptNavigationTheme,
+  MD3DarkTheme,
+  MD3LightTheme,
+  PaperProvider,
 } from "react-native-paper";
 import { useUIStore } from "../store/useUIStore";
 import {
-    addAlpha,
-    COLORS,
-    getDynamicBackground,
-    getDynamicSurface,
+  addAlpha,
+  COLORS,
+  getDynamicBackground,
+  getDynamicSurface,
 } from "../utils/theme";
 
 const { LightTheme: AdaptedLight, DarkTheme: AdaptedDark } =
@@ -28,10 +28,11 @@ const { LightTheme: AdaptedLight, DarkTheme: AdaptedDark } =
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const systemColorScheme = useColorScheme();
-  const { themeMode, isAmoled } = useUIStore();
-  const accentColor =
-    useUIStore((state) => state.accentColor) || COLORS.primary;
+  const { colorScheme: systemColorScheme } = useColorScheme();
+  const themeMode = useUIStore((state) => state.themeMode);
+  const isAmoled = useUIStore((state) => state.isAmoled);
+  const storedAccent = useUIStore((state) => state.accentColor);
+  const accentColor = storedAccent || COLORS.primary;
 
   const isDark =
     themeMode === "system"
@@ -57,6 +58,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
         primaryContainer: addAlpha(accentColor, 0.1),
         onPrimaryContainer: accentColor,
         onSurface: isDark ? COLORS.text.dark : COLORS.text.light,
+        onBackground: isDark ? COLORS.text.dark : COLORS.text.light,
         elevation: {
           ...baseTheme.colors.elevation,
           level1: surfaceColor,

@@ -1,20 +1,21 @@
+import { LinearGradient } from "expo-linear-gradient";
 import { usePathname, useRouter } from "expo-router";
 import {
-    Calendar,
-    Home,
-    LucideIcon,
-    Music2,
-    Search,
-    User,
-    Users,
+  Calendar,
+  Home,
+  LucideIcon,
+  Music2,
+  Search,
+  User,
+  Users,
 } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { Text, TouchableRipple, useTheme } from "react-native-paper";
 import Animated, {
-    interpolate,
-    interpolateColor,
-    useAnimatedStyle,
+  interpolate,
+  interpolateColor,
+  useAnimatedStyle,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useUIStore } from "../../store/useUIStore";
@@ -48,7 +49,11 @@ export const BottomNav: React.FC = () => {
     ? [
         { label: "Home", icon: Home, route: `/event/${eventId}` },
         { label: "Line-up", icon: Music2, route: `/event/${eventId}/lineup` },
-        { label: "Schedule", icon: Calendar, route: `/event/${eventId}/schedule` },
+        {
+          label: "Schedule",
+          icon: Calendar,
+          route: `/event/${eventId}/schedule`,
+        },
         { label: "Visitors", icon: Users, route: `/event/${eventId}/visitors` },
       ]
     : [];
@@ -70,21 +75,21 @@ export const BottomNav: React.FC = () => {
         key={index}
         onPress={() => router.navigate(item.route as any)}
         rippleColor={addAlpha(theme.colors.primary, 0.2)}
-        style={[
-          styles.item,
-          isActive && {
-            backgroundColor: addAlpha(theme.colors.primary, 0.1),
-          },
-        ]}
+        style={[styles.item]}
       >
         <View style={styles.itemContent}>
+          {isActive && (
+            <LinearGradient
+              colors={[
+                addAlpha(theme.colors.primary, 0.15),
+                addAlpha(theme.colors.primary, 0.05),
+              ]}
+              style={StyleSheet.absoluteFillObject}
+            />
+          )}
           <Icon
             size={24}
-            color={
-              isActive
-                ? theme.colors.primary
-                : theme.colors.outline
-            }
+            color={isActive ? theme.colors.primary : theme.colors.outline}
             strokeWidth={isActive ? 2.5 : 2}
           />
           {isActive && (
@@ -93,9 +98,7 @@ export const BottomNav: React.FC = () => {
               style={[
                 styles.label,
                 {
-                  color: isActive
-                    ? theme.colors.primary
-                    : theme.colors.outline,
+                  color: isActive ? theme.colors.primary : theme.colors.outline,
                 },
               ]}
             >
@@ -106,6 +109,9 @@ export const BottomNav: React.FC = () => {
       </TouchableRipple>
     );
   };
+
+  const bgColorTo = addAlpha(theme.colors.surface, 0.85);
+  const borderColorTo = addAlpha(theme.colors.outlineVariant, 0.3);
 
   const animatedContainerStyle = useAnimatedStyle(() => {
     const margin = interpolate(scrollOffset, [0, 50], [0, 24], "clamp");
@@ -128,12 +134,12 @@ export const BottomNav: React.FC = () => {
     const bgColor = interpolateColor(
       scrollOffset,
       [0, 50],
-      [theme.colors.surface, addAlpha(theme.colors.surface, 0.85)]
+      [theme.colors.surface, bgColorTo],
     );
     const borderColor = interpolateColor(
       scrollOffset,
       [0, 50],
-      [theme.colors.outlineVariant, addAlpha(theme.colors.outlineVariant, 0.3)]
+      [theme.colors.outlineVariant, borderColorTo],
     );
 
     return {

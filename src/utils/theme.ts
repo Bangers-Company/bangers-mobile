@@ -36,19 +36,24 @@ export const getDynamicBackground = (
   const g = parseInt(accent.slice(3, 5), 16);
   const b = parseInt(accent.slice(5, 7), 16);
 
+  const toHex = (c: number) =>
+    Math.max(0, Math.min(255, Math.round(c)))
+      .toString(16)
+      .padStart(2, "0");
+
   if (mode === "light") {
     // Subtler background tint (4% mix)
     const nr = Math.round(255 * 0.96 + r * 0.04);
     const ng = Math.round(255 * 0.96 + g * 0.04);
     const nb = Math.round(255 * 0.96 + b * 0.04);
-    return `rgb(${nr}, ${ng}, ${nb})`;
+    return `#${toHex(nr)}${toHex(ng)}${toHex(nb)}`;
   } else {
     // Dark mode: Use neutral base (18, 18, 18) to avoid color clashing
     // Mix 7% accent for slightly more visible tint
     const nr = Math.round(18 * 0.93 + r * 0.07);
     const ng = Math.round(18 * 0.93 + g * 0.07);
     const nb = Math.round(18 * 0.93 + b * 0.07);
-    return `rgb(${nr}, ${ng}, ${nb})`;
+    return `#${toHex(nr)}${toHex(ng)}${toHex(nb)}`;
   }
 };
 
@@ -63,21 +68,32 @@ export const getGradientColors = (
   if (mode === "amoled") return ["#000000", "#000000"];
 
   const accent = accentColor || COLORS.primary;
-  
+
   // Simple hex to rgb
   const r = parseInt(accent.slice(1, 3), 16);
   const g = parseInt(accent.slice(3, 5), 16);
   const b = parseInt(accent.slice(5, 7), 16);
 
+  const toHex = (c: number) =>
+    Math.max(0, Math.min(255, Math.round(c)))
+      .toString(16)
+      .padStart(2, "0");
+
   if (mode === "light") {
     // Light mode: White at top, color tint at bottom
-    const start = `rgba(255, 255, 255, 1)`;
-    const end = `rgba(${Math.round(255 * 0.85 + r * 0.15)}, ${Math.round(255 * 0.85 + g * 0.15)}, ${Math.round(255 * 0.85 + b * 0.15)}, 1)`;
+    const start = `#ffffff`;
+    const endR = Math.round(255 * 0.85 + r * 0.15);
+    const endG = Math.round(255 * 0.85 + g * 0.15);
+    const endB = Math.round(255 * 0.85 + b * 0.15);
+    const end = `#${toHex(endR)}${toHex(endG)}${toHex(endB)}`;
     return [start, end];
   } else {
     // Dark mode: Dark base at top, color tint at bottom
     const start = "#0a050c";
-    const end = `rgba(${Math.round(r * 0.2)}, ${Math.round(g * 0.2)}, ${Math.round(b * 0.2)}, 1)`;
+    const endR = Math.round(r * 0.2);
+    const endG = Math.round(g * 0.2);
+    const endB = Math.round(b * 0.2);
+    const end = `#${toHex(endR)}${toHex(endG)}${toHex(endB)}`;
     return [start, end];
   }
 };
@@ -96,19 +112,24 @@ export const getDynamicSurface = (
   const g = parseInt(accent.slice(3, 5), 16);
   const b = parseInt(accent.slice(5, 7), 16);
 
+  const toHex = (c: number) =>
+    Math.max(0, Math.min(255, Math.round(c)))
+      .toString(16)
+      .padStart(2, "0");
+
   if (mode === "light") {
     // Subtler surface (4% mix)
     const nr = Math.round(255 * 0.96 + r * 0.04);
     const ng = Math.round(255 * 0.96 + g * 0.04);
     const nb = Math.round(255 * 0.96 + b * 0.04);
-    return `rgb(${nr}, ${ng}, ${nb})`;
+    return `#${toHex(nr)}${toHex(ng)}${toHex(nb)}`;
   } else {
     // Use neutral dark surface base (30, 30, 30)
     // Mix 12% accent for vibrant surfaces (popovers, cards)
     const nr = Math.round(30 * 0.88 + r * 0.12);
     const ng = Math.round(30 * 0.88 + g * 0.12);
     const nb = Math.round(30 * 0.88 + b * 0.12);
-    return `rgb(${nr}, ${ng}, ${nb})`;
+    return `#${toHex(nr)}${toHex(ng)}${toHex(nb)}`;
   }
 };
 

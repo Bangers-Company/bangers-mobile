@@ -1,6 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
+import { useColorScheme } from "nativewind";
 import React from "react";
-import { StyleSheet, View, ViewProps, useColorScheme } from "react-native";
+import { StyleSheet, View, ViewProps } from "react-native";
 import { useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useUIStore } from "../store/useUIStore";
@@ -21,14 +22,16 @@ export const PageContainer: React.FC<PageContainerProps> = ({
 }) => {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const systemColorScheme = useColorScheme();
-  const { themeMode, accentColor, isAmoled } = useUIStore();
+  const { colorScheme: systemColorScheme } = useColorScheme();
+  const themeMode = useUIStore((state) => state.themeMode);
+  const accentColor = useUIStore((state) => state.accentColor);
+  const isAmoled = useUIStore((state) => state.isAmoled);
 
   const isDark =
     themeMode === "system"
       ? systemColorScheme === "dark"
       : themeMode === "dark";
-  
+
   const effectiveAmoled = isDark && isAmoled;
   const mode = effectiveAmoled ? "amoled" : isDark ? "dark" : "light";
   const gradientColors = getGradientColors(accentColor, mode);

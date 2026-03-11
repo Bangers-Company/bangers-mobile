@@ -1,8 +1,8 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ShieldAlert, ShieldCheck } from "lucide-react-native";
-import React, { useEffect, useState } from "react";
-import { FlatList, StyleSheet, View, Dimensions } from "react-native";
-import ContentLoader, { Rect, Circle } from "react-content-loader/native";
+import React, { useState } from "react";
+import ContentLoader, { Circle, Rect } from "react-content-loader/native";
+import { Dimensions, FlatList, StyleSheet, View } from "react-native";
 import {
   Avatar,
   Button,
@@ -13,10 +13,9 @@ import {
   useTheme,
 } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { eventsApi } from "../../../src/api/events";
+import { PageContainer } from "../../../src/components/PageContainer";
 import { User } from "../../../src/types/user";
 import { resolveMediaUrl } from "../../../src/utils/format";
-import { PageContainer } from "../../../src/components/PageContainer";
 
 import { useEventStore } from "../../../src/store/useEventStore";
 
@@ -48,8 +47,16 @@ export default function VisitorsScreen() {
   if (error && !event) {
     return (
       <PageContainer style={styles.center}>
-        <Text variant="titleMedium" style={{ color: theme.colors.error }}>{error}</Text>
-        <Button mode="contained" onPress={() => fetchFullEvent(id, true)} style={{ marginTop: 16 }}>Try Again</Button>
+        <Text variant="titleMedium" style={{ color: theme.colors.error }}>
+          {error}
+        </Text>
+        <Button
+          mode="contained"
+          onPress={() => fetchFullEvent(id, true)}
+          style={{ marginTop: 16 }}
+        >
+          Try Again
+        </Button>
       </PageContainer>
     );
   }
@@ -57,25 +64,53 @@ export default function VisitorsScreen() {
   if (loading || !event) {
     return (
       <PageContainer withPadding={false} withSafeArea={false}>
-        <View style={{ paddingTop: top + 10, paddingHorizontal: 16 }}>
-          <ContentLoader 
-            speed={2} 
-            width={SCREEN_WIDTH} 
-            height={800} 
+        <View style={{ paddingTop: top, paddingHorizontal: 16 }}>
+          <ContentLoader
+            speed={2}
+            width={SCREEN_WIDTH}
+            height={800}
             viewBox={`0 0 ${SCREEN_WIDTH} 800`}
             backgroundColor="rgba(128,128,128,0.2)"
             foregroundColor="rgba(128,128,128,0.4)"
           >
             {/* Header placeholder */}
-            <Rect x="0" y="0" rx="4" ry="4" width={SCREEN_WIDTH * 0.4} height="28" />
-            <Rect x="0" y="36" rx="4" ry="4" width={SCREEN_WIDTH * 0.2} height="16" />
-            
+            <Rect
+              x="0"
+              y="0"
+              rx="4"
+              ry="4"
+              width={SCREEN_WIDTH * 0.4}
+              height="28"
+            />
+            <Rect
+              x="0"
+              y="36"
+              rx="4"
+              ry="4"
+              width={SCREEN_WIDTH * 0.2}
+              height="16"
+            />
+
             {/* Visitors placeholder */}
             {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
               <React.Fragment key={i}>
                 <Circle cx="24" cy={100 + i * 80} r="24" />
-                <Rect x="64" y={86 + i * 80} rx="4" ry="4" width={SCREEN_WIDTH * 0.5} height="16" />
-                <Rect x="64" y={110 + i * 80} rx="4" ry="4" width={SCREEN_WIDTH * 0.3} height="12" />
+                <Rect
+                  x="64"
+                  y={86 + i * 80}
+                  rx="4"
+                  ry="4"
+                  width={SCREEN_WIDTH * 0.5}
+                  height="16"
+                />
+                <Rect
+                  x="64"
+                  y={110 + i * 80}
+                  rx="4"
+                  ry="4"
+                  width={SCREEN_WIDTH * 0.3}
+                  height="12"
+                />
               </React.Fragment>
             ))}
           </ContentLoader>
@@ -84,14 +119,21 @@ export default function VisitorsScreen() {
     );
   }
 
-
-
   const renderVisitor = ({ item }: { item: User }) => {
-    const isAdmin = item.roles?.some((r: any) => typeof r === "string" ? r === "admin" : r?.name === "admin");
-    const isModerator = !isAdmin && item.roles?.some((r: any) => typeof r === "string" ? r === "moderator" : r?.name === "moderator");
+    const isAdmin = item.roles?.some((r: any) =>
+      typeof r === "string" ? r === "admin" : r?.name === "admin",
+    );
+    const isModerator =
+      !isAdmin &&
+      item.roles?.some((r: any) =>
+        typeof r === "string" ? r === "moderator" : r?.name === "moderator",
+      );
 
     return (
-      <Surface style={[styles.visitorCard, { backgroundColor: theme.colors.surface }]} elevation={1}>
+      <Surface
+        style={[styles.visitorCard, { backgroundColor: theme.colors.surface }]}
+        elevation={1}
+      >
         <TouchableRipple
           onPress={() => router.push(`/user/${item.id}` as any)}
           style={styles.visitorRipple}
@@ -100,15 +142,23 @@ export default function VisitorsScreen() {
           <View style={styles.visitorContent}>
             <Avatar.Image
               size={48}
-              source={{ uri: resolveMediaUrl(item.profile_media_url) || "https://via.placeholder.com/48" }}
+              source={{
+                uri:
+                  resolveMediaUrl(item.profile_media_url) ||
+                  "https://via.placeholder.com/48",
+              }}
             />
             <View style={styles.visitorInfo}>
               <View style={styles.nameRow}>
                 <Text variant="titleMedium" style={styles.visitorName}>
                   {item.first_name} {item.last_name}
                 </Text>
-                {isAdmin && <ShieldAlert size={16} color={theme.colors.error} />}
-                {isModerator && <ShieldCheck size={16} color={theme.colors.primary} />}
+                {isAdmin && (
+                  <ShieldAlert size={16} color={theme.colors.error} />
+                )}
+                {isModerator && (
+                  <ShieldCheck size={16} color={theme.colors.primary} />
+                )}
               </View>
               <Text variant="bodySmall" style={styles.visitorUsername}>
                 @{item.username}
@@ -122,12 +172,28 @@ export default function VisitorsScreen() {
 
   return (
     <PageContainer withPadding={false} withSafeArea={false}>
-      <View style={[styles.header, { paddingTop: top + 10, paddingBottom: 10 }]}>
+      {/* Absolute TopBar */}
+      <View style={[styles.header, { paddingTop: top / 4, paddingBottom: 10 }]}>
         <View style={styles.headerRow}>
-          <IconButton icon="chevron-left" onPress={() => router.push("/(tabs)")} />
+          <IconButton
+            icon="chevron-left"
+            onPress={() => router.push("/(tabs)")}
+          />
           <View style={{ flex: 1 }}>
-            <Text variant="titleLarge" style={styles.headerTitle} numberOfLines={1}>Visitors</Text>
-            <Text variant="bodySmall" style={styles.headerSubtitle} numberOfLines={1}>{visitors.length} attending</Text>
+            <Text
+              variant="titleLarge"
+              style={styles.headerTitle}
+              numberOfLines={1}
+            >
+              Visitors
+            </Text>
+            <Text
+              variant="bodySmall"
+              style={styles.headerSubtitle}
+              numberOfLines={1}
+            >
+              {visitors.length} attending
+            </Text>
           </View>
         </View>
       </View>
@@ -136,17 +202,24 @@ export default function VisitorsScreen() {
         data={visitors}
         keyExtractor={(item) => item.id}
         renderItem={renderVisitor}
-        contentContainerStyle={[styles.listContent, { paddingBottom: bottom + 120 }]}
+        contentContainerStyle={[
+          styles.listContent,
+          { paddingBottom: bottom + 120 },
+        ]}
         onRefresh={onRefresh}
         refreshing={refreshing}
         onScroll={(e) => {
           const offsetY = e.nativeEvent.contentOffset.y;
-          import("../../../src/store/useUIStore").then((mod) => mod.useUIStore.getState().setScrollOffset(offsetY));
+          import("../../../src/store/useUIStore").then((mod) =>
+            mod.useUIStore.getState().setScrollOffset(offsetY),
+          );
         }}
         scrollEventThrottle={16}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text variant="bodyMedium" style={{ opacity: 0.5 }}>Be the first to say you're going!</Text>
+            <Text variant="bodyMedium" style={{ opacity: 0.5 }}>
+              Be the first to say you&apos;re going!
+            </Text>
           </View>
         }
       />

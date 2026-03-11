@@ -1,6 +1,6 @@
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import "react-native-reanimated";
 import { ThemeProvider } from "../src/context/ThemeProvider";
@@ -16,6 +16,8 @@ export default function RootLayout() {
   const accessToken = useAuthStore((state) => state.accessToken);
   const segments = useSegments();
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const [isHydrated, setIsHydrated] = useState(false);
   const [isDbReady, setIsDbReady] = useState(false);
   // Handle database initialization
@@ -71,16 +73,16 @@ export default function RootLayout() {
     const inAuthGroup = segments[0] === "(auth)";
     const handleRedirect = () => {
       if (!accessToken && !inAuthGroup) {
-        router.replace("/login" as any);
+        routerRef.current.replace("/login" as any);
       } else if (accessToken && inAuthGroup) {
-        router.replace("/" as any);
+        routerRef.current.replace("/" as any);
       }
     };
 
     // Use a small delay to ensure router is ready
     const timer = setTimeout(handleRedirect, 100);
     return () => clearTimeout(timer);
-  }, [accessToken, segments, isHydrated, router]);
+  }, [accessToken, segments, isHydrated]);
 
   if (!isHydrated || !isDbReady) {
     return (

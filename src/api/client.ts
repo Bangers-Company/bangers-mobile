@@ -2,7 +2,7 @@ import axios from "axios";
 import { useAuthStore } from "../store/useAuthStore";
 import { AuthResponse } from "../types/user";
 
-const API_BASE_URL = "http://localhost:8080/api/mobile"; // Replace with actual API URL or env var
+const API_BASE_URL = "http://192.168.3.2:8080/api/mobile"; // Replace with actual API URL or env var
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

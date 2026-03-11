@@ -1,8 +1,8 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Calendar, Heart, MapPin, Share2, Users } from "lucide-react-native";
+import { Calendar, Heart, MapPin, Users } from "lucide-react-native";
 import React, { useState } from "react";
-import { Image, ScrollView, StyleSheet, View, Dimensions } from "react-native";
 import ContentLoader, { Rect } from "react-content-loader/native";
+import { Dimensions, Image, ScrollView, StyleSheet, View } from "react-native";
 import {
   Button,
   IconButton,
@@ -12,31 +12,33 @@ import {
 } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { eventsApi } from "../../../src/api/events";
+import { useAuthStore } from "../../../src/store/useAuthStore";
+import { useEventStore } from "../../../src/store/useEventStore";
+import { useUIStore } from "../../../src/store/useUIStore";
 import { resolveMediaUrl } from "../../../src/utils/format";
 import { addAlpha } from "../../../src/utils/theme";
-import { useAuthStore } from "../../../src/store/useAuthStore";
-import { useUIStore } from "../../../src/store/useUIStore";
-import { useEventStore } from "../../../src/store/useEventStore";
 
 export default function EventDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useTheme();
   const router = useRouter();
   const { top, bottom } = useSafeAreaInsets();
-  
+
   const setScrollOffset = useUIStore((state) => state.setScrollOffset);
   const currentUser = useAuthStore((state) => state.user);
 
   const cachedData = useEventStore((state) => state.events[id]);
   const loadingEvents = useEventStore((state) => state.loadingEvents);
   const errors = useEventStore((state) => state.errors);
-  const setAttendanceStatus = useEventStore((state) => state.setAttendanceStatus);
+  const setAttendanceStatus = useEventStore(
+    (state) => state.setAttendanceStatus,
+  );
 
   const event = cachedData?.event;
   const attendees = cachedData?.attendees || [];
   const loading = loadingEvents[id] && !event; // Only show full loader if we have NO event data
   const error = errors[id];
-  
+
   const isGoing = event?.user_status === "going";
   const isInterested = event?.user_status === "interested";
 
@@ -49,14 +51,14 @@ export default function EventDetailsScreen() {
   const toggleAttendance = async (status: "going" | "interested") => {
     if (!event || !currentUser || actionLoading) return;
     setActionLoading(true);
-    
+
     // If clicking what we already have, we remove it
     const isRemoving = event.user_status === status;
     const nextStatus = isRemoving ? null : status;
-    
+
     // Optimistic Update
     setAttendanceStatus(id, nextStatus, currentUser);
-    
+
     try {
       if (nextStatus) {
         await eventsApi.updateAttendance(id as string, nextStatus);
@@ -76,16 +78,28 @@ export default function EventDetailsScreen() {
     if (!dateString) return "";
     const d = new Date(dateString);
     if (isNaN(d.getTime())) return dateString;
-    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    return d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
   };
 
   const { width } = Dimensions.get("window");
 
   if (error && !event) {
     return (
-      <View style={[styles.center, {flex: 1}]}>
-        <Text variant="titleMedium" style={{ color: theme.colors.error }}>{error || "Event not found"}</Text>
-        <Button mode="contained" onPress={() => router.push("/(tabs)")} style={{ marginTop: 16 }}>Go Back</Button>
+      <View style={[styles.center, { flex: 1 }]}>
+        <Text variant="titleMedium" style={{ color: theme.colors.error }}>
+          {error || "Event not found"}
+        </Text>
+        <Button
+          mode="contained"
+          onPress={() => router.push("/(tabs)")}
+          style={{ marginTop: 16 }}
+        >
+          Go Back
+        </Button>
       </View>
     );
   }
@@ -93,7 +107,7 @@ export default function EventDetailsScreen() {
   if (loading || !event) {
     return (
       <View style={[styles.container, { flex: 1 }]}>
-        <ContentLoader 
+        <ContentLoader
           speed={2}
           width={width}
           height={800}
@@ -113,12 +127,11 @@ export default function EventDetailsScreen() {
     );
   }
 
-
-
   const bannerUrl = resolveMediaUrl(event.banner?.url);
-  const startEndMerged = event.end_date && event.end_date !== event.start_date
-    ? `${formatDate(event.start_date)} - ${formatDate(event.end_date)}`
-    : formatDate(event.start_date);
+  const startEndMerged =
+    event.end_date && event.end_date !== event.start_date
+      ? `${formatDate(event.start_date)} - ${formatDate(event.end_date)}`
+      : formatDate(event.start_date);
 
   const acts = event.acts || [];
   const previewActs = acts.slice(0, 4);
@@ -126,7 +139,7 @@ export default function EventDetailsScreen() {
   return (
     <View style={styles.container}>
       {/* Absolute TopBar */}
-      <View style={[styles.eventHeader, { top: top + 10 }]}>
+      <View style={[styles.eventHeader, { top: top / 4 }]}>
         <IconButton
           icon="chevron-left"
           size={24}
@@ -136,10 +149,16 @@ export default function EventDetailsScreen() {
         />
         <View style={styles.headerRight}>
           <IconButton
-            icon={() => <Heart size={20} color={isInterested ? theme.colors.error : "white"} fill={isInterested ? theme.colors.error : "transparent"} />}
+            icon={() => (
+              <Heart
+                size={20}
+                color={isInterested ? theme.colors.error : "white"}
+                fill={isInterested ? theme.colors.error : "transparent"}
+              />
+            )}
             size={24}
             containerColor="rgba(0,0,0,0.5)"
-            onPress={() => toggleAttendance('interested')}
+            onPress={() => toggleAttendance("interested")}
             loading={actionLoading}
           />
           <IconButton
@@ -152,7 +171,7 @@ export default function EventDetailsScreen() {
         </View>
       </View>
 
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={{ paddingBottom: bottom + 100 }}
         onScroll={handleScroll}
         scrollEventThrottle={16}
@@ -162,7 +181,12 @@ export default function EventDetailsScreen() {
           {bannerUrl ? (
             <Image source={{ uri: bannerUrl }} style={styles.bannerImage} />
           ) : (
-            <View style={[styles.bannerImage, { backgroundColor: theme.colors.surfaceVariant }]} />
+            <View
+              style={[
+                styles.bannerImage,
+                { backgroundColor: theme.colors.surfaceVariant },
+              ]}
+            />
           )}
           <View style={styles.bannerOverlay} />
         </View>
@@ -170,87 +194,134 @@ export default function EventDetailsScreen() {
         {/* Content */}
         <View style={styles.content}>
           <View style={styles.titleSection}>
-            <Text variant="displaySmall" style={styles.eventName}>{event.name}</Text>
+            <Text variant="displaySmall" style={styles.eventName}>
+              {event.name}
+            </Text>
           </View>
 
           <View style={styles.metaSection}>
             <View style={styles.metaRow}>
-              <View style={[styles.iconBox, { backgroundColor: addAlpha(theme.colors.primary, 0.1) }]}>
+              <View
+                style={[
+                  styles.iconBox,
+                  { backgroundColor: addAlpha(theme.colors.primary, 0.1) },
+                ]}
+              >
                 <Calendar size={20} color={theme.colors.primary} />
               </View>
               <View style={styles.metaTexts}>
-                <Text variant="bodyLarge" style={styles.metaTitle}>{startEndMerged}</Text>
-                <Text variant="bodyMedium" style={styles.metaSubtitle}>Dates</Text>
-              </View>
-            </View>
-            
-            <View style={styles.metaRow}>
-              <View style={[styles.iconBox, { backgroundColor: addAlpha(theme.colors.primary, 0.1) }]}>
-                 <MapPin size={20} color={theme.colors.primary} />
-              </View>
-              <View style={styles.metaTexts}>
-                <Text variant="bodyLarge" style={styles.metaTitle}>{event.location}</Text>
-                <Text variant="bodyMedium" style={styles.metaSubtitle}>Location</Text>
+                <Text variant="bodyLarge" style={styles.metaTitle}>
+                  {startEndMerged}
+                </Text>
+                <Text variant="bodyMedium" style={styles.metaSubtitle}>
+                  Dates
+                </Text>
               </View>
             </View>
 
             <View style={styles.metaRow}>
-              <View style={[styles.iconBox, { backgroundColor: addAlpha(theme.colors.primary, 0.1) }]}>
-                 <Users size={20} color={theme.colors.primary} />
+              <View
+                style={[
+                  styles.iconBox,
+                  { backgroundColor: addAlpha(theme.colors.primary, 0.1) },
+                ]}
+              >
+                <MapPin size={20} color={theme.colors.primary} />
               </View>
               <View style={styles.metaTexts}>
-                <Text variant="bodyLarge" style={styles.metaTitle}>{event.attendee_count ?? attendees.length}</Text>
-                <Text variant="bodyMedium" style={styles.metaSubtitle}>Going</Text>
+                <Text variant="bodyLarge" style={styles.metaTitle}>
+                  {event.location}
+                </Text>
+                <Text variant="bodyMedium" style={styles.metaSubtitle}>
+                  Location
+                </Text>
               </View>
-              
-              <Button 
-                 mode={isGoing ? "outlined" : "contained"} 
-                 onPress={() => toggleAttendance('going')}
-                 loading={actionLoading}
-                 style={styles.attendButton}
+            </View>
+
+            <View style={styles.metaRow}>
+              <View
+                style={[
+                  styles.iconBox,
+                  { backgroundColor: addAlpha(theme.colors.primary, 0.1) },
+                ]}
               >
-                 {isGoing ? "Attending" : "Attend"}
+                <Users size={20} color={theme.colors.primary} />
+              </View>
+              <View style={styles.metaTexts}>
+                <Text variant="bodyLarge" style={styles.metaTitle}>
+                  {event.attendee_count ?? attendees.length}
+                </Text>
+                <Text variant="bodyMedium" style={styles.metaSubtitle}>
+                  Going
+                </Text>
+              </View>
+
+              <Button
+                mode={isGoing ? "outlined" : "contained"}
+                onPress={() => toggleAttendance("going")}
+                loading={actionLoading}
+                style={styles.attendButton}
+              >
+                {isGoing ? "Attending" : "Attend"}
               </Button>
             </View>
           </View>
 
           {event.description && (
-             <View style={styles.descriptionSection}>
-               <Text variant="titleMedium" style={styles.sectionTitle}>About</Text>
-               <Text variant="bodyMedium" style={styles.descriptionText}>{event.description}</Text>
-             </View>
+            <View style={styles.descriptionSection}>
+              <Text variant="titleMedium" style={styles.sectionTitle}>
+                About
+              </Text>
+              <Text variant="bodyMedium" style={styles.descriptionText}>
+                {event.description}
+              </Text>
+            </View>
           )}
 
           {/* Line-up Preview Section */}
           <View style={styles.lineupSection}>
-            <Text variant="titleMedium" style={styles.sectionTitle}>Line-up</Text>
+            <Text variant="titleMedium" style={styles.sectionTitle}>
+              Line-up
+            </Text>
             {acts.length > 0 ? (
               <>
                 <View style={styles.actGrid}>
                   {previewActs.map((act) => (
-                     <Surface key={act.id} style={styles.actCard} elevation={1}>
-                       <Text variant="bodyLarge" style={styles.actName} numberOfLines={2}>
-                          {act.artists && act.artists.length > 0 ? act.artists[0].name : act.name}
-                       </Text>
-                     </Surface>
+                    <Surface key={act.id} style={styles.actCard} elevation={1}>
+                      <Text
+                        variant="bodyLarge"
+                        style={styles.actName}
+                        numberOfLines={2}
+                      >
+                        {act.artists && act.artists.length > 0
+                          ? act.artists[0].name
+                          : act.name}
+                      </Text>
+                    </Surface>
                   ))}
                 </View>
-                <Button 
-                   mode="text" 
-                   onPress={() => router.push(`/event/${id}/lineup` as any)}
-                   style={styles.viewFullButton}
+                <Button
+                  mode="text"
+                  onPress={() => router.push(`/event/${id}/lineup` as any)}
+                  style={styles.viewFullButton}
                 >
-                   View full line-up
+                  View full line-up
                 </Button>
               </>
             ) : (
               <Surface style={styles.noLineup} elevation={0}>
-                 <Text variant="bodyMedium" style={{ opacity: 0.6 }}>Line-up hasn't been announced yet.</Text>
-                 <Button mode="text" onPress={() => router.push(`/event/${id}/lineup` as any)}>Check anyway</Button>
+                <Text variant="bodyMedium" style={{ opacity: 0.6 }}>
+                  Line-up hasn't been announced yet.
+                </Text>
+                <Button
+                  mode="text"
+                  onPress={() => router.push(`/event/${id}/lineup` as any)}
+                >
+                  Check anyway
+                </Button>
               </Surface>
             )}
           </View>
-
         </View>
       </ScrollView>
     </View>
