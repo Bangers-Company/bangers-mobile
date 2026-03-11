@@ -43,6 +43,7 @@ export interface Event {
   acts?: Act[];
   attendees?: User[];
   attendee_count?: number;
+  user_status?: "going" | "interested" | null;
   created_at: string;
   updated_at: string;
   deleted_at?: string | null;

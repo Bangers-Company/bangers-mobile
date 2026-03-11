@@ -37,36 +37,36 @@ export default function EventDetailsScreen() {
   const loading = loadingEvents[id] && !event; // Only show full loader if we have NO event data
   const error = errors[id];
   
-  const isAttending = React.useMemo(() => {
-     if (!currentUser) return false;
-     return attendees.some(a => a.id === currentUser.id);
-  }, [attendees, currentUser]);
+  const isGoing = event?.user_status === "going";
+  const isInterested = event?.user_status === "interested";
 
   const [actionLoading, setActionLoading] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(false);
 
   const handleScroll = (e: any) => {
     setScrollOffset(e.nativeEvent.contentOffset.y);
   };
 
-  const toggleAttendance = async () => {
+  const toggleAttendance = async (status: "going" | "interested") => {
     if (!event || !currentUser || actionLoading) return;
     setActionLoading(true);
     
+    // If clicking what we already have, we remove it
+    const isRemoving = event.user_status === status;
+    const nextStatus = isRemoving ? null : status;
+    
     // Optimistic Update
-    const newStatus = !isAttending;
-    setAttendanceStatus(id, newStatus, currentUser);
+    setAttendanceStatus(id, nextStatus, currentUser);
     
     try {
-      if (newStatus) {
-        await eventsApi.updateAttendance(id as string);
+      if (nextStatus) {
+        await eventsApi.updateAttendance(id as string, nextStatus);
       } else {
         await eventsApi.deleteAttendance(id as string);
       }
     } catch (err) {
       console.error("Failed to update attendance", err);
-      // Revert optimistic update on failure
-      setAttendanceStatus(id, !newStatus, currentUser);
+      // Revert optimistic update on failure (approximate)
+      setAttendanceStatus(id, event.user_status || null, currentUser);
     } finally {
       setActionLoading(false);
     }
@@ -136,10 +136,11 @@ export default function EventDetailsScreen() {
         />
         <View style={styles.headerRight}>
           <IconButton
-            icon={() => <Heart size={20} color={isFavorite ? theme.colors.error : "white"} fill={isFavorite ? theme.colors.error : "transparent"} />}
+            icon={() => <Heart size={20} color={isInterested ? theme.colors.error : "white"} fill={isInterested ? theme.colors.error : "transparent"} />}
             size={24}
             containerColor="rgba(0,0,0,0.5)"
-            onPress={() => setIsFavorite(!isFavorite)}
+            onPress={() => toggleAttendance('interested')}
+            loading={actionLoading}
           />
           <IconButton
             icon="share-variant"
@@ -203,12 +204,12 @@ export default function EventDetailsScreen() {
               </View>
               
               <Button 
-                 mode={isAttending ? "outlined" : "contained"} 
-                 onPress={toggleAttendance}
+                 mode={isGoing ? "outlined" : "contained"} 
+                 onPress={() => toggleAttendance('going')}
                  loading={actionLoading}
                  style={styles.attendButton}
               >
-                 {isAttending ? "Attending" : "Attend"}
+                 {isGoing ? "Attending" : "Attend"}
               </Button>
             </View>
           </View>

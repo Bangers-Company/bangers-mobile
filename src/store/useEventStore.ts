@@ -26,7 +26,7 @@ interface EventStore {
   clearError: (id: string) => void;
   
   // Optimistic updates
-  setAttendanceStatus: (id: string, isAttending: boolean, currentUser: User) => void;
+  setAttendanceStatus: (id: string, status: "going" | "interested" | null, currentUser: User) => void;
 }
 
 const CACHE_TTL = 1000 * 60 * 5; // 5 minutes
@@ -109,14 +109,25 @@ export const useEventStore = create<EventStore>((set, get) => ({
     set((state) => ({ errors: { ...state.errors, [id]: null } }));
   },
 
-  setAttendanceStatus: (id, isAttending, currentUser) => {
+  setAttendanceStatus: (id, status, currentUser) => {
     set((state) => {
       const cached = state.events[id];
       if (!cached) return state;
 
+      const previousStatus = cached.event.user_status;
+      let newAttendeeCount = cached.event.attendee_count ?? cached.attendees.length;
+
+      // Optimistic count update
+      if (status === "going" && previousStatus !== "going") {
+        newAttendeeCount++;
+      } else if (status !== "going" && previousStatus === "going") {
+        newAttendeeCount = Math.max(0, newAttendeeCount - 1);
+      }
+
       let newAttendees = [...cached.attendees];
+      const isAttendingAtAll = status !== null;
       
-      if (isAttending) {
+      if (isAttendingAtAll) {
         // Add current user to attendees if not present
         if (!newAttendees.some(a => a.id === currentUser.id)) {
           newAttendees.push(currentUser);
@@ -131,6 +142,11 @@ export const useEventStore = create<EventStore>((set, get) => ({
           ...state.events,
           [id]: {
             ...cached,
+            event: {
+              ...cached.event,
+              user_status: status,
+              attendee_count: newAttendeeCount
+            },
             attendees: newAttendees,
           },
         },

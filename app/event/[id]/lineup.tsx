@@ -86,10 +86,11 @@ export default function LineupScreen() {
             <Rect x="110" y="130" rx="16" ry="16" width="120" height="40" />
             
             {/* Acts placeholder */}
-            <Rect x="0" y="200" rx="12" ry="12" width={SCREEN_WIDTH - 32} height="80" />
-            <Rect x="0" y="295" rx="12" ry="12" width={SCREEN_WIDTH - 32} height="80" />
-            <Rect x="0" y="390" rx="12" ry="12" width={SCREEN_WIDTH - 32} height="80" />
-            <Rect x="0" y="485" rx="12" ry="12" width={SCREEN_WIDTH - 32} height="80" />
+            <Rect x="0" y="190" rx="12" ry="12" width={SCREEN_WIDTH - 32} height="65" />
+            <Rect x="0" y="263" rx="12" ry="12" width={SCREEN_WIDTH - 32} height="65" />
+            <Rect x="0" y="336" rx="12" ry="12" width={SCREEN_WIDTH - 32} height="65" />
+            <Rect x="0" y="409" rx="12" ry="12" width={SCREEN_WIDTH - 32} height="65" />
+            <Rect x="0" y="482" rx="12" ry="12" width={SCREEN_WIDTH - 32} height="65" />
           </ContentLoader>
         </View>
       </PageContainer>
@@ -203,8 +204,8 @@ export default function LineupScreen() {
       <Surface style={[styles.actCard, { backgroundColor: theme.colors.surface }]} elevation={1}>
         <TouchableRipple onPress={() => {}} style={styles.actRipple} rippleColor="rgba(0,0,0,0.1)">
           <View style={styles.actContent}>
-            <View style={{ flex: 1 }}>
-              <Text variant="titleMedium" style={styles.actName}>{actName}</Text>
+            <View style={{ flex: 1, marginRight: 8 }}>
+              <Text variant="bodyLarge" style={styles.actName} numberOfLines={1}>{actName}</Text>
               {act.start_time && act.end_time && (
                 <Text variant="bodySmall" style={styles.actTime}>
                   {act.start_time.substring(0, 5)} - {act.end_time.substring(0, 5)}
@@ -331,14 +332,10 @@ export default function LineupScreen() {
                 data={item.acts}
                 keyExtractor={(act) => act.id}
                 renderItem={renderAct}
-                contentContainerStyle={[styles.actsListContent, { paddingBottom: SCREEN_HEIGHT * 0.6 }]}
+                contentContainerStyle={[styles.actsListContent, { paddingBottom: bottom + 60 }]}
                 initialNumToRender={10}
                 maxToRenderPerBatch={10}
                 windowSize={5}
-                onScroll={(e) => {
-                  const offsetY = e.nativeEvent.contentOffset.y;
-                  useUIStore.getState().setScrollOffset(offsetY);
-                }}
                 scrollEventThrottle={16}
                 ListEmptyComponent={
                   <View style={styles.emptyContainer}>
@@ -415,15 +412,15 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   actsListContent: {
-    padding: 16,
-    gap: 12,
+    padding: 12,
+    gap: 8,
   },
   actCard: {
-    borderRadius: 16,
+    borderRadius: 12,
     overflow: "hidden",
   },
   actRipple: {
-    padding: 16,
+    padding: 12,
   },
   actContent: {
     flexDirection: "row",
@@ -431,7 +428,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   actName: {
-    fontWeight: "800",
+    fontWeight: "700",
     flex: 1,
   },
   actTime: {

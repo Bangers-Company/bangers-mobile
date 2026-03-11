@@ -57,6 +57,7 @@ export const TopBar: React.FC = () => {
     try {
       if (action === 'accept') {
         await friendsApi.acceptRequest(id);
+        useAuthStore.getState().updateFriendsCount(1);
       } else {
         await friendsApi.rejectRequest(id);
       }

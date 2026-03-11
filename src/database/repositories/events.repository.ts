@@ -22,6 +22,17 @@ export const eventsRepository = {
         event.deleted_at || null,
       ]),
     );
+
+    // Also persist current user's attendance status if provided
+    if (event.user_status) {
+      await db.runAsync(
+        "INSERT OR REPLACE INTO user_event_attendance (event_id, status) VALUES (?, ?)",
+        [event.id, event.user_status]
+      );
+    } else if (event.user_status === null) {
+      // If explicitly null, it means we definitely aren't attending
+      await db.runAsync("DELETE FROM user_event_attendance WHERE event_id = ?", [event.id]);
+    }
   },
 
   getAll: async (): Promise<Event[]> => {

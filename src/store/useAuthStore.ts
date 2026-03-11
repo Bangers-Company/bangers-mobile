@@ -11,6 +11,7 @@ interface AuthState {
   setAuth: (accessToken: string, refreshToken: string, user: User) => void;
   setUser: (user: User) => void;
   updateAccessToken: (accessToken: string) => void;
+  updateFriendsCount: (delta: number) => void;
   logout: () => void;
 }
 
@@ -51,6 +52,15 @@ export const useAuthStore = create<AuthState>()(
         user: state.user ? { ...state.user, ...user } : user 
       })),
       updateAccessToken: (accessToken) => set({ accessToken }),
+      updateFriendsCount: (delta) => set((state) => {
+        if (!state.user) return state;
+        return {
+          user: {
+            ...state.user,
+            friends_count: (state.user.friends_count || 0) + delta
+          }
+        };
+      }),
       logout: () => set({ accessToken: null, refreshToken: null, user: null }),
     }),
     {

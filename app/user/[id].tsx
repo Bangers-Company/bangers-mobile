@@ -105,9 +105,13 @@ export default function PublicProfileScreen() {
             } else if (friendshipStatus === "pending_received") {
                 await friendsApi.acceptRequest(id);
                 setFriendshipStatus("friends");
+                setFriendsCount(prev => prev + 1);
+                useAuthStore.getState().updateFriendsCount(1);
             } else if (friendshipStatus === "friends") {
                 await friendsApi.removeFriend(id);
                 setFriendshipStatus("none");
+                setFriendsCount(prev => Math.max(0, prev - 1));
+                useAuthStore.getState().updateFriendsCount(-1);
             }
         } catch (e) {
             console.error("Failed friend action", e);
