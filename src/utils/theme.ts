@@ -70,14 +70,14 @@ export const getGradientColors = (
   const b = parseInt(accent.slice(5, 7), 16);
 
   if (mode === "light") {
-    // Light mode: More pronounced tint mix
+    // Light mode: White at top, color tint at bottom
     const start = `rgba(255, 255, 255, 1)`;
     const end = `rgba(${Math.round(255 * 0.85 + r * 0.15)}, ${Math.round(255 * 0.85 + g * 0.15)}, ${Math.round(255 * 0.85 + b * 0.15)}, 1)`;
     return [start, end];
   } else {
-    // Dark mode: Deeper, more visible accent start
-    const start = `rgba(${Math.round(r * 0.2)}, ${Math.round(g * 0.2)}, ${Math.round(b * 0.2)}, 1)`;
-    const end = "#0a050c"; 
+    // Dark mode: Dark base at top, color tint at bottom
+    const start = "#0a050c";
+    const end = `rgba(${Math.round(r * 0.2)}, ${Math.round(g * 0.2)}, ${Math.round(b * 0.2)}, 1)`;
     return [start, end];
   }
 };
