@@ -31,6 +31,7 @@ export const BottomNav: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
   const scrollOffset = useUIStore((state) => state.scrollOffset);
+  const isBottomNavVisible = useUIStore((state) => state.isBottomNavVisible);
   const insets = useSafeAreaInsets();
 
   const isEventPage = pathname.startsWith("/event/");
@@ -147,6 +148,8 @@ export const BottomNav: React.FC = () => {
       borderColor: borderColor,
     };
   });
+
+  if (!isBottomNavVisible) return null;
 
   return (
     <Animated.View

@@ -32,26 +32,61 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
 
   // Day Logic
   const days = useMemo(() => {
+    // 1. Find the earliest calendar date in the timetable
+    const calendarDates = timetable.entries.map(e => e.start_time.split("T")[0]).sort();
+    const firstCalendarDate = calendarDates[0] || "";
+
+    const getFestivalDate = (dateStr: string) => {
+      const date = new Date(dateStr);
+      const calendarDate = dateStr.split("T")[0];
+      const hour = date.getHours();
+      
+      // Only shift back if it's NOT the first calendar day of the event
+      // This prevents "Friday 02:00 AM" from becoming "Thursday" if the festival starts Friday
+      if (hour < 6 && calendarDate !== firstCalendarDate) {
+        const festivalDate = new Date(date);
+        festivalDate.setDate(festivalDate.getDate() - 1);
+        
+        const year = festivalDate.getFullYear();
+        const month = (festivalDate.getMonth() + 1).toString().padStart(2, "0");
+        const day = festivalDate.getDate().toString().padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      }
+      
+      return calendarDate;
+    };
+
     const dayMap = new Set<string>();
     timetable.entries.forEach(e => {
-      dayMap.add(e.start_time.split("T")[0]);
+      dayMap.add(getFestivalDate(e.start_time));
     });
-    return Array.from(dayMap).sort();
+    return {
+      days: Array.from(dayMap).sort(),
+      getFestivalDate // Export it for use in filtering
+    };
   }, [timetable.entries]);
 
-  const [selectedDay, setSelectedDay] = useState(days[0] || "");
+  const { days: availableDays, getFestivalDate } = days;
+  const [selectedDay, setSelectedDay] = useState("");
+
+  useEffect(() => {
+    if (availableDays.length > 0 && !selectedDay) {
+      setSelectedDay(availableDays[0]);
+    }
+  }, [availableDays]);
 
   const filteredEntries = useMemo(() => {
-    if (!selectedDay) return timetable.entries;
-    return timetable.entries.filter(e => e.start_time.startsWith(selectedDay));
-  }, [timetable.entries, selectedDay]);
+    if (!selectedDay) return [];
+    return timetable.entries.filter(e => getFestivalDate(e.start_time) === selectedDay);
+  }, [timetable.entries, selectedDay, getFestivalDate]);
 
+  const insets = useSafeAreaInsets();
   const currentTimetable = { ...timetable, entries: filteredEntries };
 
   return (
     <View style={styles.container}>
       {/* Grid Content */}
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, marginBottom: availableDays.length > 1 ? 60 + insets.bottom : 0 }}>
         {viewMode === "vertical" ? (
           <TimetableVerticalGrid 
             timetable={currentTimetable}
@@ -69,11 +104,19 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
         )}
       </View>
 
-      {/* Day Selector (Tabs in bottom area context) */}
-      {days.length > 1 && (
-        <View style={[styles.dayContainer, { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.outlineVariant }]}>
+      {/* Day Selector (Custom Bottom Nav) */}
+      {availableDays.length > 1 && (
+        <View style={[
+          styles.dayContainer, 
+          { 
+            backgroundColor: theme.colors.surface, 
+            borderTopColor: theme.colors.outlineVariant,
+            paddingBottom: insets.bottom,
+            shadowColor: theme.colors.shadow,
+          }
+        ]}>
           <View style={styles.dayInner}>
-            {days.map((day, idx) => {
+            {availableDays.map((day: string, idx: number) => {
               const isActive = selectedDay === day;
               return (
                 <TouchableRipple
@@ -83,12 +126,14 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
                     styles.dayTab,
                     isActive && { backgroundColor: addAlpha(theme.colors.primary, 0.1) }
                   ]}
+                  rippleColor={addAlpha(theme.colors.primary, 0.2)}
                 >
                   <Text 
                     variant="labelLarge" 
                     style={[styles.dayTabText, { color: isActive ? theme.colors.primary : theme.colors.outline }]}
+                    numberOfLines={1}
                   >
-                    Day {idx + 1}
+                    {format(parseISO(day), "EEEE")}
                   </Text>
                 </TouchableRipple>
               );
@@ -101,29 +146,40 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
 };
 
 import { useMemo } from "react";
+import { format, parseISO } from "date-fns";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
   dayContainer: {
-    paddingBottom: 20,
-    paddingTop: 8,
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
     borderTopWidth: 1,
+    elevation: 8,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
   dayInner: {
     flexDirection: "row",
-    justifyContent: "center",
-    gap: 16,
-    paddingHorizontal: 16,
+    justifyContent: "space-around",
+    padding: 12,
   },
   dayTab: {
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    borderRadius: 100,
+    flex: 1,
+    paddingVertical: 12,
+    marginHorizontal: 4,
+    borderRadius: 12,
+    alignItems: "center",
   },
   dayTabText: {
-    fontWeight: "bold",
+    fontWeight: "800",
     textTransform: "uppercase",
+    fontSize: 12,
+    letterSpacing: 1,
   },
 });

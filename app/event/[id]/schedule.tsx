@@ -5,6 +5,7 @@ import { StyleSheet, View } from "react-native";
 import { IconButton, Text, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PageContainer } from "../../../src/components/PageContainer";
+import { useUIStore } from "../../../src/store/useUIStore";
 import { useEventStore } from "../../../src/store/useEventStore";
 import { useAuthStore } from "../../../src/store/useAuthStore";
 import { useTimetableStore } from "../../../src/store/useTimetableStore";
@@ -40,6 +41,17 @@ export default function ScheduleScreen() {
   const official = officialTimetable[eventId] || (cachedEvent?.official_timetable ? { ...cachedEvent.official_timetable, event_id: eventId, entries: [] } as Timetable : null);
   const personal = personalTimetable[eventId] || (cachedEvent?.personal_timetable ? { ...cachedEvent.personal_timetable, event_id: eventId, entries: [] } as Timetable : null);
   const isLoading = loading[eventId];
+
+  const setIsBottomNavVisible = useUIStore((state) => state.setIsBottomNavVisible);
+
+  useEffect(() => {
+    if (selectedTimetable) {
+      setIsBottomNavVisible(false);
+    } else {
+      setIsBottomNavVisible(true);
+    }
+    return () => setIsBottomNavVisible(true);
+  }, [selectedTimetable]);
 
   useEffect(() => {
     if (eventId) {
