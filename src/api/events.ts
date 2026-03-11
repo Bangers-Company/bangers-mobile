@@ -3,6 +3,7 @@ import apiClient from "./client";
 
 export const eventsApi = {
   getById: (id: string) => apiClient.get<Event>(`/events/${id}`),
+  getAttendees: (id: string) => apiClient.get(`/events/${id}/attendees`),
   getAttendance: (id: string) => apiClient.get(`/events/${id}/attendance`),
   updateAttendance: (id: string) => apiClient.put(`/events/${id}/attendance`),
   deleteAttendance: (id: string) =>

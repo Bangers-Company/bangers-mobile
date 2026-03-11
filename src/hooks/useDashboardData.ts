@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { dashboardApi, DashboardData } from "../api/dashboard";
 import { eventsRepository } from "../database/repositories/events.repository";
 import { useSyncStore } from "../store/useSyncStore";
 import { runDeltaSync } from "../sync/deltaSync";
+import { useAuthStore } from "../store/useAuthStore";
+import { useEventStore } from "../store/useEventStore";
 
 export const useDashboardData = () => {
   const [data, setData] = useState<DashboardData | null>(null);
@@ -11,6 +13,7 @@ export const useDashboardData = () => {
   const [error, setError] = useState<Error | null>(null);
 
   const isSyncing = useSyncStore((state) => state.isSyncing);
+  const fetchingRef = useRef(false);
 
   const loadLocalData = useCallback(async () => {
     try {
@@ -42,39 +45,54 @@ export const useDashboardData = () => {
   }, []);
 
   const fetchRemoteData = useCallback(async () => {
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
+
     try {
       setError(null);
-      const [dashboardRes, suggestedRes] = await Promise.all([
-        dashboardApi.getDashboard(),
-        dashboardApi.getSuggestedEvents(),
-      ]);
-
-      const dashboardData = dashboardRes.data?.data;
-      const suggestedEvents = suggestedRes.data?.data || [];
+      const response = await dashboardApi.getDashboard();
+      const dashboardData = response.data?.data;
 
       if (dashboardData) {
-        setData({
-          ...dashboardData,
-          suggested_events: suggestedEvents,
+        setData(dashboardData);
+
+        // 1. Update User Profile in Auth Store
+        if (dashboardData.user) {
+          useAuthStore.getState().setUser(dashboardData.user);
+        }
+
+        // 2. Collect all events for batch processing
+        const allEventLists = [
+          dashboardData.attending_events,
+          dashboardData.upcoming_events,
+          dashboardData.past_events,
+          dashboardData.suggested_events,
+          dashboardData.friends_events
+        ];
+
+        const allEvents: any[] = [];
+        allEventLists.forEach(list => {
+          if (!list) return;
+          const items = Array.isArray(list) ? list : (list as any).data || [];
+          allEvents.push(...items);
         });
 
-        // Upsert events to local DB for offline access
-        const upcomingEventsRaw = dashboardData.upcoming_events;
-        const upcomingEvents = Array.isArray(upcomingEventsRaw)
-          ? upcomingEventsRaw
-          : upcomingEventsRaw?.data || [];
-
-        for (const event of upcomingEvents) {
-          if (event && typeof event === "object") {
+        // 3. Upsert to local DB for offline access
+        for (const event of allEvents) {
+          if (event && typeof event === "object" && event.id) {
             await eventsRepository.upsert(event);
           }
         }
+
+        // 4. Cache in global Event Store
+        useEventStore.getState().setEventsData(allEvents);
       }
     } catch (err: any) {
       setError(err);
       console.error("Failed to fetch remote dashboard data:", err);
     } finally {
       setLoading(false);
+      fetchingRef.current = false;
     }
   }, []);
 

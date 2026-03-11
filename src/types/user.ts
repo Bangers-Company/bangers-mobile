@@ -26,6 +26,8 @@ export interface User {
   permissions: string[];
   profile_media?: Media | null;
   profile_media_url?: string | null;
+  friends_count?: number;
+  friend_requests?: import("../api/friends").Friendship[];
   stats?: UserStats;
   past_events?: { data: import("./event").Event[] } | import("./event").Event[];
   upcoming_events?:

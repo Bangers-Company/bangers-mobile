@@ -18,6 +18,22 @@ export function useProfile() {
   const fetchProfile = useCallback(async () => {
     if (!accessToken || !refreshToken) return;
 
+    // If we already have the user data with profile info (including stats) from Dashboard, skip fetch
+    if (user && user.upcoming_events && user.stats) {
+       const attending = (user.upcoming_events as any)?.data || user.upcoming_events || [];
+       const past = (user.past_events as any)?.data || user.past_events || [];
+       
+       setAttendingEvents(attending);
+       setPastEvents(past);
+       setLocalStats(user.stats);
+       
+       if (user.friends_count !== undefined) {
+         setFriendsCount(user.friends_count);
+       }
+       
+       return;
+    }
+
     setLoading(true);
     try {
       const [response, friendsRes] = await Promise.all([
@@ -37,22 +53,26 @@ export function useProfile() {
         past_count: userData.past_events?.length || 0,
       };
 
-      console.log(userData)
-
-      setAttendingEvents(
-        userData.upcoming_events?.data || userData.upcoming_events || [],
-      );
-      setPastEvents(userData.past_events?.data || userData.past_events || []);
+      const attending = userData.upcoming_events?.data || userData.upcoming_events || [];
+      const past = userData.past_events?.data || userData.past_events || [];
+      
+      setAttendingEvents(attending);
+      setPastEvents(past);
       setLocalStats(stats);
       setAuth(accessToken, refreshToken, { ...userData, stats });
       setError(null);
+      
+      // Cache events globally
+      import("../store/useEventStore").then(({ useEventStore }) => {
+         useEventStore.getState().setEventsData([...attending, ...past]);
+      });
     } catch (err: any) {
       setError(err);
       console.error("Failed to fetch profile:", err);
     } finally {
       setLoading(false);
     }
-  }, [accessToken, refreshToken, setAuth]);
+  }, [accessToken, refreshToken, setAuth, user]);
 
   useEffect(() => {
     fetchProfile();

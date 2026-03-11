@@ -34,6 +34,8 @@ export const BottomNav: React.FC = () => {
   const insets = useSafeAreaInsets();
 
   const isEventPage = pathname.startsWith("/event/");
+  const pathSegments = pathname.split("/");
+  const eventId = isEventPage ? pathSegments[2] : null;
 
   const dashboardItems: NavItem[] = [
     { label: "Home", icon: Home, route: "/(tabs)/" },
@@ -41,16 +43,19 @@ export const BottomNav: React.FC = () => {
     { label: "Profile", icon: User, route: "/(tabs)/profile" },
   ];
 
-  const eventItems: NavItem[] = [
-    { label: "Home", icon: Home, route: "/" },
-    { label: "Line-up", icon: Music2, route: `${pathname}/lineup` },
-    { label: "Schedule", icon: Calendar, route: `${pathname}/schedule` },
-    { label: "Visitors", icon: Users, route: `${pathname}/visitors` },
-  ];
+  const eventItems: NavItem[] = eventId
+    ? [
+        { label: "Home", icon: Home, route: `/event/${eventId}` },
+        { label: "Line-up", icon: Music2, route: `/event/${eventId}/lineup` },
+        { label: "Schedule", icon: Calendar, route: `/event/${eventId}/schedule` },
+        { label: "Visitors", icon: Users, route: `/event/${eventId}/visitors` },
+      ]
+    : [];
 
   const items = isEventPage ? eventItems : dashboardItems;
 
   const renderItem = (item: NavItem, index: number) => {
+    // Determine active state with strict matching for event routes
     const isActive =
       pathname === item.route ||
       (item.route === "/(tabs)/" &&

@@ -38,12 +38,16 @@ export const TopBar: React.FC = () => {
 
   React.useEffect(() => {
     if (user) {
-      // Fetch friend request notifications as initial notification type
-      friendsApi.getRequests().then((res) => {
-        setNotifications(res.data.data);
-      }).catch(console.error);
+      if (user.friend_requests) {
+        setNotifications(user.friend_requests);
+      } else {
+        // Fallback fetch if data isn't in store yet
+        friendsApi.getRequests().then((res) => {
+          setNotifications(res.data.data);
+        }).catch(console.error);
+      }
     }
-  }, [user]);
+  }, [user?.friend_requests]);
 
   const [removingIds, setRemovingIds] = React.useState<Set<string>>(new Set());
   const slideAnimations = useRef<{ [key: string]: Animated.Value }>({}).current;
@@ -98,29 +102,6 @@ export const TopBar: React.FC = () => {
       console.error("Failed request action", e);
     }
   };
-
-  const isEventPage = pathname.startsWith("/event/");
-
-  if (isEventPage) {
-    return (
-      <View style={[styles.eventHeader, { top: top + 10 }]}>
-        <IconButton
-          icon="chevron-left"
-          mode="contained"
-          containerColor="rgba(0,0,0,0.3)"
-          iconColor="white"
-          onPress={() => router.back()}
-        />
-        <IconButton
-          icon="share-variant"
-          mode="contained"
-          containerColor="rgba(0,0,0,0.3)"
-          iconColor="white"
-          onPress={() => { }}
-        />
-      </View>
-    );
-  }
 
   return (
     <View
