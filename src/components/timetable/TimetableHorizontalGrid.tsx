@@ -13,7 +13,7 @@ interface HorizontalGridProps {
 }
 
 const HOUR_WIDTH = 220;
-const STAGE_HEIGHT = 80;
+const STAGE_HEIGHT = 120;
 const STAGE_LABEL_WIDTH = 100;
 
 export const TimetableHorizontalGrid: React.FC<HorizontalGridProps> = ({
@@ -79,27 +79,26 @@ export const TimetableHorizontalGrid: React.FC<HorizontalGridProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Stage Sidebar */}
-      <View
-        style={[styles.stageSidebar, { backgroundColor: theme.colors.surface }]}
-      >
-        <View style={styles.sidebarHeader} />
-        {stages.map((stage) => (
-          <View key={stage.id} style={styles.stageLabelContainer}>
-            <Text
-              variant="labelMedium"
-              style={styles.stageLabel}
-              numberOfLines={2}
-            >
-              {stage.name}
-            </Text>
-          </View>
-        ))}
-      </View>
-
       <ScrollView style={{ flex: 1 }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View>
+        <View style={{ flexDirection: "row" }}>
+          {/* Stage Sidebar */}
+          <View style={[styles.stageSidebar]}>
+            <View style={styles.sidebarHeader} />
+            {stages.map((stage) => (
+              <View key={stage.id} style={styles.stageLabelContainer}>
+                <Text
+                  variant="labelMedium"
+                  style={styles.stageLabel}
+                  numberOfLines={2}
+                >
+                  {stage.name}
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View>
             {/* Time Header */}
             <View style={styles.timeHeader}>
               {hours.map((hour) => {
@@ -229,8 +228,9 @@ export const TimetableHorizontalGrid: React.FC<HorizontalGridProps> = ({
                   />
                 )}
             </View>
-          </View>
-        </ScrollView>
+            </View>
+          </ScrollView>
+        </View>
       </ScrollView>
     </View>
   );

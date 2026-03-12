@@ -15,7 +15,7 @@ export default function EventLayout() {
   }, [id, fetchFullEvent]);
 
   return (
-    <PageContainer withPadding={false}>
+    <PageContainer withPadding={false} withSafeArea={{ top: true, bottom: false }}>
       <Tabs
         screenOptions={{
           headerShown: false,

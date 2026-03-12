@@ -82,12 +82,7 @@ export const TimetableVerticalGrid: React.FC<VerticalGridProps> = ({
       <ScrollView style={{ flex: 1 }}>
         <View style={{ flexDirection: "row" }}>
           {/* Time Sidebar */}
-          <View
-            style={[
-              styles.timeSidebar,
-              { backgroundColor: theme.colors.surface },
-            ]}
-          >
+          <View style={[styles.timeSidebar]}>
             {hours.map((hour) => {
               const displayHour = hour >= 24 ? hour - 24 : hour;
               const displayString = `${displayHour

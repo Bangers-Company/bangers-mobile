@@ -10,7 +10,7 @@ import { getGradientColors } from "../utils/theme";
 interface PageContainerProps extends ViewProps {
   children: React.ReactNode;
   withPadding?: boolean;
-  withSafeArea?: boolean;
+  withSafeArea?: boolean | { top?: boolean; bottom?: boolean };
 }
 
 export const PageContainer: React.FC<PageContainerProps> = ({
@@ -48,8 +48,18 @@ export const PageContainer: React.FC<PageContainerProps> = ({
           styles.container,
           withPadding && styles.padding,
           withSafeArea && {
-            paddingTop: insets.top,
-            paddingBottom: insets.bottom,
+            paddingTop:
+              typeof withSafeArea === "object"
+                ? withSafeArea.top
+                  ? insets.top
+                  : 0
+                : insets.top,
+            paddingBottom:
+              typeof withSafeArea === "object"
+                ? withSafeArea.bottom
+                  ? insets.bottom
+                  : 0
+                : insets.bottom,
           },
           style,
         ]}

@@ -1,11 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { useTheme, Text, TouchableRipple } from "react-native-paper";
-import { Timetable, TimetableEntry } from "../../types/timetable";
-import { TimetableVerticalGrid } from "./TimetableVerticalGrid";
-import { TimetableHorizontalGrid } from "./TimetableHorizontalGrid";
+import { Text, TouchableRipple, useTheme } from "react-native-paper";
 import { useTimetableStore } from "../../store/useTimetableStore";
+import { Timetable, TimetableEntry } from "../../types/timetable";
 import { addAlpha } from "../../utils/theme";
+import { TimetableHorizontalGrid } from "./TimetableHorizontalGrid";
+import { TimetableVerticalGrid } from "./TimetableVerticalGrid";
+
+import { format, parseISO } from "date-fns";
+import {
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 interface TimetableGridProps {
   timetable: Timetable;
@@ -33,36 +38,38 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
   // Day Logic
   const days = useMemo(() => {
     // 1. Find the earliest calendar date in the timetable
-    const calendarDates = timetable.entries.map(e => e.start_time.split("T")[0]).sort();
+    const calendarDates = timetable.entries
+      .map((e) => e.start_time.split("T")[0])
+      .sort();
     const firstCalendarDate = calendarDates[0] || "";
 
     const getFestivalDate = (dateStr: string) => {
       const date = new Date(dateStr);
       const calendarDate = dateStr.split("T")[0];
       const hour = date.getHours();
-      
+
       // Only shift back if it's NOT the first calendar day of the event
       // This prevents "Friday 02:00 AM" from becoming "Thursday" if the festival starts Friday
       if (hour < 6 && calendarDate !== firstCalendarDate) {
         const festivalDate = new Date(date);
         festivalDate.setDate(festivalDate.getDate() - 1);
-        
+
         const year = festivalDate.getFullYear();
         const month = (festivalDate.getMonth() + 1).toString().padStart(2, "0");
         const day = festivalDate.getDate().toString().padStart(2, "0");
         return `${year}-${month}-${day}`;
       }
-      
+
       return calendarDate;
     };
 
     const dayMap = new Set<string>();
-    timetable.entries.forEach(e => {
+    timetable.entries.forEach((e) => {
       dayMap.add(getFestivalDate(e.start_time));
     });
     return {
       days: Array.from(dayMap).sort(),
-      getFestivalDate // Export it for use in filtering
+      getFestivalDate, // Export it for use in filtering
     };
   }, [timetable.entries]);
 
@@ -77,7 +84,9 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
 
   const filteredEntries = useMemo(() => {
     if (!selectedDay) return [];
-    return timetable.entries.filter(e => getFestivalDate(e.start_time) === selectedDay);
+    return timetable.entries.filter(
+      (e) => getFestivalDate(e.start_time) === selectedDay,
+    );
   }, [timetable.entries, selectedDay, getFestivalDate]);
 
   const insets = useSafeAreaInsets();
@@ -86,16 +95,21 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
   return (
     <View style={styles.container}>
       {/* Grid Content */}
-      <View style={{ flex: 1, marginBottom: availableDays.length > 1 ? 60 + insets.bottom : 0 }}>
+      <View
+        style={{
+          flex: 1,
+          marginBottom: availableDays.length > 1 ? 70 + insets.bottom : 0,
+        }}
+      >
         {viewMode === "vertical" ? (
-          <TimetableVerticalGrid 
+          <TimetableVerticalGrid
             timetable={currentTimetable}
             onEntryPress={onEntryPress}
             isPersonal={isPersonal}
             currentTime={currentTime}
           />
         ) : (
-          <TimetableHorizontalGrid 
+          <TimetableHorizontalGrid
             timetable={currentTimetable}
             onEntryPress={onEntryPress}
             isPersonal={isPersonal}
@@ -106,16 +120,17 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
 
       {/* Day Selector (Custom Bottom Nav) */}
       {availableDays.length > 1 && (
-        <View style={[
-          styles.dayContainer, 
-          { 
-            backgroundColor: theme.colors.surface, 
-            borderTopColor: theme.colors.outlineVariant,
-            paddingBottom: insets.bottom,
-            shadowColor: theme.colors.shadow,
-          }
-        ]}>
-          <View style={styles.dayInner}>
+        <View
+          style={[
+            styles.dayContainer,
+            {
+              backgroundColor: theme.colors.surface,
+              borderTopColor: theme.colors.outlineVariant,
+              shadowColor: theme.colors.shadow,
+            },
+          ]}
+        >
+          <View style={[styles.dayInner, { paddingBottom: Math.max(insets.bottom, 12) }]}>
             {availableDays.map((day: string, idx: number) => {
               const isActive = selectedDay === day;
               return (
@@ -124,13 +139,22 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
                   onPress={() => setSelectedDay(day)}
                   style={[
                     styles.dayTab,
-                    isActive && { backgroundColor: addAlpha(theme.colors.primary, 0.1) }
+                    isActive && {
+                      backgroundColor: addAlpha(theme.colors.primary, 0.1),
+                    },
                   ]}
                   rippleColor={addAlpha(theme.colors.primary, 0.2)}
                 >
-                  <Text 
-                    variant="labelLarge" 
-                    style={[styles.dayTabText, { color: isActive ? theme.colors.primary : theme.colors.outline }]}
+                  <Text
+                    variant="labelLarge"
+                    style={[
+                      styles.dayTabText,
+                      {
+                        color: isActive
+                          ? theme.colors.primary
+                          : theme.colors.outline,
+                      },
+                    ]}
                     numberOfLines={1}
                   >
                     {format(parseISO(day), "EEEE")}
@@ -144,10 +168,6 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
     </View>
   );
 };
-
-import { useMemo } from "react";
-import { format, parseISO } from "date-fns";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const styles = StyleSheet.create({
   container: {
