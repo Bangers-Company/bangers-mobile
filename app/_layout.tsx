@@ -7,6 +7,11 @@ import { ThemeProvider } from "../src/context/ThemeProvider";
 import { initDatabase } from "../src/database/sqlite";
 import "../src/global.css";
 import { useAuthStore } from "../src/store/useAuthStore";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Provider } from "react-redux";
+import { store } from "../src/store/redux/store";
+
+const queryClient = new QueryClient();
 
 export const unstable_settings = {
   initialRouteName: "(auth)",
@@ -103,27 +108,31 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider>
-      <Stack
-        screenOptions={{
-          animation: "slide_from_right",
-          headerShown: false,
-        }}
-      >
-        <Stack.Screen name="(auth)" options={{ animation: "fade" }} />
-        <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
-        <Stack.Screen
-          name="modal"
-          options={{ presentation: "modal", title: "Modal" }}
-        />
-        <Stack.Screen
-          name="settings"
-          options={{ animation: "slide_from_bottom" }}
-        />
-        <Stack.Screen name="user/[id]" />
-        <Stack.Screen name="friends/[id]" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <Provider store={store}>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <Stack
+            screenOptions={{
+              animation: "slide_from_right",
+              headerShown: false,
+            }}
+          >
+            <Stack.Screen name="(auth)" options={{ animation: "fade" }} />
+            <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
+            <Stack.Screen
+              name="modal"
+              options={{ presentation: "modal", title: "Modal" }}
+            />
+            <Stack.Screen
+              name="settings"
+              options={{ animation: "slide_from_bottom" }}
+            />
+            <Stack.Screen name="user/[id]" />
+            <Stack.Screen name="friends/[id]" />
+          </Stack>
+          <StatusBar style="auto" />
+        </ThemeProvider>
+      </QueryClientProvider>
+    </Provider>
   );
 }

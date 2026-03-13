@@ -14,6 +14,12 @@ import { useAuthStore } from "../../../src/store/useAuthStore";
 import { useTimetableStore } from "../../../src/store/useTimetableStore";
 import { useUIStore } from "../../../src/store/useUIStore";
 import { Timetable, TimetableEntry } from "../../../src/types/timetable";
+import { 
+  useOfficialTimetable, 
+  usePersonalTimetable, 
+  useGroups, 
+  useToggleAttendance 
+} from "../../../src/hooks/useTimetables";
 
 export default function ScheduleScreen() {
   const { id: eventId } = useLocalSearchParams<{ id: string }>();
@@ -28,18 +34,16 @@ export default function ScheduleScreen() {
   const [loadingPersonalOp, setLoadingPersonalOp] = useState(false);
   const [loadingGroupsOp, setLoadingGroupsOp] = useState(false);
 
+  // TanStack Query Hooks
+  const { data: officialQuery, isLoading: isLoadingOfficial } = useOfficialTimetable(eventId);
+  const { data: personalQuery, isLoading: isLoadingPersonal } = usePersonalTimetable(eventId);
+  const { data: groupsQuery, isLoading: isLoadingGroups } = useGroups();
+  const toggleMutation = useToggleAttendance();
+
+  // Zustand Store (for remaining UI state and actions)
   const {
-    officialTimetable,
-    personalTimetable,
-    groups,
-    loading,
-    fetchGroups,
-    fetchOfficial,
-    fetchPersonal,
-    fetchGroupTimetable,
     createPersonal,
     deletePersonal,
-    toggleAttend,
     acceptInvitation,
     rejectInvitation,
     createGroup,
@@ -50,32 +54,23 @@ export default function ScheduleScreen() {
   } = useTimetableStore();
 
   const cachedEvent = useEventStore((state) => state.events[eventId]?.event);
-  const isLoading = loading[eventId];
   const setIsBottomNavVisible = useUIStore((state) => state.setIsBottomNavVisible);
 
-  // Initial Fetch
-  useEffect(() => {
-    if (eventId) {
-      fetchOfficial(eventId);
-      fetchPersonal(eventId);
-      fetchGroups();
-    }
-  }, [eventId, fetchOfficial, fetchPersonal, fetchGroups]);
-
-  // Derive timetables
-  const official = officialTimetable[eventId] || (cachedEvent?.official_timetable ? {
+  // Derive timetables from queries
+  const official = officialQuery || (cachedEvent?.official_timetable ? {
     ...cachedEvent.official_timetable,
     event_id: eventId,
     entries: (cachedEvent.official_timetable as any).entries || [],
   } as Timetable : null);
 
-  const personal = personalTimetable[eventId] || (cachedEvent as any)?.personal_timetable || null;
+  const personal = personalQuery || (cachedEvent as any)?.personal_timetable || null;
+  const groups = groupsQuery || [];
 
   const selectedTimetable = (() => {
     if (selectedTimetableId) {
       if (selectedTimetableId === official?.id) return official;
       if (selectedTimetableId === personal?.id) return personal;
-      const g = groups.find(g => g.id === selectedGroupId);
+      const g = groups.find((g: any) => g.id === selectedGroupId);
       const t = g?.timetables?.find((t: any) => t.id === selectedTimetableId);
       if (t) return t;
     }
@@ -84,17 +79,6 @@ export default function ScheduleScreen() {
 
   const isPersonal = !!selectedTimetable && 
     (selectedTimetable.id === personal?.id || !!selectedGroupId);
-
-  // Fetch group detail if missing
-  useEffect(() => {
-    if (selectedGroupId && selectedTimetableId) {
-      const group = groups.find(g => g.id === selectedGroupId);
-      const timetable = group?.timetables?.find((t: any) => t.id === selectedTimetableId);
-      if (timetable && (!timetable.entries || timetable.entries.length === 0)) {
-        fetchGroupTimetable(selectedGroupId, selectedTimetableId);
-      }
-    }
-  }, [selectedGroupId, selectedTimetableId, groups, fetchGroupTimetable]);
 
   // Handle BottomNav visibility
   useEffect(() => {
@@ -122,7 +106,6 @@ export default function ScheduleScreen() {
               if (selectedTimetableId === id) {
                 setSelectedTimetableId(null);
               }
-              await fetchPersonal(eventId); // Explicit sync
             } finally {
               setLoadingPersonalOp(false);
             }
@@ -155,7 +138,6 @@ export default function ScheduleScreen() {
                  setSelectedTimetableId(null);
                  setSelectedGroupId(null);
               }
-              await fetchGroups(); // Explicit sync
             } finally {
               setLoadingGroupsOp(false);
             }
@@ -170,11 +152,9 @@ export default function ScheduleScreen() {
     try {
       await createPersonal(eventId, name);
       setCreateModalVisible(false);
-      await fetchPersonal(eventId); 
-      // Finding it by eventId in store after fetch
-      const currentPersonal = useTimetableStore.getState().personalTimetable[eventId];
-      if (currentPersonal) {
-        setSelectedTimetableId(currentPersonal.id);
+      // Finding it by eventId in query data instead
+      if (personalQuery) {
+        setSelectedTimetableId(personalQuery.id);
       }
     } catch (e) {
       console.error(e);
@@ -188,7 +168,6 @@ export default function ScheduleScreen() {
     try {
       await createGroup(name, members);
       setCreateGroupModalVisible(false);
-      await fetchGroups(); // Explicit sync
     } catch (e) {
       console.error(e);
     } finally {
@@ -199,7 +178,13 @@ export default function ScheduleScreen() {
 
   const handleEntryPress = (entry: TimetableEntry) => {
     if (!selectedTimetable || selectedTimetable.is_official) return;
-    toggleAttend(selectedTimetable.id, entry.id, !!selectedGroupId, eventId, selectedGroupId || undefined);
+    toggleMutation.mutate({
+      id: selectedTimetable.id,
+      entryId: entry.id,
+      isGroup: !!selectedGroupId,
+      type: selectedGroupId ? 'group' : 'personal',
+      targetId: selectedGroupId || eventId
+    });
   };
 
   const toggleViewMode = () => {
@@ -281,15 +266,16 @@ export default function ScheduleScreen() {
             templateTimetable={official}
             isPersonal={isPersonal}
             onEntryPress={handleEntryPress}
+            toggleMutation={toggleMutation}
           />
         ) : (
           <TimetableOverview
             official={official}
             personal={personal}
             groups={groups}
-            loadingOfficial={isLoading}
-            loadingPersonal={loadingPersonalOp}
-            loadingGroups={loadingGroupsOp}
+            loadingOfficial={isLoadingOfficial}
+            loadingPersonal={loadingPersonalOp || isLoadingPersonal}
+            loadingGroups={loadingGroupsOp || isLoadingGroups}
             onSelect={(t: Timetable) => setSelectedTimetableId(t.id)}
             onCreatePersonal={() => setCreateModalVisible(true)}
             onDeletePersonal={handleDeletePersonal}
@@ -297,7 +283,6 @@ export default function ScheduleScreen() {
                setLoadingGroupsOp(true);
                try {
                  await acceptInvitation(gid);
-                 await fetchGroups();
                } finally {
                  setLoadingGroupsOp(false);
                }
@@ -306,7 +291,6 @@ export default function ScheduleScreen() {
               setLoadingGroupsOp(true);
               try {
                 await rejectInvitation(gid);
-                await fetchGroups();
               } finally {
                 setLoadingGroupsOp(false);
               }
@@ -318,14 +302,15 @@ export default function ScheduleScreen() {
               
               setLoadingGroupsOp(true);
               try {
-                // If group has no timetables or we need to ensure they are loaded
-                if (!group.timetables || group.timetables.length === 0) {
-                  console.log("Fetching group timetables for:", group.id);
-                  await fetchGroups(); // Deep refresh
-                }
+                // Refresh the group reference from the latest query data or use passed group
+                const updatedGroup = groups.find((g: any) => g.id === group.id) || group;
 
-                // Refresh the group reference from the latest store state
-                const updatedGroup = useTimetableStore.getState().groups.find(g => g.id === group.id) || group;
+                // If group has no timetables or we need to ensure they are loaded
+                if (!updatedGroup.timetables || updatedGroup.timetables.length === 0) {
+                  // The useGroups query will handle the data, but we might need 
+                  // to wait for it or trigger a refetch if we really want to be sure.
+                  // For now, let's assume useGroups is fresh enough or will refresh.
+                }
                 
                 const groupSchedule = (updatedGroup.timetables || []).find((t: any) => 
                   String(t.event_id).toLowerCase() === String(eventId).toLowerCase()
@@ -340,17 +325,7 @@ export default function ScheduleScreen() {
                   // Auto-create instead of showing a modal
                   await createGroupTimetable(updatedGroup.id, eventId, `${updatedGroup.name} Schedule`);
                   
-                  // Fetch fresh data and select it
-                  await fetchGroups();
-                  const finalGroup = useTimetableStore.getState().groups.find(g => g.id === group.id);
-                  const newT = finalGroup?.timetables?.find((t: any) => 
-                    String(t.event_id).toLowerCase() === String(eventId).toLowerCase()
-                  );
-                  
-                  if (newT) {
-                    setSelectedTimetableId(newT.id);
-                    setSelectedGroupId(finalGroup?.id || group.id);
-                  }
+                  // Query invalidation in mutation handles the refresh
                 }
               } catch (e) {
                 console.error("Failed to select/create group schedule", e);

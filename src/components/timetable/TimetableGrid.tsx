@@ -18,6 +18,7 @@ interface TimetableGridProps {
   templateTimetable?: Timetable | null;
   isPersonal: boolean;
   onEntryPress: (entry: TimetableEntry) => void;
+  toggleMutation?: any;
 }
 
 export const TimetableGrid: React.FC<TimetableGridProps> = ({
@@ -25,6 +26,7 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
   templateTimetable,
   isPersonal,
   onEntryPress,
+  toggleMutation,
 }) => {
   const theme = useTheme();
   const viewMode = useTimetableStore((state) => state.viewMode);
@@ -93,17 +95,21 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
     }
   }, [availableDays, selectedDay]);
 
-  // Use direct calculation to ensure immediate reactivity to timetable.entries updates
-  const filteredEntries = selectedDay && timetable?.entries
-    ? timetable.entries.filter((e: TimetableEntry) => getFestivalDate(e.start_time) === selectedDay)
-    : [];
+  // Optimistic timetable that only contains entries for the selected day
+  const dailyTimetable = useMemo(() => {
+    if (!selectedDay || !timetable?.entries) return timetable;
+    return {
+      ...timetable,
+      entries: (timetable.entries as TimetableEntry[]).filter(
+        (e) => getFestivalDate(e.start_time) === selectedDay
+      )
+    };
+  }, [selectedDay, timetable, getFestivalDate]);
 
   const insets = useSafeAreaInsets();
-  const currentTimetable = { ...timetable, entries: filteredEntries };
 
   return (
     <View style={styles.container}>
-      {/* Grid Content */}
       <View
         style={{
           flex: 1,
@@ -112,7 +118,7 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
       >
         {viewMode === "vertical" ? (
           <TimetableVerticalGrid
-            timetable={currentTimetable}
+            timetable={dailyTimetable}
             templateTimetable={templateTimetable}
             onEntryPress={onEntryPress}
             onEntryLongPress={(entry) => {
@@ -124,7 +130,7 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
           />
         ) : (
           <TimetableHorizontalGrid
-            timetable={currentTimetable}
+            timetable={dailyTimetable}
             templateTimetable={templateTimetable}
             onEntryPress={onEntryPress}
             onEntryLongPress={(entry: TimetableEntry) => {

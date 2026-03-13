@@ -23,8 +23,9 @@ export const TimetableActItem: React.FC<TimetableActItemProps> = ({
 }) => {
   const theme = useTheme();
   
-  // Use primary color if it's in a personal/group timetable (favorited/added)
-  const isFavorited = entry.pivot?.is_attending ?? false; 
+  // Since Redux updates the state immediately in 'pending', 
+  // we just render what's in the entry object!
+  const isFavorited = entry.pivot?.is_attending ?? false;
   const attendingCount = entry.pivot?.attending_count ?? 0;
 
   const backgroundColor = isFavorited
@@ -39,52 +40,56 @@ export const TimetableActItem: React.FC<TimetableActItemProps> = ({
   const secondaryTextColor = isFavorited ? "rgba(255,255,255,0.8)" : theme.colors.onSurfaceVariant;
 
   return (
-    <TouchableRipple
-      onPress={() => onPress(entry)}
-      onLongPress={() => onLongPress(entry)}
-      delayLongPress={500}
+    <View
       style={[
         styles.entryCard,
+        style,
         {
           backgroundColor,
           borderColor,
         },
-        style,
       ]}
-      rippleColor={isFavorited ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)"}
     >
-      <View style={styles.entryContent}>
-        <View style={styles.titleRow}>
+      <TouchableRipple
+        onPress={() => onPress(entry)}
+        onLongPress={() => onLongPress(entry)}
+        delayLongPress={500}
+        style={styles.touchable}
+        rippleColor={isFavorited ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)"}
+      >
+        <View style={styles.entryContent}>
+          <View style={styles.titleRow}>
+            <Text
+              variant={variant === "vertical" ? "labelSmall" : "labelSmall"}
+              style={[
+                styles.entryTitle,
+                { color: textColor },
+                variant === "horizontal" && { fontSize: 11, lineHeight: 12 }
+              ]}
+              numberOfLines={2}
+            >
+              {entry.act.name}
+            </Text>
+            {!isPersonal && attendingCount > 0 && (
+              <View style={[styles.countBadge, { backgroundColor: isFavorited ? 'rgba(255,255,255,0.2)' : theme.colors.primaryContainer }]}>
+                 <Text style={[styles.countText, { color: isFavorited ? 'white' : theme.colors.primary }]}>{attendingCount}</Text>
+              </View>
+            )}
+          </View>
           <Text
-            variant={variant === "vertical" ? "labelSmall" : "labelSmall"}
+            variant="labelSmall"
             style={[
-              styles.entryTitle,
-              { color: textColor },
-              variant === "horizontal" && { fontSize: 11, lineHeight: 12 }
+              styles.entryTime,
+              { color: secondaryTextColor },
+              variant === "horizontal" && { fontSize: 9 }
             ]}
-            numberOfLines={2}
           >
-            {entry.act.name}
+            {format(new Date(entry.start_time), "HH:mm")}
+            {variant === "vertical" && ` - ${format(new Date(entry.end_time), "HH:mm")}`}
           </Text>
-          {!isPersonal && attendingCount > 0 && (
-            <View style={[styles.countBadge, { backgroundColor: isFavorited ? 'rgba(255,255,255,0.2)' : theme.colors.primaryContainer }]}>
-               <Text style={[styles.countText, { color: isFavorited ? 'white' : theme.colors.primary }]}>{attendingCount}</Text>
-            </View>
-          )}
         </View>
-        <Text
-          variant="labelSmall"
-          style={[
-            styles.entryTime,
-            { color: secondaryTextColor },
-            variant === "horizontal" && { fontSize: 9 }
-          ]}
-        >
-          {format(new Date(entry.start_time), "HH:mm")}
-          {variant === "vertical" && ` - ${format(new Date(entry.end_time), "HH:mm")}`}
-        </Text>
-      </View>
-    </TouchableRipple>
+      </TouchableRipple>
+    </View>
   );
 };
 
@@ -93,8 +98,11 @@ const styles = StyleSheet.create({
     position: "absolute",
     borderRadius: 8,
     borderWidth: 1,
-    padding: 8,
     overflow: "hidden",
+  },
+  touchable: {
+    flex: 1,
+    padding: 8,
   },
   entryContent: {
     flex: 1,

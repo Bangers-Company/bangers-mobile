@@ -69,7 +69,10 @@ export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
     opacity: opacity.value,
   }));
 
-  if (!visible && translateY.value === SCREEN_HEIGHT) return null;
+  // useDerivedValue or simply don't check .value here to avoid the warning.
+  // Instead of unmounting based on .value, we can use a separate state or just rely on 'visible'
+  // or just render it always and let opacity handle it if it's not too heavy.
+  if (!visible && !entry) return null;
 
   const startTime = entry ? new Date(entry.start_time) : new Date();
   const endTime = entry ? new Date(entry.end_time) : new Date();
