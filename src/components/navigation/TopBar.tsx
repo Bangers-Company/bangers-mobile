@@ -6,9 +6,10 @@ import {
     LogOut,
     Settings,
     User,
+    Users,
 } from "lucide-react-native";
 import React, { useRef } from "react";
-import { Animated, Dimensions, StyleSheet, View } from "react-native";
+import { Animated, Dimensions, StyleSheet, View, InteractionManager } from "react-native";
 import {
     Avatar,
     Badge,
@@ -20,9 +21,10 @@ import {
     TouchableRipple,
     useTheme,
 } from "react-native-paper";
-import { friendsApi, Friendship } from "../../api/friends";
+import { friendsApi } from "../../api/friends";
 import { useAuthStore } from "../../store/useAuthStore";
 import { resolveMediaUrl } from "../../utils/format";
+import { useTimetableStore } from "../../store/useTimetableStore";
 
 export const TopBar: React.FC = () => {
   const theme = useTheme();
@@ -30,24 +32,49 @@ export const TopBar: React.FC = () => {
   const user = useAuthStore((state) => state.user);
   const [menuVisible, setMenuVisible] = React.useState(false);
   const [notifVisible, setNotifVisible] = React.useState(false);
-  // Generic notifications array; currently contains friend request notifications
-  const [notifications, setNotifications] = React.useState<Friendship[]>([]);
+
+  // Helper to close menus safely before navigation
+  const closeAndNavigate = (path: string, replace = false) => {
+    setMenuVisible(false);
+    setNotifVisible(false);
+    // Use InteractionManager to wait for animations to settle
+    InteractionManager.runAfterInteractions(() => {
+      setTimeout(() => {
+        if (replace) {
+          router.replace(path as any);
+        } else {
+          router.push(path as any);
+        }
+      }, 100);
+    });
+  };
+  // Friend requests and group invitations
+  const { groups, fetchGroups, acceptInvitation, rejectInvitation } = useTimetableStore();
+  const [notifications, setNotifications] = React.useState<any[]>([]);
 
   React.useEffect(() => {
     if (user) {
-      if (user.friend_requests) {
-        setNotifications(user.friend_requests);
-      } else {
-        // Fallback fetch if data isn't in store yet
-        friendsApi
-          .getRequests()
-          .then((res) => {
-            setNotifications(res.data.data);
-          })
-          .catch(console.error);
+      const friendRequests = user.friend_requests || [];
+      const groupInvitations = groups.filter(g => g.pivot?.invitation_status === 'pending');
+      
+      const combined = [
+        ...friendRequests.map(r => ({ ...r, type: 'friend' })),
+        ...groupInvitations.map(g => ({ ...g, type: 'group' }))
+      ];
+      
+      setNotifications(combined);
+      
+      if (!user.friend_requests) {
+        friendsApi.getRequests().then(res => {
+           // We'll update the store or let the next update handle it
+        }).catch(console.error);
+      }
+      
+      if (groups.length === 0) {
+        fetchGroups();
       }
     }
-  }, [user]);
+  }, [user, groups, fetchGroups]);
 
   const [removingIds, setRemovingIds] = React.useState<Set<string>>(new Set());
   const slideAnimations = useRef<{ [key: string]: Animated.Value }>({}).current;
@@ -56,13 +83,23 @@ export const TopBar: React.FC = () => {
   const handleNotificationAction = async (
     id: string,
     action: "accept" | "reject",
+    type: "friend" | "group" = "friend"
   ) => {
     try {
-      if (action === "accept") {
-        await friendsApi.acceptRequest(id);
-        useAuthStore.getState().updateFriendsCount(1);
+      if (type === "friend") {
+        if (action === "accept") {
+          await friendsApi.acceptRequest(id);
+          useAuthStore.getState().updateFriendsCount(1);
+        } else {
+          await friendsApi.rejectRequest(id);
+        }
       } else {
-        await friendsApi.rejectRequest(id);
+        if (action === "accept") {
+          await acceptInvitation(id);
+        } else {
+          await rejectInvitation(id);
+        }
+        await fetchGroups(); // Immediate sync
       }
 
       // Initialize animation values if they don't exist yet
@@ -85,7 +122,10 @@ export const TopBar: React.FC = () => {
           useNativeDriver: true,
         }),
       ]).start(() => {
-        setNotifications((prev) => prev.filter((r) => r.requester?.id !== id));
+        setNotifications((prev) => prev.filter((n) => {
+          const nid = n.type === 'group' ? n.id : n.requester?.id;
+          return nid !== id;
+        }));
         setRemovingIds((prev) => {
           const next = new Set(prev);
           next.delete(id);
@@ -147,12 +187,14 @@ export const TopBar: React.FC = () => {
               />
             ) : (
               notifications.map((notif) => {
-                const id = notif.requester!.id;
+                const isGroup = notif.type === 'group';
+                const id = isGroup ? notif.id : notif.requester!.id;
+                const itemId = notif.id;
 
                 // Initialize anim values if not present
-                if (!slideAnimations[id]) {
-                  slideAnimations[id] = new Animated.Value(0);
-                  fadeAnimations[id] = new Animated.Value(1);
+                if (!slideAnimations[itemId]) {
+                  slideAnimations[itemId] = new Animated.Value(0);
+                  fadeAnimations[itemId] = new Animated.Value(1);
                 }
 
                 return (
@@ -161,42 +203,58 @@ export const TopBar: React.FC = () => {
                     style={[
                       styles.requestItem,
                       {
-                        transform: [{ translateX: slideAnimations[id] }],
-                        opacity: fadeAnimations[id],
+                        transform: [{ translateX: slideAnimations[itemId] }],
+                        opacity: fadeAnimations[itemId],
                       },
                     ]}
                   >
-                    <Avatar.Text
-                      size={36}
-                      label={notif.requester?.first_name?.charAt(0) || "U"}
-                      style={{
-                        backgroundColor: theme.colors.primary,
-                        alignSelf: "flex-start",
-                        marginTop: 4,
-                      }}
-                    />
+                    {isGroup ? (
+                       <Avatar.Icon 
+                         size={36} 
+                         icon={() => <Users size={20} color="white" />}
+                         style={{ backgroundColor: theme.colors.primary, alignSelf: "flex-start", marginTop: 4 }}
+                       />
+                    ) : (
+                      <Avatar.Text
+                        size={36}
+                        label={notif.requester?.first_name?.charAt(0) || "U"}
+                        style={{
+                          backgroundColor: theme.colors.primary,
+                          alignSelf: "flex-start",
+                          marginTop: 4,
+                        }}
+                      />
+                    )}
                     <View style={styles.requestInfo}>
                       <Text variant="bodyMedium" style={styles.requestText}>
-                        <Text style={styles.requestName}>
-                          {notif.requester?.first_name}{" "}
-                          {notif.requester?.last_name}
-                        </Text>{" "}
-                        sent you a friend request.
+                        {isGroup ? (
+                          <>
+                            Invitation to join <Text style={styles.requestName}>{notif.name}</Text>
+                          </>
+                        ) : (
+                          <>
+                            <Text style={styles.requestName}>
+                              {notif.requester?.first_name}{" "}
+                              {notif.requester?.last_name}
+                            </Text>{" "}
+                            sent you a friend request.
+                          </>
+                        )}
                       </Text>
                       <View style={styles.requestActions}>
                         <Button
                           mode="contained"
-                          onPress={() => handleNotificationAction(id, "accept")}
+                          onPress={() => handleNotificationAction(id, "accept", isGroup ? "group" : "friend")}
                           contentStyle={{ paddingHorizontal: 0, height: 32 }}
                           labelStyle={{ fontSize: 12, marginHorizontal: 8 }}
                           style={{ borderRadius: 8, flex: 1 }}
-                          disabled={removingIds.has(id)}
+                          disabled={removingIds.has(itemId)}
                         >
                           Accept
                         </Button>
                         <Button
                           mode="outlined"
-                          onPress={() => handleNotificationAction(id, "reject")}
+                          onPress={() => handleNotificationAction(id, "reject", isGroup ? "group" : "friend")}
                           contentStyle={{ paddingHorizontal: 0, height: 32 }}
                           labelStyle={{ fontSize: 12, marginHorizontal: 8 }}
                           style={{
@@ -205,7 +263,7 @@ export const TopBar: React.FC = () => {
                             borderColor: theme.colors.outlineVariant,
                           }}
                           textColor={theme.colors.onSurface}
-                          disabled={removingIds.has(id)}
+                          disabled={removingIds.has(itemId)}
                         >
                           Decline
                         </Button>
@@ -251,11 +309,7 @@ export const TopBar: React.FC = () => {
           >
             {/* Section 1: Profile */}
             <Menu.Item
-              onPress={() => {
-                setMenuVisible(false);
-                // 400ms allows the full Paper menu closing animation (approx 250ms) to finish
-                setTimeout(() => router.push("/(tabs)/profile" as any), 400);
-              }}
+              onPress={() => closeAndNavigate("/(tabs)/profile")}
               leadingIcon={() => (
                 <User size={20} color={theme.colors.primary} />
               )}
@@ -291,10 +345,7 @@ export const TopBar: React.FC = () => {
 
             {/* Section 3: Settings & Logout */}
             <Menu.Item
-              onPress={() => {
-                setMenuVisible(false);
-                setTimeout(() => router.push("/settings"), 400);
-              }}
+              onPress={() => closeAndNavigate("/settings")}
               leadingIcon={() => (
                 <Settings size={20} color={theme.colors.onSurfaceVariant} />
               )}
@@ -307,7 +358,7 @@ export const TopBar: React.FC = () => {
                 setTimeout(() => {
                   useAuthStore.getState().logout();
                   router.replace("/(auth)/login");
-                }, 400);
+                }, 200);
               }}
               leadingIcon={() => (
                 <LogOut size={20} color={theme.colors.error} />

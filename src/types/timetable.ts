@@ -7,6 +7,11 @@ export interface TimetableEntry {
   end_time: string;
   act: Act;
   stage: Stage;
+  pivot?: {
+    is_attending?: boolean;
+    added_by?: string;
+    attending_count?: number;
+  };
 }
 
 export interface Timetable {

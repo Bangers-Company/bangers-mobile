@@ -6,6 +6,7 @@ import { Timetable, TimetableEntry } from "../../types/timetable";
 import { addAlpha } from "../../utils/theme";
 import { TimetableHorizontalGrid } from "./TimetableHorizontalGrid";
 import { TimetableVerticalGrid } from "./TimetableVerticalGrid";
+import { ActInfoBottomSheet } from "./ActInfoBottomSheet";
 
 import { format, parseISO } from "date-fns";
 import {
@@ -14,18 +15,24 @@ import {
 
 interface TimetableGridProps {
   timetable: Timetable;
+  templateTimetable?: Timetable | null;
   isPersonal: boolean;
   onEntryPress: (entry: TimetableEntry) => void;
 }
 
 export const TimetableGrid: React.FC<TimetableGridProps> = ({
   timetable,
+  templateTimetable,
   isPersonal,
   onEntryPress,
 }) => {
   const theme = useTheme();
   const viewMode = useTimetableStore((state) => state.viewMode);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [selectedEntry, setSelectedEntry] = useState<TimetableEntry | null>(
+    null,
+  );
+  const [infoVisible, setInfoVisible] = useState(false);
 
   // Update current time every minute
   useEffect(() => {
@@ -37,8 +44,10 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
 
   // Day Logic
   const days = useMemo(() => {
-    // 1. Find the earliest calendar date in the timetable
-    const calendarDates = timetable.entries
+    const sourceEntries = templateTimetable?.entries || timetable?.entries || [];
+    
+    // 1. Find the earliest calendar date
+    const calendarDates = sourceEntries
       .map((e) => e.start_time.split("T")[0])
       .sort();
     const firstCalendarDate = calendarDates[0] || "";
@@ -64,30 +73,30 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
     };
 
     const dayMap = new Set<string>();
-    timetable.entries.forEach((e) => {
+    sourceEntries.forEach((e) => {
       dayMap.add(getFestivalDate(e.start_time));
     });
     return {
       days: Array.from(dayMap).sort(),
       getFestivalDate, // Export it for use in filtering
     };
-  }, [timetable.entries]);
+  }, [timetable.entries, templateTimetable?.entries]);
 
   const { days: availableDays, getFestivalDate } = days;
   const [selectedDay, setSelectedDay] = useState("");
 
   useEffect(() => {
-    if (availableDays.length > 0 && !selectedDay) {
-      setSelectedDay(availableDays[0]);
+    if (availableDays.length > 0) {
+      if (!selectedDay || !availableDays.includes(selectedDay)) {
+        setSelectedDay(availableDays[0]);
+      }
     }
-  }, [availableDays]);
+  }, [availableDays, selectedDay]);
 
-  const filteredEntries = useMemo(() => {
-    if (!selectedDay) return [];
-    return timetable.entries.filter(
-      (e) => getFestivalDate(e.start_time) === selectedDay,
-    );
-  }, [timetable.entries, selectedDay, getFestivalDate]);
+  // Use direct calculation to ensure immediate reactivity to timetable.entries updates
+  const filteredEntries = selectedDay && timetable?.entries
+    ? timetable.entries.filter((e: TimetableEntry) => getFestivalDate(e.start_time) === selectedDay)
+    : [];
 
   const insets = useSafeAreaInsets();
   const currentTimetable = { ...timetable, entries: filteredEntries };
@@ -104,14 +113,24 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
         {viewMode === "vertical" ? (
           <TimetableVerticalGrid
             timetable={currentTimetable}
+            templateTimetable={templateTimetable}
             onEntryPress={onEntryPress}
+            onEntryLongPress={(entry) => {
+              setSelectedEntry(entry);
+              setInfoVisible(true);
+            }}
             isPersonal={isPersonal}
             currentTime={currentTime}
           />
         ) : (
           <TimetableHorizontalGrid
             timetable={currentTimetable}
+            templateTimetable={templateTimetable}
             onEntryPress={onEntryPress}
+            onEntryLongPress={(entry: TimetableEntry) => {
+              setSelectedEntry(entry);
+              setInfoVisible(true);
+            }}
             isPersonal={isPersonal}
             currentTime={currentTime}
           />
@@ -165,6 +184,12 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
           </View>
         </View>
       )}
+
+      <ActInfoBottomSheet
+        visible={infoVisible}
+        onDismiss={() => setInfoVisible(false)}
+        entry={selectedEntry}
+      />
     </View>
   );
 };

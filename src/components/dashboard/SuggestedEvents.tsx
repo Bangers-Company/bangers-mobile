@@ -3,7 +3,7 @@ import React from "react";
 import { StyleSheet, View } from "react-native";
 import { Text, TouchableRipple, useTheme } from "react-native-paper";
 import { Event } from "../../types/event";
-import { EventCard } from "../event/EventCard";
+import { EventHorizontalCard } from "../event/EventHorizontalCard";
 
 interface SuggestedEventsProps {
   events: Event[];
@@ -40,10 +40,9 @@ export const SuggestedEvents: React.FC<SuggestedEventsProps> = ({
 
       <View style={styles.list}>
         {events.map((event) => (
-          <EventCard
+          <EventHorizontalCard
             key={event.id}
             event={event}
-            variant="compact"
             onPress={onEventPress}
           />
         ))}

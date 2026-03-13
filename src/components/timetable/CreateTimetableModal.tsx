@@ -7,6 +7,8 @@ interface CreateTimetableModalProps {
   onDismiss: () => void;
   onConfirm: (name: string) => void;
   loading?: boolean;
+  title?: string;
+  placeholder?: string;
 }
 
 export const CreateTimetableModal: React.FC<CreateTimetableModalProps> = ({
@@ -14,6 +16,8 @@ export const CreateTimetableModal: React.FC<CreateTimetableModalProps> = ({
   onDismiss,
   onConfirm,
   loading,
+  title = "Create Timetable",
+  placeholder = "e.g. My Summer Fest Plan",
 }) => {
   const [name, setName] = useState("");
   const theme = useTheme();
@@ -32,18 +36,18 @@ export const CreateTimetableModal: React.FC<CreateTimetableModalProps> = ({
         onDismiss={onDismiss} 
         contentContainerStyle={[styles.container, { backgroundColor: theme.colors.surface }]}
       >
-        <Text variant="headlineSmall" style={styles.title}>Create Timetable</Text>
+        <Text variant="headlineSmall" style={styles.title}>{title}</Text>
         <Text variant="bodyMedium" style={styles.subtitle}>
-          Give your personal schedule a name. All official acts will be added as a baseline.
+          Enter a name for this item to get started.
         </Text>
         
         <TextInput
-          label="Timetable Name"
+          label="Name"
           value={name}
           onChangeText={setName}
           mode="outlined"
           style={styles.input}
-          placeholder="e.g. My Summer Fest Plan"
+          placeholder={placeholder}
           autoFocus
         />
 

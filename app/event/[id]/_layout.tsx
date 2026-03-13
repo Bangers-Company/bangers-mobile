@@ -1,6 +1,7 @@
 import { Tabs, useLocalSearchParams } from "expo-router";
 import React, { useEffect } from "react";
 import { BottomNav } from "../../../src/components/navigation/BottomNav";
+import { ScrollResetHandler } from "../../../src/components/navigation/ScrollResetHandler";
 import { PageContainer } from "../../../src/components/PageContainer";
 import { useEventStore } from "../../../src/store/useEventStore";
 
@@ -16,6 +17,7 @@ export default function EventLayout() {
 
   return (
     <PageContainer withPadding={false} withSafeArea={{ top: true, bottom: false }}>
+      <ScrollResetHandler />
       <Tabs
         screenOptions={{
           headerShown: false,

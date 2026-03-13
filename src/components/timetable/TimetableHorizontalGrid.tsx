@@ -1,13 +1,15 @@
-import { format } from "date-fns";
-import React, { useMemo } from "react";
+import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { Text, TouchableRipple, useTheme } from "react-native-paper";
+import { Text, useTheme } from "react-native-paper";
 import { Timetable, TimetableEntry } from "../../types/timetable";
 import { addAlpha } from "../../utils/theme";
+import { TimetableActItem } from "./TimetableActItem";
 
 interface HorizontalGridProps {
   timetable: Timetable;
+  templateTimetable?: Timetable | null;
   onEntryPress: (entry: TimetableEntry) => void;
+  onEntryLongPress: (entry: TimetableEntry) => void;
   isPersonal: boolean;
   currentTime?: Date;
 }
@@ -18,46 +20,54 @@ const STAGE_LABEL_WIDTH = 100;
 
 export const TimetableHorizontalGrid: React.FC<HorizontalGridProps> = ({
   timetable,
+  templateTimetable,
   onEntryPress,
+  onEntryLongPress,
   isPersonal,
   currentTime,
 }) => {
   const theme = useTheme();
 
   // Group by stage and calculate time range
-  const stages = useMemo(() => {
-    const stageMap: Record<
-      string,
-      { id: string; name: string; entries: TimetableEntry[] }
-    > = {};
-    timetable.entries.forEach((entry) => {
+  const stageMap: Record<
+    string,
+    { id: string; name: string; entries: TimetableEntry[] }
+  > = {};
+  
+  // If template exists, initialize all stages from it
+  if (templateTimetable) {
+    (templateTimetable?.entries || []).forEach((entry) => {
       if (!stageMap[entry.stage.id]) {
         stageMap[entry.stage.id] = { ...entry.stage, entries: [] };
       }
-      stageMap[entry.stage.id].entries.push(entry);
     });
-    return Object.values(stageMap);
-  }, [timetable.entries]);
+  }
+
+  (timetable?.entries || []).forEach((entry) => {
+    if (!stageMap[entry.stage.id]) {
+      stageMap[entry.stage.id] = { ...entry.stage, entries: [] };
+    }
+    stageMap[entry.stage.id].entries.push(entry);
+  });
+  const stages = Object.values(stageMap);
 
   const toFestivalHour = (date: Date) => {
     const h = date.getHours();
     return h < 6 ? h + 24 : h;
   };
 
-  const timeRange = useMemo(() => {
-    // Default range: 09:00 AM to 02:00 AM (next day = 26)
-    let min = 9;
-    let max = 26;
+  // Default range: 09:00 AM to 02:00 AM (next day = 26)
+  let min = 9;
+  let max = 26;
 
-    timetable.entries.forEach((entry) => {
-      const start = toFestivalHour(new Date(entry.start_time));
-      const end = toFestivalHour(new Date(entry.end_time));
-      if (start < min) min = Math.floor(start);
-      if (end + 1 > max) max = Math.ceil(end + 1);
-    });
+  (timetable?.entries || []).forEach((entry) => {
+    const start = toFestivalHour(new Date(entry.start_time));
+    const end = toFestivalHour(new Date(entry.end_time));
+    if (start < min) min = Math.floor(start);
+    if (end + 1 > max) max = Math.ceil(end + 1);
+  });
 
-    return { start: min, end: max };
-  }, [timetable.entries]);
+  const timeRange = { start: min, end: max };
 
   const hours = Array.from(
     { length: timeRange.end - timeRange.start + 1 },
@@ -157,56 +167,24 @@ export const TimetableHorizontalGrid: React.FC<HorizontalGridProps> = ({
                       entry.start_time,
                       entry.end_time,
                     );
-                    const isFavorited = isPersonal;
 
                     return (
-                      <TouchableRipple
+                      <TimetableActItem
                         key={entry.id}
-                        style={[
-                          styles.entryCard,
-                          {
-                            left,
-                            width: width - 4,
-                            backgroundColor: isFavorited
-                              ? theme.colors.primary
-                              : addAlpha(theme.colors.surfaceVariant, 0.8),
-                            borderColor: isFavorited
-                              ? theme.colors.primaryContainer
-                              : theme.colors.outlineVariant,
-                          },
-                        ]}
-                        onPress={() => onEntryPress(entry)}
-                      >
-                        <View style={styles.entryContent}>
-                          <Text
-                            variant="labelSmall"
-                            style={[
-                              styles.entryTitle,
-                              {
-                                color: isFavorited
-                                  ? "white"
-                                  : theme.colors.onSurface,
-                              },
-                            ]}
-                            numberOfLines={2}
-                          >
-                            {entry.act.name}
-                          </Text>
-                          <Text
-                            variant="labelSmall"
-                            style={[
-                              styles.entryTime,
-                              {
-                                color: isFavorited
-                                  ? "rgba(255,255,255,0.8)"
-                                  : theme.colors.outline,
-                              },
-                            ]}
-                          >
-                            {format(new Date(entry.start_time), "HH:mm")}
-                          </Text>
-                        </View>
-                      </TouchableRipple>
+                        entry={entry}
+                        isPersonal={isPersonal}
+                        onPress={onEntryPress}
+                        onLongPress={onEntryLongPress}
+                        style={{
+                          left,
+                          width: width - 4,
+                          // height is managed by stageRow container usually, but let's be explicit if needed
+                          top: 4,
+                          bottom: 4,
+                          position: 'absolute',
+                        }}
+                        variant="horizontal"
+                      />
                     );
                   })}
                 </View>

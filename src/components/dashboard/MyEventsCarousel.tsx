@@ -1,17 +1,12 @@
-import { MapPin } from "lucide-react-native";
 import React from "react";
-import { Image, StyleSheet, View, useWindowDimensions } from "react-native";
-import { Card, Text, useTheme } from "react-native-paper";
+import { StyleSheet, View, useWindowDimensions } from "react-native";
+import { Text } from "react-native-paper";
 import Animated, {
-  Extrapolate,
-  SharedValue,
-  interpolate,
   useAnimatedScrollHandler,
-  useAnimatedStyle,
   useSharedValue,
 } from "react-native-reanimated";
 import { Event } from "../../types/event";
-import { resolveMediaUrl } from "../../utils/format";
+import { EventCarouselCard } from "../event/EventCarouselCard";
 
 interface MyEventsCarouselProps {
   events: Event[];
@@ -19,98 +14,9 @@ interface MyEventsCarouselProps {
   onPress?: (event: Event) => void;
 }
 
-const CARD_WIDTH_RATIO = 0.8;
+const CARD_WIDTH_RATIO = 0.9;
 
-interface CarouselItemProps {
-  event: Event;
-  index: number;
-  scrollX: SharedValue<number>;
-  snapToInterval: number;
-  cardWidth: number;
-  cardMargin: number;
-  onPress?: (event: Event) => void;
-}
-
-const CarouselItem: React.FC<CarouselItemProps> = ({
-  event,
-  index,
-  scrollX,
-  snapToInterval,
-  cardWidth,
-  cardMargin,
-  onPress,
-}) => {
-  const theme = useTheme();
-  const bannerUrl = resolveMediaUrl(event.banner?.url);
-
-  const animatedStyle = useAnimatedStyle(() => {
-    const inputRange = [
-      (index - 1) * snapToInterval,
-      index * snapToInterval,
-      (index + 1) * snapToInterval,
-    ];
-
-    const scale = interpolate(
-      scrollX.value,
-      inputRange,
-      [0.9, 1, 0.9],
-      Extrapolate.CLAMP,
-    );
-
-    const opacity = interpolate(
-      scrollX.value,
-      inputRange,
-      [0.6, 1, 0.6],
-      Extrapolate.CLAMP,
-    );
-
-    return {
-      transform: [{ scale }],
-      opacity,
-    };
-  });
-
-  return (
-    <Animated.View
-      style={[
-        animatedStyle,
-        {
-          width: cardWidth,
-          marginHorizontal: cardMargin,
-          // @ts-ignore - Web only
-          scrollSnapAlign: "center",
-        },
-      ]}
-    >
-      <Card style={styles.card} onPress={() => onPress?.(event)}>
-        <View style={styles.imageContainer}>
-          {bannerUrl ? (
-            <Image source={{ uri: bannerUrl }} style={styles.image} />
-          ) : (
-            <View
-              style={[
-                styles.image,
-                { backgroundColor: theme.colors.surfaceVariant },
-              ]}
-            />
-          )}
-          <View style={styles.overlay} />
-          <View style={styles.content}>
-            <Text variant="titleLarge" style={styles.eventName}>
-              {event.name}
-            </Text>
-            <View style={styles.locationRow}>
-              <MapPin size={14} color="rgba(255,255,255,0.7)" />
-              <Text variant="bodySmall" style={styles.location}>
-                {event.location}
-              </Text>
-            </View>
-          </View>
-        </View>
-      </Card>
-    </Animated.View>
-  );
-};
+// Removed local CarouselItem in favor of src/components/event/EventCarouselCard.tsx
 
 export const MyEventsCarousel: React.FC<MyEventsCarouselProps> = ({
   events,
@@ -126,7 +32,7 @@ export const MyEventsCarousel: React.FC<MyEventsCarouselProps> = ({
 
   const snapOffsets = events.map((_, index) => index * snapToInterval);
 
-  const scrollHandler = useAnimatedScrollHandler((event) => {
+  const scrollHandler = useAnimatedScrollHandler((event: any) => {
     scrollX.value = event.contentOffset.x;
   });
 
@@ -156,7 +62,7 @@ export const MyEventsCarousel: React.FC<MyEventsCarouselProps> = ({
         }}
       >
         {events.map((event, index) => (
-          <CarouselItem
+          <EventCarouselCard
             key={event.id}
             event={event}
             index={index}
@@ -200,18 +106,33 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.3)",
+    backgroundColor: "rgba(0,0,0,0.1)",
+  },
+  dateBadge: {
+    position: "absolute",
+    top: 16,
+    right: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: "rgba(0,0,0,0.6)",
+  },
+  dateText: {
+    color: "white",
+    fontWeight: "bold",
   },
   content: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
     padding: 16,
   },
   eventName: {
-    color: "#fff",
-    fontWeight: "bold",
+    fontWeight: "900",
+    letterSpacing: -0.5,
+    marginBottom: 8,
+  },
+  metaRow: {
+    flexDirection: "row",
+    gap: 16,
+    alignItems: "center",
   },
   locationRow: {
     flexDirection: "row",
@@ -220,6 +141,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   location: {
-    color: "rgba(255,255,255,0.7)",
+    opacity: 0.7,
+    fontWeight: "600",
   },
 });

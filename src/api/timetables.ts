@@ -8,15 +8,27 @@ export const timetablesApi = {
     apiClient.get<Timetable>(`/personal-timetables/${eventId}`),
   createPersonal: (data: { event_id: string; name: string }) => 
     apiClient.post<Timetable>("/personal-timetables", data),
+  deletePersonal: (id: string) =>
+    apiClient.delete(`/personal-timetables/${id}`),
   getGroups: () => apiClient.get("/groups"),
   getGroupTimetables: (groupId: string) => 
     apiClient.get<Timetable[]>(`/groups/${groupId}/timetables`),
+  deleteGroup: (id: string) => apiClient.delete(`/groups/${id}`),
   createGroupTimetable: (groupId: string, data: { event_id: string; name: string }) =>
     apiClient.post<Timetable>(`/groups/${groupId}/timetables`, data),
-  updateEntries: (id: string, entryIds: string[], isGroup = false, groupId?: string) => {
+  toggleAttend: (id: string, entryId: string, isGroup = false, groupId?: string) => {
     const url = isGroup 
-      ? `/groups/${groupId}/timetables/${id}/entries`
-      : `/personal-timetables/${id}/entries`;
-    return apiClient.put<Timetable>(url, { entry_ids: entryIds });
+      ? `/groups/${groupId}/timetables/${id}/entries/${entryId}/toggle-attend`
+      : `/personal-timetables/${id}/entries/${entryId}/toggle-attend`;
+    return apiClient.post<{ is_attending: boolean; count?: number }>(url);
   },
+  getAttendance: (groupId: string, timetableId: string, entryId: string) =>
+    apiClient.get<any[]>(`/groups/${groupId}/timetables/${timetableId}/entries/${entryId}/attendance`),
+  createGroup: (data: { name: string; description?: string; user_ids?: string[] }) =>
+    apiClient.post("/groups", data),
+  acceptInvitation: (groupId: string) =>
+    apiClient.post(`/groups/${groupId}/accept`),
+  rejectInvitation: (groupId: string) =>
+    apiClient.post(`/groups/${groupId}/reject`),
+  getInvitations: () => apiClient.get("/groups?status=pending"), // We'll need to filter in backend or frontend
 };

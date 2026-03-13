@@ -2,12 +2,14 @@ import { Tabs } from "expo-router";
 import React from "react";
 import { StyleSheet } from "react-native";
 import { BottomNav } from "../../src/components/navigation/BottomNav";
+import { ScrollResetHandler } from "../../src/components/navigation/ScrollResetHandler";
 import { TopBar } from "../../src/components/navigation/TopBar";
 import { PageContainer } from "../../src/components/PageContainer";
 
 export default function TabLayout() {
   return (
     <PageContainer withPadding={false}>
+      <ScrollResetHandler />
       <TopBar />
       <Tabs
         screenOptions={{
@@ -25,8 +27,3 @@ export default function TabLayout() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});

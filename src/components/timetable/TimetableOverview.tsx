@@ -1,28 +1,49 @@
 import React from "react";
 import { StyleSheet, View, TouchableOpacity, ScrollView } from "react-native";
 import { Text, useTheme, ActivityIndicator, IconButton, Card, Button } from "react-native-paper";
-import { Calendar, User, Users, ChevronRight, Plus, Globe } from "lucide-react-native";
+import { Calendar, Users, Globe } from "lucide-react-native";
 import { addAlpha } from "../../utils/theme";
 import { Timetable } from "../../types/timetable";
 
 interface TimetableOverviewProps {
   official: Timetable | null;
   personal: Timetable | null;
-  loading: boolean;
+  groups: any[];
+  loadingPersonal: boolean;
+  loadingGroups: boolean;
+  loadingOfficial: boolean;
   onSelect: (timetable: Timetable) => void;
   onCreatePersonal: () => void;
+  onDeletePersonal: (id: string) => void;
+  onAcceptInvitation: (groupId: string) => void;
+  onRejectInvitation: (groupId: string) => void;
+  onCreateGroup: () => void;
+  onDeleteGroup: (group: any) => void;
+  onSelectGroup: (group: any) => void;
 }
 
 export const TimetableOverview: React.FC<TimetableOverviewProps> = ({
   official,
   personal,
-  loading,
+  groups,
+  loadingPersonal,
+  loadingGroups,
+  loadingOfficial,
   onSelect,
   onCreatePersonal,
+  onDeletePersonal,
+  onAcceptInvitation,
+  onRejectInvitation,
+  onCreateGroup,
+  onDeleteGroup,
+  onSelectGroup,
 }) => {
   const theme = useTheme();
 
-  if (loading && !official) {
+  const invitations = groups.filter(g => g.pivot?.invitation_status === 'pending');
+  const activeGroups = groups.filter(g => g.pivot?.invitation_status === 'accepted');
+
+  if (loadingOfficial && !official) {
     return (
       <View style={styles.center}>
         <ActivityIndicator color={theme.colors.primary} />
@@ -59,53 +80,104 @@ export const TimetableOverview: React.FC<TimetableOverviewProps> = ({
         />
       </Card>
 
+      {invitations.length > 0 && (
+        <>
+          <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.primary }]}>
+            Invitations ({invitations.length})
+          </Text>
+          {invitations.map(group => (
+            <Card key={group.id} style={[styles.card, { borderLeftWidth: 4, borderLeftColor: theme.colors.primary }]}>
+              <Card.Title
+                title={group.name}
+                subtitle={`Invited by ${group.owner?.name}`}
+                left={(props) => <Users {...props} size={24} color={theme.colors.primary} />}
+              />
+              <Card.Actions>
+                <Button mode="text" onPress={() => onRejectInvitation(group.id)}>Decline</Button>
+                <Button mode="contained" onPress={() => onAcceptInvitation(group.id)}>Accept</Button>
+              </Card.Actions>
+            </Card>
+          ))}
+        </>
+      )}
+
       <View style={styles.sectionHeader}>
         <Text variant="titleMedium" style={styles.sectionTitle}>My Timetables</Text>
-        {!personal && (
-          <Button 
-            mode="text" 
-            onPress={onCreatePersonal}
-            icon={() => <Plus size={18} color={theme.colors.primary} />}
-          >
-            Create
-          </Button>
-        )}
+        {loadingPersonal && <ActivityIndicator size="small" color={theme.colors.primary} />}
       </View>
 
       {personal ? (
-        <Card
-          style={styles.card}
+        <Card 
+          style={styles.card} 
           onPress={() => onSelect(personal)}
+          onLongPress={() => onDeletePersonal(personal.id)}
         >
           <Card.Title
-            title={personal.name}
-            subtitle="Personal Schedule"
-            left={(props) => <User {...props} size={24} color={theme.colors.secondary} />}
+            title={personal.name || "Personal Timetable"}
+            subtitle="Your custom schedule • Long press to delete"
+            left={(props) => <Calendar {...props} size={24} color={theme.colors.primary} />}
             right={(props) => <IconButton {...props} icon="chevron-right" />}
           />
         </Card>
       ) : (
-        <TouchableOpacity style={styles.createPlaceholder} onPress={onCreatePersonal}>
-          <Plus size={32} color={theme.colors.outline} />
-          <Text variant="bodyMedium" style={{ color: theme.colors.outline, marginTop: 8 }}>
-            Create personal timetable
-          </Text>
+        <TouchableOpacity 
+          style={styles.createPlaceholder} 
+          onPress={onCreatePersonal}
+          disabled={loadingPersonal}
+        >
+          {loadingPersonal ? (
+            <ActivityIndicator size="small" color={theme.colors.primary} />
+          ) : (
+            <>
+              <Calendar size={24} color={theme.colors.primary} />
+              <Text variant="bodyMedium" style={{ color: theme.colors.primary, marginTop: 4 }}>
+                Create your personal timetable
+              </Text>
+            </>
+          )}
         </TouchableOpacity>
       )}
 
       <View style={styles.sectionHeader}>
         <Text variant="titleMedium" style={styles.sectionTitle}>Groups</Text>
-        <Text variant="bodySmall" style={{ color: theme.colors.outline }}>Coming Soon</Text>
+        {loadingGroups && <ActivityIndicator size="small" color={theme.colors.primary} />}
       </View>
       
-      <Card style={[styles.card, { opacity: 0.5 }]} disabled>
-         <Card.Title
-            title="Shared Force"
-            subtitle="Group Timetable (Disabled)"
-            left={(props) => <Users {...props} size={24} color={theme.colors.outline} />}
-            right={(props) => <IconButton {...props} icon="lock" />}
+      {activeGroups.map(group => (
+        <Card 
+          key={group.id} 
+          style={styles.card} 
+          onPress={() => onSelectGroup(group)}
+          onLongPress={() => onDeleteGroup(group)}
+        >
+          <Card.Title
+            title={group.name}
+            subtitle={`${group.timetables?.length || 0} Timetables • Long press to delete`}
+            left={(props) => <Users {...props} size={24} color={theme.colors.primary} />}
+            right={(props) => <IconButton {...props} icon="chevron-right" />}
           />
-      </Card>
+        </Card>
+      ))}
+
+      <TouchableOpacity 
+        style={[styles.createPlaceholder, { height: activeGroups.length > 0 ? 80 : 100 }]} 
+        onPress={onCreateGroup}
+        disabled={loadingGroups}
+      >
+        {loadingGroups ? (
+          <ActivityIndicator size="small" color={theme.colors.primary} />
+        ) : (
+          <>
+            <Users size={activeGroups.length > 0 ? 20 : 24} color={theme.colors.primary} />
+            <Text 
+              variant={activeGroups.length > 0 ? "bodySmall" : "bodyMedium"} 
+              style={{ color: theme.colors.primary, marginTop: 4 }}
+            >
+              {activeGroups.length > 0 ? "Create another group" : "Create your first group"}
+            </Text>
+          </>
+        )}
+      </TouchableOpacity>
     </ScrollView>
   );
 };
@@ -141,6 +213,17 @@ const styles = StyleSheet.create({
     borderStyle: "dashed",
     borderColor: addAlpha("#000", 0.1),
     borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  createPlaceholderSmall: {
+    height: 48,
+    borderWidth: 2,
+    borderStyle: "dashed",
+    borderColor: addAlpha("#000", 0.1),
+    borderRadius: 16,
+    flexDirection: 'row',
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 12,

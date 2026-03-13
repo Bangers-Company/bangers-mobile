@@ -95,7 +95,7 @@ export default function EventDetailsScreen() {
         </Text>
         <Button
           mode="contained"
-          onPress={() => router.push("/(tabs)")}
+          onPress={() => router.back()}
           style={{ marginTop: 16 }}
         >
           Go Back
@@ -145,7 +145,7 @@ export default function EventDetailsScreen() {
           size={24}
           containerColor="rgba(0,0,0,0.5)"
           iconColor="white"
-          onPress={() => router.push("/(tabs)")}
+          onPress={() => router.back()}
         />
         <View style={styles.headerRight}>
           <IconButton

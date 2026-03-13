@@ -27,7 +27,7 @@ import {
 } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { searchApi, SearchResponse } from "../../src/api/search";
-import { EventCard } from "../../src/components/event/EventCard";
+import { EventHorizontalCard } from "../../src/components/event/EventHorizontalCard";
 import { resolveMediaUrl } from "../../src/utils/format";
 import { addAlpha } from "../../src/utils/theme";
 
@@ -98,7 +98,7 @@ export default function SearchScreen() {
         {data.map((item) => (
           <View key={item.id} style={styles.itemWrapper}>
             {type === "events" ? (
-              <EventCard
+              <EventHorizontalCard
                 event={item}
                 onPress={(ev) => router.push(`/event/${ev.id}` as any)}
               />

@@ -8,6 +8,11 @@ import {
 } from "lucide-react-native";
 import React, { useState } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, useColorScheme, View } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import {
   Divider,
   IconButton,
@@ -43,8 +48,31 @@ const AnimatedSection = ({
   isExpanded: boolean;
   children: React.ReactNode;
 }) => {
-  if (!isExpanded) return null;
-  return <View>{children}</View>;
+  const height = useSharedValue(0);
+  const opacity = useSharedValue(0);
+
+  // We use a specific height for simplicity, or we could measure it.
+  // For most settings sections, 250 is enough.
+  const MAX_HEIGHT = 400; 
+
+  React.useEffect(() => {
+    height.value = withTiming(isExpanded ? MAX_HEIGHT : 0, { duration: 300 });
+    opacity.value = withTiming(isExpanded ? 1 : 0, { duration: 300 });
+  }, [isExpanded, height, opacity]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    height: height.value,
+    opacity: opacity.value,
+    overflow: "hidden",
+  }));
+
+  return (
+    <Animated.View style={animatedStyle}>
+      <View style={{ position: "absolute", top: 0, left: 0, right: 0 }}>
+        {children}
+      </View>
+    </Animated.View>
+  );
 };
 
 export default function SettingsScreen() {
