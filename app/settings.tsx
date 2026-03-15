@@ -23,9 +23,15 @@ import {
   useTheme,
 } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useDispatch, useSelector } from "react-redux";
 import { PageContainer } from "../src/components/PageContainer";
 import { useAuthStore } from "../src/store/useAuthStore";
-import { useUIStore } from "../src/store/useUIStore";
+import { RootState, AppDispatch } from "../src/store/redux/store";
+import { 
+  setThemeMode, 
+  setIsAmoled, 
+  setAccentColor 
+} from "../src/store/redux/uiSlice";
 import { addAlpha, COLORS } from "../src/utils/theme";
 
 const ACCENT_COLORS = [
@@ -79,15 +85,15 @@ export default function SettingsScreen() {
   const { bottom } = useSafeAreaInsets();
   const theme = useTheme();
   const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
   const systemColorScheme = useColorScheme();
+  
   const {
     themeMode,
-    setThemeMode,
     isAmoled,
-    setIsAmoled,
     accentColor,
-    setAccentColor,
-  } = useUIStore();
+  } = useSelector((state: RootState) => state.ui);
+
   const logout = useAuthStore((state) => state.logout);
 
   const [expandedSection, setExpandedSection] = useState<string | null>(
@@ -198,7 +204,7 @@ export default function SettingsScreen() {
               </View>
               <SegmentedButtons
                 value={themeMode}
-                onValueChange={(val) => setThemeMode(val as any)}
+                onValueChange={(val) => dispatch(setThemeMode(val as any))}
                 buttons={[
                   { value: "system", label: "System" },
                   { value: "light", label: "Light" },
@@ -219,7 +225,9 @@ export default function SettingsScreen() {
               </View>
               <Switch
                 value={isAmoled}
-                onValueChange={setIsAmoled}
+                onValueChange={(val) => {
+                  dispatch(setIsAmoled(val));
+                }}
                 disabled={!isDarkActive}
                 color={theme.colors.primary}
               />
@@ -235,7 +243,7 @@ export default function SettingsScreen() {
                   return (
                     <TouchableOpacity
                       key={color}
-                      onPress={() => setAccentColor(color)}
+                      onPress={() => dispatch(setAccentColor(color))}
                       style={[
                         styles.colorCircle,
                         { backgroundColor: color },

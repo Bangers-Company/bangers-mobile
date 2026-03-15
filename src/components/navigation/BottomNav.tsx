@@ -18,7 +18,8 @@ import Animated, {
   useAnimatedStyle,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useUIStore } from "../../store/useUIStore";
+import { useSelector } from "react-redux";
+import { RootState } from "../../store/redux/store";
 import { addAlpha } from "../../utils/theme";
 
 interface NavItem {
@@ -31,8 +32,7 @@ export const BottomNav: React.FC = () => {
   const theme = useTheme();
   const pathname = usePathname();
   const router = useRouter();
-  const scrollOffset = useUIStore((state) => state.scrollOffset);
-  const isBottomNavVisible = useUIStore((state) => state.isBottomNavVisible);
+  const { scrollOffset, isBottomNavVisible } = useSelector((state: RootState) => state.ui);
   const insets = useSafeAreaInsets();
 
   const isEventPage = pathname.startsWith("/event/");

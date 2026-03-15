@@ -1,9 +1,10 @@
 import { Platform } from "react-native";
-import { useUIStore } from "../store/useUIStore";
+import { useSelector } from "react-redux";
+import { RootState } from "../store/redux/store";
 import { COLORS } from "../utils/theme";
 
 export const useMaterialYou = () => {
-  const accentColor = useUIStore((state) => state.accentColor);
+  const accentColor = useSelector((state: RootState) => state.ui.accentColor);
 
   // In a real Android environment with react-native-material-you,
   // we would extract the system accent color here.

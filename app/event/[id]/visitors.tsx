@@ -13,33 +13,43 @@ import {
   useTheme,
 } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useDispatch, useSelector } from "react-redux";
 import { PageContainer } from "../../../src/components/PageContainer";
 import { User } from "../../../src/types/user";
 import { resolveMediaUrl } from "../../../src/utils/format";
-
-import { useEventStore } from "../../../src/store/useEventStore";
+import { RootState, AppDispatch } from "../../../src/store/redux/store";
+import {
+  fetchFullEvent
+} from "../../../src/store/redux/eventSlice";
+import { setScrollOffset } from "../../../src/store/redux/uiSlice";
 
 export default function VisitorsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useTheme();
   const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
   const { top, bottom } = useSafeAreaInsets();
 
-  const cachedData = useEventStore((state) => state.events[id]);
-  const loadingState = useEventStore((state) => state.loadingEvents[id]);
-  const error = useEventStore((state) => state.errors[id]);
-  const fetchFullEvent = useEventStore((state) => state.fetchFullEvent);
+  const cachedEvent = useSelector((state: RootState) => state.event.events[id as string]);
+  const event = cachedEvent?.event;
+  const attendees = cachedEvent?.attendees || [];
+  const loading = useSelector((state: RootState) => state.event.loadingEvents[id as string]);
+  const error = useSelector((state: RootState) => state.event.errors[id as string]);
 
-  const visitors = cachedData?.attendees || [];
-  const event = cachedData?.event;
-  const loading = loadingState && !event;
+  const visitors = attendees; // Use the new attendees variable
+  const isLoadingInitialData = loading && !event; // Adjust loading state based on new variables
 
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchFullEvent(id, true);
+    await dispatch(fetchFullEvent({ id: id as string, force: true }));
     setRefreshing(false);
+  };
+
+  const handleScroll = (event: any) => {
+    const offsetY = event.nativeEvent.contentOffset.y;
+    dispatch(setScrollOffset(offsetY));
   };
 
   const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -52,7 +62,7 @@ export default function VisitorsScreen() {
         </Text>
         <Button
           mode="contained"
-          onPress={() => fetchFullEvent(id, true)}
+          onPress={() => dispatch(fetchFullEvent({ id: id as string, force: true }))}
           style={{ marginTop: 16 }}
         >
           Try Again
@@ -208,12 +218,7 @@ export default function VisitorsScreen() {
         ]}
         onRefresh={onRefresh}
         refreshing={refreshing}
-        onScroll={(e) => {
-          const offsetY = e.nativeEvent.contentOffset.y;
-          import("../../../src/store/useUIStore").then((mod) =>
-            mod.useUIStore.getState().setScrollOffset(offsetY),
-          );
-        }}
+        onScroll={handleScroll}
         scrollEventThrottle={16}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>

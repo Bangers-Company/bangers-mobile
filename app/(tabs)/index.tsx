@@ -3,26 +3,29 @@ import React from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { ActivityIndicator, Button, Text, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useDispatch } from "react-redux";
 import { MyEventsCarousel } from "../../src/components/dashboard/MyEventsCarousel";
 import { SuggestedEvents } from "../../src/components/dashboard/SuggestedEvents";
 import { TopBar } from "../../src/components/navigation/TopBar";
 import { Droplet } from "../../src/components/ui/Droplet";
 import { useDashboardData } from "../../src/hooks/useDashboardData";
-import { useUIStore } from "../../src/store/useUIStore";
+import { AppDispatch } from "../../src/store/redux/store";
+import { setScrollOffset } from "../../src/store/redux/uiSlice";
 
 export default function HomeScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { bottom } = useSafeAreaInsets();
+  const dispatch = useDispatch<AppDispatch>();
+  const insets = useSafeAreaInsets();
   const { data, loading, refreshing, refresh, error } = useDashboardData();
   const [showDroplet, setShowDroplet] = React.useState(false);
   const scrollRef = React.useRef<ScrollView>(null);
-  const setScrollOffset = useUIStore((state) => state.setScrollOffset);
 
   const handleScroll = (event: any) => {
     const offsetY = event.nativeEvent.contentOffset.y;
-    setShowDroplet(offsetY > 300);
-    setScrollOffset(offsetY);
+    // Show after scrolling past "My Events" (approx 200px)
+    setShowDroplet(offsetY > 200);
+    dispatch(setScrollOffset(offsetY));
   };
 
   const scrollToTop = () => {
@@ -80,6 +83,12 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
+      <Droplet
+        visible={showDroplet}
+        onPress={scrollToTop}
+        position="top"
+        topOffset={insets.top + 8}
+      />
       <ScrollView
         ref={scrollRef}
         onScroll={handleScroll}
@@ -93,10 +102,9 @@ export default function HomeScreen() {
         }
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: bottom + 100 },
+          { paddingBottom: insets.bottom + 100 },
         ]}
       >
-        <Droplet visible={showDroplet} onPress={scrollToTop} />
         {/* Attending Section */}
         {attendingEvents.length > 0 && (
           <MyEventsCarousel
@@ -123,8 +131,6 @@ export default function HomeScreen() {
           onEventPress={(ev) => router.push(`/event/${ev.id}` as any)}
         />
       </ScrollView>
-
-
     </View>
   );
 }

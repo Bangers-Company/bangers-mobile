@@ -16,7 +16,8 @@ import {
   MD3LightTheme,
   PaperProvider,
 } from "react-native-paper";
-import { useUIStore } from "../store/useUIStore";
+import { useSelector } from "react-redux";
+import { RootState } from "../store/redux/store";
 import {
   addAlpha,
   COLORS,
@@ -34,9 +35,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const { colorScheme: systemColorScheme } = useColorScheme();
-  const themeMode = useUIStore((state) => state.themeMode);
-  const isAmoled = useUIStore((state) => state.isAmoled);
-  const storedAccent = useUIStore((state) => state.accentColor);
+  const { themeMode, isAmoled, accentColor: storedAccent } = useSelector((state: RootState) => state.ui);
   const accentColor = storedAccent || COLORS.primary;
 
   const isDark =

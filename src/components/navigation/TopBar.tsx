@@ -26,10 +26,15 @@ import { useAuthStore } from "../../store/useAuthStore";
 import { resolveMediaUrl } from "../../utils/format";
 import { useTimetableStore } from "../../store/useTimetableStore";
 
+import { useDispatch, useSelector } from "react-redux";
+import { RootState, AppDispatch } from "../../store/redux/store";
+import { updateFriendsCount } from "../../store/redux/userSlice";
+
 export const TopBar: React.FC = () => {
   const theme = useTheme();
   const router = useRouter();
-  const user = useAuthStore((state) => state.user);
+  const dispatch = useDispatch<AppDispatch>();
+  const user = useSelector((state: RootState) => state.user.user);
   const [menuVisible, setMenuVisible] = React.useState(false);
   const [notifVisible, setNotifVisible] = React.useState(false);
 
@@ -89,7 +94,7 @@ export const TopBar: React.FC = () => {
       if (type === "friend") {
         if (action === "accept") {
           await friendsApi.acceptRequest(id);
-          useAuthStore.getState().updateFriendsCount(1);
+          dispatch(updateFriendsCount(1));
         } else {
           await friendsApi.rejectRequest(id);
         }

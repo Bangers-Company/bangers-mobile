@@ -9,6 +9,7 @@ import { TimetableVerticalGrid } from "./TimetableVerticalGrid";
 import { ActInfoBottomSheet } from "./ActInfoBottomSheet";
 
 import { format, parseISO } from "date-fns";
+import { Calendar } from "lucide-react-native";
 import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
@@ -107,6 +108,17 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
   }, [selectedDay, timetable, getFestivalDate]);
 
   const insets = useSafeAreaInsets();
+
+  if (availableDays.length === 0) {
+    return (
+      <View style={styles.emptyGrid}>
+        <Calendar size={48} color={theme.colors.outline} style={{ opacity: 0.3 }} />
+        <Text variant="titleMedium" style={{ marginTop: 16, opacity: 0.5 }}>
+          No timetable available yet
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -232,5 +244,11 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     fontSize: 12,
     letterSpacing: 1,
+  },
+  emptyGrid: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 32,
   },
 });

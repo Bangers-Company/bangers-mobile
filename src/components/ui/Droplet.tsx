@@ -11,29 +11,47 @@ import Animated, {
 interface DropletProps {
   visible: boolean;
   onPress: () => void;
+  position?: "top" | "bottom";
+  topOffset?: number;
 }
 
-export const Droplet: React.FC<DropletProps> = ({ visible, onPress }) => {
+export const Droplet: React.FC<DropletProps> = ({
+  visible,
+  onPress,
+  position = "bottom",
+  topOffset = 0,
+}) => {
   const theme = useTheme();
 
   const animatedStyle = useAnimatedStyle(() => {
+    const isTop = position === "top";
+    const hiddenY = isTop ? -100 : 100;
     return {
       transform: [
-        { translateY: withSpring(visible ? 0 : 100) },
+        { translateY: withSpring(visible ? 0 : hiddenY) },
         { scale: withSpring(visible ? 1 : 0) },
       ],
       opacity: withTiming(visible ? 1 : 0),
     };
   });
 
+  const positionStyle =
+    position === "top"
+      ? { top: topOffset, bottom: undefined }
+      : { bottom: 100, top: undefined };
+
   return (
-    <Animated.View style={[styles.container, animatedStyle]}>
+    <Animated.View style={[styles.container, positionStyle, animatedStyle]}>
       <TouchableRipple
         onPress={onPress}
         style={[styles.droplet, { backgroundColor: theme.colors.primary }]}
         rippleColor="rgba(255, 255, 255, 0.3)"
       >
-        <ChevronUp color="white" size={24} />
+        <ChevronUp
+          color="white"
+          size={24}
+          style={{ transform: [{ rotate: position === "top" ? "0deg" : "0deg" }] }}
+        />
       </TouchableRipple>
     </Animated.View>
   );
@@ -42,8 +60,9 @@ export const Droplet: React.FC<DropletProps> = ({ visible, onPress }) => {
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    bottom: 100, // Above BottomNav
-    right: 24,
+    left: 0,
+    right: 0,
+    alignItems: "center",
     zIndex: 1000,
   },
   droplet: {

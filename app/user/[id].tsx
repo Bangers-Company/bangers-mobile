@@ -1,7 +1,8 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Calendar, History, UserPlus, UserCheck, UserMinus, Clock, Users, ShieldAlert, ShieldCheck } from "lucide-react-native";
+import { Calendar, History, UserPlus, UserCheck, Clock, Users, ShieldAlert, ShieldCheck } from "lucide-react-native";
 import React, { useEffect, useState, useCallback } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { useDispatch } from "react-redux";
 import {
     Avatar,
     Button,
@@ -13,14 +14,14 @@ import {
 } from "react-native-paper";
 import ContentLoader, { Rect } from "react-content-loader/native";
 import { userApi } from "../../src/api/user";
-import { friendsApi, Friendship } from "../../src/api/friends";
+import { friendsApi } from "../../src/api/friends";
 import { useAuthStore } from "../../src/store/useAuthStore";
+import { updateFriendsCount } from "../../src/store/redux/userSlice";
 import { Event } from "../../src/types/event";
-import { User, UserStats } from "../../src/types/user";
+import { User } from "../../src/types/user";
 import { resolveMediaUrl } from "../../src/utils/format";
 import {
     EventCard,
-    EventCardSkeleton,
 } from "../../src/components/event/EventCard";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PageContainer } from "../../src/components/PageContainer";
@@ -30,6 +31,7 @@ export default function PublicProfileScreen() {
     const theme = useTheme();
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const dispatch = useDispatch();
     const currentUser = useAuthStore((state) => state.user);
 
     const [profileUser, setProfileUser] = useState<User | null>(null);
@@ -37,7 +39,6 @@ export default function PublicProfileScreen() {
     const [error, setError] = useState<string | null>(null);
 
     const [friendshipStatus, setFriendshipStatus] = useState<"none" | "pending_sent" | "pending_received" | "friends">("none");
-    const [friendshipId, setFriendshipId] = useState<string | null>(null);
     const [friendsCount, setFriendsCount] = useState<number>(0);
     const [actionLoading, setActionLoading] = useState(false);
 
@@ -65,14 +66,10 @@ export default function PublicProfileScreen() {
                 const isFriend = friendsRes.data.data.some((f: any) => f.id === id);
                 if (isFriend) {
                     setFriendshipStatus("friends");
-                    // Finding the actual friendship ID would require a different endpoint or searching,
-                    // but removeFriend takes userId anyway.
-                    setFriendshipId(id);
                 } else {
                     const receivedReq = requestsRes.data.data.find(r => r.requester?.id === id);
                     if (receivedReq) {
                         setFriendshipStatus("pending_received");
-                        setFriendshipId(receivedReq.id);
                     } else {
                         // To rigorously check 'pending_sent', we might need to rely on backend failure or 
                         // a specific endpoint. Assuming we don't have it explicitly in getRequests, 
@@ -106,12 +103,12 @@ export default function PublicProfileScreen() {
                 await friendsApi.acceptRequest(id);
                 setFriendshipStatus("friends");
                 setFriendsCount(prev => prev + 1);
-                useAuthStore.getState().updateFriendsCount(1);
+                dispatch(updateFriendsCount(1));
             } else if (friendshipStatus === "friends") {
                 await friendsApi.removeFriend(id);
                 setFriendshipStatus("none");
                 setFriendsCount(prev => Math.max(0, prev - 1));
-                useAuthStore.getState().updateFriendsCount(-1);
+                dispatch(updateFriendsCount(-1));
             }
         } catch (e) {
             console.error("Failed friend action", e);

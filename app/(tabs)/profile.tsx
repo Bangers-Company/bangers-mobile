@@ -1,51 +1,61 @@
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Calendar, History, Users, ShieldAlert, ShieldCheck } from "lucide-react-native";
-import React from "react";
+import React, { useCallback } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import {
   Avatar,
   Button,
-  Surface,
   Text,
   TouchableRipple,
   useTheme,
 } from "react-native-paper";
 import ContentLoader, { Rect } from "react-content-loader/native";
 import { useProfile } from "../../src/hooks/useProfile";
-import { useUIStore } from "../../src/store/useUIStore";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "../../src/store/redux/store";
+import { setScrollOffset } from "../../src/store/redux/uiSlice";
 import { resolveMediaUrl } from "../../src/utils/format";
 import {
   EventCard,
   EventCardSkeleton,
 } from "../../src/components/event/EventCard";
+import { AnimatedCounter } from "../../src/components/ui/AnimatedCounter";
 
 export default function ProfileScreen() {
   const theme = useTheme();
   const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
+  const [focusKey, setFocusKey] = React.useState(0);
   const { user, attendingEvents, pastEvents, friendsCount, loading, refreshProfile } =
     useProfile();
-  const setScrollOffset = useUIStore((state) => state.setScrollOffset);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshProfile();
+      setFocusKey(prev => prev + 1);
+    }, [refreshProfile])
+  );
 
   const handleScroll = (event: any) => {
-    setScrollOffset(event.nativeEvent.contentOffset.y);
+    dispatch(setScrollOffset(event.nativeEvent.contentOffset.y));
   };
 
   const statItems = [
     {
       label: "Attending Events",
-      value: attendingEvents.length.toString() || "0",
+      value: attendingEvents?.length || user?.stats?.upcoming_count || 0,
       icon: Calendar,
       route: null,
     },
     {
       label: "Past events",
-      value: pastEvents.length.toString() || "0",
+      value: pastEvents?.length || user?.stats?.past_count || 0,
       icon: History,
       route: null,
     },
     {
       label: "Friends",
-      value: friendsCount.toString() || "0",
+      value: friendsCount || 0,
       icon: Users,
       route: `/friends/me`,
     },
@@ -95,7 +105,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <View style={styles.statsContainer}>
+        <View style={styles.statsContainer} key={focusKey}>
           {statItems.map((item, index) => (
             <TouchableRipple
               key={index}
@@ -124,9 +134,11 @@ export default function ProfileScreen() {
                     <Rect x="0" y="0" rx="4" ry="4" width="40" height="20" />
                   </ContentLoader>
                 ) : (
-                  <Text variant="titleMedium" style={styles.statValue}>
-                    {item.value}
-                  </Text>
+                  <AnimatedCounter
+                    value={item.value}
+                    variant="titleMedium"
+                    style={styles.statValue}
+                  />
                 )}
                 <Text variant="labelSmall" style={styles.statLabel}>
                   {item.label}

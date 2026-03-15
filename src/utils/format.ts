@@ -22,3 +22,12 @@ export const resolveMediaUrl = (url?: string | null) => {
   const STORAGE_BASE = "http://localhost:8080";
   return `${STORAGE_BASE}${url.startsWith("/") ? "" : "/"}${url}`;
 };
+
+export const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString("nl-NL", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+};

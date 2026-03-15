@@ -1,0 +1,60 @@
+import React, { useEffect } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { Text } from 'react-native-paper';
+import Animated, { 
+  useAnimatedStyle, 
+  useSharedValue, 
+  withSpring, 
+  withSequence,
+  FadeIn,
+  FadeOut
+} from 'react-native-reanimated';
+
+interface AnimatedCounterProps {
+  value: string | number;
+  variant?: 'displayLarge' | 'displayMedium' | 'displaySmall' | 'headlineLarge' | 'headlineMedium' | 'headlineSmall' | 'titleLarge' | 'titleMedium' | 'titleSmall' | 'bodyLarge' | 'bodyMedium' | 'bodySmall' | 'labelLarge' | 'labelMedium' | 'labelSmall';
+  style?: any;
+}
+
+export const AnimatedCounter: React.FC<AnimatedCounterProps> = ({ 
+  value, 
+  variant = 'titleMedium',
+  style 
+}) => {
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    scale.value = withSequence(
+      withSpring(1.2, { damping: 10, stiffness: 100 }),
+      withSpring(1, { damping: 10, stiffness: 100 })
+    );
+  }, [value, scale]);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scale.value }],
+    };
+  });
+
+  return (
+    <View style={[styles.container, style]}>
+      <Animated.View style={animatedStyle} key={value}>
+        <Animated.View entering={FadeIn} exiting={FadeOut}>
+          <Text variant={variant} style={styles.text}>
+            {value}
+          </Text>
+        </Animated.View>
+      </Animated.View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  text: {
+    fontWeight: 'bold',
+  },
+});

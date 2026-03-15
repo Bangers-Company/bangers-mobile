@@ -4,15 +4,16 @@ import React, { useEffect, useState } from "react";
 import { Alert, StyleSheet, View } from "react-native";
 import { IconButton, Text, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useDispatch, useSelector } from "react-redux";
 import { PageContainer } from "../../../src/components/PageContainer";
 import { CreateGroupModal } from "../../../src/components/timetable/CreateGroupModal";
 import { CreateTimetableModal } from "../../../src/components/timetable/CreateTimetableModal";
 import { TimetableGrid } from "../../../src/components/timetable/TimetableGrid";
 import { TimetableOverview } from "../../../src/components/timetable/TimetableOverview";
-import { useEventStore } from "../../../src/store/useEventStore";
 import { useAuthStore } from "../../../src/store/useAuthStore";
 import { useTimetableStore } from "../../../src/store/useTimetableStore";
-import { useUIStore } from "../../../src/store/useUIStore";
+import { RootState, AppDispatch } from "../../../src/store/redux/store";
+import { setIsBottomNavVisible } from "../../../src/store/redux/uiSlice";
 import { Timetable, TimetableEntry } from "../../../src/types/timetable";
 import { 
   useOfficialTimetable, 
@@ -25,6 +26,7 @@ export default function ScheduleScreen() {
   const { id: eventId } = useLocalSearchParams<{ id: string }>();
   const theme = useTheme();
   const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
   const { top } = useSafeAreaInsets();
 
   const [selectedTimetableId, setSelectedTimetableId] = useState<string | null>(null);
@@ -53,8 +55,7 @@ export default function ScheduleScreen() {
     setViewMode,
   } = useTimetableStore();
 
-  const cachedEvent = useEventStore((state) => state.events[eventId]?.event);
-  const setIsBottomNavVisible = useUIStore((state) => state.setIsBottomNavVisible);
+  const cachedEvent = useSelector((state: RootState) => state.event.events[eventId as string]?.event);
 
   // Derive timetables from queries
   const official = officialQuery || (cachedEvent?.official_timetable ? {
@@ -83,12 +84,14 @@ export default function ScheduleScreen() {
   // Handle BottomNav visibility
   useEffect(() => {
     if (selectedTimetable) {
-      setIsBottomNavVisible(false);
+      dispatch(setIsBottomNavVisible(false));
     } else {
-      setIsBottomNavVisible(true);
+      dispatch(setIsBottomNavVisible(true));
     }
-    return () => setIsBottomNavVisible(true);
-  }, [selectedTimetable, setIsBottomNavVisible]);
+    return () => {
+      dispatch(setIsBottomNavVisible(true));
+    };
+  }, [selectedTimetable, dispatch]);
 
   const handleDeletePersonal = async (id: string) => {
     Alert.alert(

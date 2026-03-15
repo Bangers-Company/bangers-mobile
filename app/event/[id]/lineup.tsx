@@ -18,12 +18,13 @@ import {
   useTheme,
 } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSelector } from "react-redux";
 import { PageContainer } from "../../../src/components/PageContainer";
-import { useEventStore } from "../../../src/store/useEventStore";
+import { RootState } from "../../../src/store/redux/store";
 import { Act, Stage } from "../../../src/types/event";
 import { addAlpha } from "../../../src/utils/theme";
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export default function LineupScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -31,9 +32,11 @@ export default function LineupScreen() {
   const router = useRouter();
   const { top, bottom } = useSafeAreaInsets();
 
-  const cachedData = useEventStore((state) => state.events[id]);
-  const loadingState = useEventStore((state) => state.loadingEvents[id]);
-  const error = useEventStore((state) => state.errors[id]);
+  const { events, loadingEvents, errors } = useSelector((state: RootState) => state.event);
+  
+  const cachedData = events[id as string];
+  const loadingState = loadingEvents[id as string];
+  const error = errors[id as string];
 
   const event = cachedData?.event;
   const loading = loadingState && !event;

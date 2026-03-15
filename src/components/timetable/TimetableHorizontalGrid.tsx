@@ -70,7 +70,7 @@ export const TimetableHorizontalGrid: React.FC<HorizontalGridProps> = ({
   const timeRange = { start: min, end: max };
 
   const hours = Array.from(
-    { length: timeRange.end - timeRange.start + 1 },
+    { length: Math.min(48, Math.max(0, timeRange.end - timeRange.start + 1)) },
     (_, i) => timeRange.start + i,
   );
 

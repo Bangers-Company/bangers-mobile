@@ -2,9 +2,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useColorScheme } from "nativewind";
 import React from "react";
 import { StyleSheet, View, ViewProps } from "react-native";
-import { useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useUIStore } from "../store/useUIStore";
+import { useSelector } from "react-redux";
+import { RootState } from "../store/redux/store";
 import { getGradientColors } from "../utils/theme";
 
 interface PageContainerProps extends ViewProps {
@@ -20,12 +20,9 @@ export const PageContainer: React.FC<PageContainerProps> = ({
   style,
   ...props
 }) => {
-  const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { colorScheme: systemColorScheme } = useColorScheme();
-  const themeMode = useUIStore((state) => state.themeMode);
-  const accentColor = useUIStore((state) => state.accentColor);
-  const isAmoled = useUIStore((state) => state.isAmoled);
+  const { themeMode, accentColor, isAmoled } = useSelector((state: RootState) => state.ui);
 
   const isDark =
     themeMode === "system"

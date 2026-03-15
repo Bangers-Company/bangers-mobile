@@ -1,19 +1,21 @@
 import { Tabs, useLocalSearchParams } from "expo-router";
 import React, { useEffect } from "react";
+import { useDispatch } from "react-redux";
 import { BottomNav } from "../../../src/components/navigation/BottomNav";
 import { ScrollResetHandler } from "../../../src/components/navigation/ScrollResetHandler";
 import { PageContainer } from "../../../src/components/PageContainer";
-import { useEventStore } from "../../../src/store/useEventStore";
+import { AppDispatch } from "../../../src/store/redux/store";
+import { fetchFullEvent } from "../../../src/store/redux/eventSlice";
 
 export default function EventLayout() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const fetchFullEvent = useEventStore((state) => state.fetchFullEvent);
+  const dispatch = useDispatch<AppDispatch>();
 
   useEffect(() => {
     if (id) {
-      fetchFullEvent(id); 
+      dispatch(fetchFullEvent({ id })); 
     }
-  }, [id, fetchFullEvent]);
+  }, [id, dispatch]);
 
   return (
     <PageContainer withPadding={false} withSafeArea={{ top: true, bottom: false }}>

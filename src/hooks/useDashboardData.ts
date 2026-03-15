@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useDispatch } from "react-redux";
 import { dashboardApi, DashboardData } from "../api/dashboard";
 import { eventsRepository } from "../database/repositories/events.repository";
 import { useSyncStore } from "../store/useSyncStore";
 import { runDeltaSync } from "../sync/deltaSync";
 import { useAuthStore } from "../store/useAuthStore";
-import { useEventStore } from "../store/useEventStore";
+import { AppDispatch } from "../store/redux/store";
+import { setEventsData } from "../store/redux/eventSlice";
+import { setUser } from "../store/redux/userSlice";
 
 export const useDashboardData = () => {
   const [data, setData] = useState<DashboardData | null>(null);
@@ -12,6 +15,7 @@ export const useDashboardData = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
+  const dispatch = useDispatch<AppDispatch>();
   const isSyncing = useSyncStore((state) => state.isSyncing);
   const fetchingRef = useRef(false);
 
@@ -56,8 +60,10 @@ export const useDashboardData = () => {
       if (dashboardData) {
         setData(dashboardData);
 
-        // 1. Update User Profile in Auth Store
+        // 1. Update User Profile in Redux
         if (dashboardData.user) {
+          dispatch(setUser(dashboardData.user));
+          // Backward compatibility for components still using useAuthStore
           useAuthStore.getState().setUser(dashboardData.user);
         }
 
@@ -84,8 +90,8 @@ export const useDashboardData = () => {
           }
         }
 
-        // 4. Cache in global Event Store
-        useEventStore.getState().setEventsData(allEvents);
+        // 4. Cache in global Redux Event Store
+        dispatch(setEventsData(allEvents));
       }
     } catch (err: any) {
       setError(err);
@@ -94,7 +100,7 @@ export const useDashboardData = () => {
       setLoading(false);
       fetchingRef.current = false;
     }
-  }, []);
+  }, [dispatch]);
 
   const refresh = useCallback(async () => {
     if (refreshing) return;

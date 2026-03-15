@@ -1,8 +1,8 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { Calendar, Heart, MapPin, Users } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import ContentLoader, { Rect } from "react-content-loader/native";
-import { Dimensions, Image, ScrollView, StyleSheet, View } from "react-native";
+import { Dimensions, Image, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import {
   Button,
   IconButton,
@@ -11,53 +11,72 @@ import {
   useTheme,
 } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useDispatch, useSelector } from "react-redux";
 import { eventsApi } from "../../../src/api/events";
+import { Droplet } from "../../../src/components/ui/Droplet";
+import { useDashboardData } from "../../../src/hooks/useDashboardData";
 import { useAuthStore } from "../../../src/store/useAuthStore";
-import { useEventStore } from "../../../src/store/useEventStore";
-import { useUIStore } from "../../../src/store/useUIStore";
-import { resolveMediaUrl } from "../../../src/utils/format";
+import { AppDispatch, RootState } from "../../../src/store/redux/store";
+import { setAttendanceStatus, fetchFullEvent } from "../../../src/store/redux/eventSlice";
+import { setScrollOffset } from "../../../src/store/redux/uiSlice";
+import { resolveMediaUrl, formatDate } from "../../../src/utils/format";
 import { addAlpha } from "../../../src/utils/theme";
+import { AnimatedCounter } from "../../../src/components/ui/AnimatedCounter";
 
 export default function EventDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useTheme();
   const router = useRouter();
-  const { top, bottom } = useSafeAreaInsets();
-
-  const setScrollOffset = useUIStore((state) => state.setScrollOffset);
+  const dispatch = useDispatch<AppDispatch>();
+  const insets = useSafeAreaInsets();
+  const [showDroplet, setShowDroplet] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
   const currentUser = useAuthStore((state) => state.user);
 
-  const cachedData = useEventStore((state) => state.events[id]);
-  const loadingEvents = useEventStore((state) => state.loadingEvents);
-  const errors = useEventStore((state) => state.errors);
-  const setAttendanceStatus = useEventStore(
-    (state) => state.setAttendanceStatus,
+  const { refresh: refreshDashboard } = useDashboardData();
+
+  const fetchEventData = useCallback(() => {
+    if (id) {
+      dispatch(fetchFullEvent({ id: id as string, force: true }));
+    }
+  }, [id, dispatch]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchEventData();
+    }, [fetchEventData])
   );
 
-  const event = cachedData?.event;
-  const attendees = cachedData?.attendees || [];
-  const loading = loadingEvents[id] && !event; // Only show full loader if we have NO event data
-  const error = errors[id];
+  const cachedEvent = useSelector((state: RootState) => state.event.events[id as string]);
+  const event = cachedEvent?.event;
+  const attendees = cachedEvent?.attendees || [];
+  const loading = useSelector((state: RootState) => state.event.loadingEvents[id as string]);
+  const error = useSelector((state: RootState) => state.event.errors[id as string]);
 
   const isGoing = event?.user_status === "going";
   const isInterested = event?.user_status === "interested";
 
   const [actionLoading, setActionLoading] = useState(false);
 
-  const handleScroll = (e: any) => {
-    setScrollOffset(e.nativeEvent.contentOffset.y);
+  const handleScroll = (event: any) => {
+    const offsetY = event.nativeEvent.contentOffset.y;
+    setShowDroplet(offsetY > 300);
+    dispatch(setScrollOffset(offsetY));
+  };
+
+  const scrollToTop = () => {
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
   };
 
   const toggleAttendance = async (status: "going" | "interested") => {
     if (!event || !currentUser || actionLoading) return;
     setActionLoading(true);
 
-    // If clicking what we already have, we remove it
     const isRemoving = event.user_status === status;
     const nextStatus = isRemoving ? null : status;
 
     // Optimistic Update
-    setAttendanceStatus(id, nextStatus, currentUser);
+    dispatch(setAttendanceStatus({ id: id as string, status: nextStatus, currentUser, event }));
 
     try {
       if (nextStatus) {
@@ -67,29 +86,18 @@ export default function EventDetailsScreen() {
       }
     } catch (err) {
       console.error("Failed to update attendance", err);
-      // Revert optimistic update on failure (approximate)
-      setAttendanceStatus(id, event.user_status || null, currentUser);
+      // Revert optimistic update on failure
+      dispatch(setAttendanceStatus({ id: id as string, status: event.user_status || null, currentUser, event }));
     } finally {
       setActionLoading(false);
     }
-  };
-
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "";
-    const d = new Date(dateString);
-    if (isNaN(d.getTime())) return dateString;
-    return d.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
   };
 
   const { width } = Dimensions.get("window");
 
   if (error && !event) {
     return (
-      <View style={[styles.center, { flex: 1 }]}>
+      <View style={[styles.center, { flex: 1, backgroundColor: theme.colors.background }]}>
         <Text variant="titleMedium" style={{ color: theme.colors.error }}>
           {error || "Event not found"}
         </Text>
@@ -104,9 +112,9 @@ export default function EventDetailsScreen() {
     );
   }
 
-  if (loading || !event) {
+  if (loading && !event) {
     return (
-      <View style={[styles.container, { flex: 1 }]}>
+      <View style={[styles.container, { flex: 1, backgroundColor: theme.colors.background }]}>
         <ContentLoader
           speed={2}
           width={width}
@@ -127,6 +135,8 @@ export default function EventDetailsScreen() {
     );
   }
 
+  if (!event) return null;
+
   const bannerUrl = resolveMediaUrl(event.banner?.url);
   const startEndMerged =
     event.end_date && event.end_date !== event.start_date
@@ -138,8 +148,14 @@ export default function EventDetailsScreen() {
 
   return (
     <View style={styles.container}>
+      <Droplet
+        visible={showDroplet}
+        onPress={scrollToTop}
+        position="top"
+        topOffset={insets.top + 8}
+      />
       {/* Absolute TopBar */}
-      <View style={[styles.eventHeader, { top: top / 4 }]}>
+      <View style={[styles.eventHeader, { top: insets.top / 4 }]}>
         <IconButton
           icon="chevron-left"
           size={24}
@@ -172,9 +188,23 @@ export default function EventDetailsScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={{ paddingBottom: bottom + 100 }}
+        ref={scrollRef}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: insets.bottom + 100 },
+        ]}
         onScroll={handleScroll}
         scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading || false}
+            onRefresh={() => {
+              fetchEventData();
+              refreshDashboard();
+            }}
+            tintColor={theme.colors.primary}
+          />
+        }
       >
         {/* Banner */}
         <View style={styles.bannerWrapper}>
@@ -248,9 +278,11 @@ export default function EventDetailsScreen() {
                 <Users size={20} color={theme.colors.primary} />
               </View>
               <View style={styles.metaTexts}>
-                <Text variant="bodyLarge" style={styles.metaTitle}>
-                  {event.attendee_count ?? attendees.length}
-                </Text>
+                <AnimatedCounter
+                  value={event.attendee_count ?? attendees.length}
+                  variant="bodyLarge"
+                  style={styles.metaTitle}
+                />
                 <Text variant="bodyMedium" style={styles.metaSubtitle}>
                   Going
                 </Text>
@@ -311,7 +343,7 @@ export default function EventDetailsScreen() {
             ) : (
               <Surface style={styles.noLineup} elevation={0}>
                 <Text variant="bodyMedium" style={{ opacity: 0.6 }}>
-                  Line-up hasn't been announced yet.
+                  Line-up hasn&apos;t been announced yet.
                 </Text>
                 <Button
                   mode="text"
@@ -359,7 +391,6 @@ const styles = StyleSheet.create({
   bannerOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.3)",
-    // A slight gradient from bottom up to blend with the app background could be nice
   },
   content: {
     padding: 24,
@@ -448,5 +479,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     backgroundColor: "rgba(0,0,0,0.1)",
+  },
+  scrollContent: {
+    paddingTop: 16,
   },
 });

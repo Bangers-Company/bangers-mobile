@@ -26,46 +26,38 @@ import {
     useTheme,
 } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { searchApi, SearchResponse } from "../../src/api/search";
+import { useDispatch, useSelector } from "react-redux";
+import { SearchResponse } from "../../src/api/search";
 import { EventHorizontalCard } from "../../src/components/event/EventHorizontalCard";
 import { resolveMediaUrl } from "../../src/utils/format";
 import { addAlpha } from "../../src/utils/theme";
+import { RootState, AppDispatch } from "../../src/store/redux/store";
+import { 
+    setSearchQuery, 
+    toggleEntity, 
+    performSearchAction 
+} from "../../src/store/redux/searchSlice";
 
 export default function SearchScreen() {
   const theme = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const dispatch = useDispatch<AppDispatch>();
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [results, setResults] = useState<SearchResponse["data"] | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { 
+    searchQuery, 
+    results, 
+    loading, 
+    entities 
+  } = useSelector((state: RootState) => state.search);
 
   const [showFilters, setShowFilters] = useState(false);
-  const [entities, setEntities] = useState<string[]>([
-    "events",
-    "artists",
-    "acts",
-    "users",
-  ]);
 
   const performSearch = useCallback(
-    async (query: string, selectedEntities: string[]) => {
-      if (!query.trim()) {
-        setResults(null);
-        return;
-      }
-
-      setLoading(true);
-      try {
-        const response = await searchApi.search(query, selectedEntities);
-        setResults(response.data.data);
-      } catch (error) {
-        console.error("Search failed:", error);
-      } finally {
-        setLoading(false);
-      }
+    (query: string, selectedEntities: string[]) => {
+      dispatch(performSearchAction({ query, entities: selectedEntities }));
     },
-    [],
+    [dispatch],
   );
 
   useEffect(() => {
@@ -75,12 +67,8 @@ export default function SearchScreen() {
     return () => clearTimeout(timer);
   }, [searchQuery, entities, performSearch]);
 
-  const toggleEntity = (entity: string) => {
-    setEntities((prev) =>
-      prev.includes(entity)
-        ? prev.filter((e) => e !== entity)
-        : [...prev, entity],
-    );
+  const onToggleEntity = (entity: string) => {
+    dispatch(toggleEntity(entity));
   };
 
   const renderSection = (
@@ -204,7 +192,7 @@ export default function SearchScreen() {
         <View style={styles.searchRow}>
           <Searchbar
             placeholder="Search..."
-            onChangeText={setSearchQuery}
+            onChangeText={(text) => dispatch(setSearchQuery(text))}
             value={searchQuery}
             style={[
               styles.searchBar,
@@ -300,24 +288,24 @@ export default function SearchScreen() {
                 <Checkbox.Item
                   label="Events"
                   status={entities.includes("events") ? "checked" : "unchecked"}
-                  onPress={() => toggleEntity("events")}
+                  onPress={() => onToggleEntity("events")}
                 />
                 <Checkbox.Item
                   label="Artists"
                   status={
                     entities.includes("artists") ? "checked" : "unchecked"
                   }
-                  onPress={() => toggleEntity("artists")}
+                  onPress={() => onToggleEntity("artists")}
                 />
                 <Checkbox.Item
                   label="Acts"
                   status={entities.includes("acts") ? "checked" : "unchecked"}
-                  onPress={() => toggleEntity("acts")}
+                  onPress={() => onToggleEntity("acts")}
                 />
                 <Checkbox.Item
                   label="Users"
                   status={entities.includes("users") ? "checked" : "unchecked"}
-                  onPress={() => toggleEntity("users")}
+                  onPress={() => onToggleEntity("users")}
                 />
               </View>
             </View>
