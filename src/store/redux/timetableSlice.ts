@@ -57,6 +57,32 @@ export const fetchGroupsList = createAsyncThunk(
   }
 );
 
+export const createPersonalTimetable = createAsyncThunk(
+  'timetable/createPersonal',
+  async (payload: { eventId: string; name: string }) => {
+    const res = await timetablesApi.createPersonal({ event_id: payload.eventId, name: payload.name });
+    const data = (res.data as any).data || res.data;
+    return { eventId: payload.eventId, data: data as Timetable };
+  }
+);
+
+export const createGroupAction = createAsyncThunk(
+  'timetable/createGroup',
+  async (payload: { name: string; members: string[] }) => {
+    const res = await timetablesApi.createGroup({ name: payload.name, user_ids: payload.members });
+    return res.data;
+  }
+);
+
+export const createGroupTimetableAction = createAsyncThunk(
+  'timetable/createGroupTimetable',
+  async (payload: { groupId: string; eventId: string; name: string }) => {
+    const res = await timetablesApi.createGroupTimetable(payload.groupId, { event_id: payload.eventId, name: payload.name });
+    const data = (res.data as any).data || res.data;
+    return { groupId: payload.groupId, data: data as Timetable };
+  }
+);
+
 interface ToggleAttendancePayload {
   timetableId: string;
   entryId: string;
@@ -89,41 +115,41 @@ const timetableSlice = createSlice({
   extraReducers: (builder) => {
     // Official
     builder.addCase(fetchOfficialTimetable.pending, (state, action) => {
-      state.loading[action.meta.arg] = true;
+      state.loading[`official_${action.meta.arg}`] = true;
     });
     builder.addCase(fetchOfficialTimetable.fulfilled, (state, action) => {
-      state.loading[action.payload.eventId] = false;
+      state.loading[`official_${action.payload.eventId}`] = false;
       state.official[action.payload.eventId] = action.payload.data;
     });
     builder.addCase(fetchOfficialTimetable.rejected, (state, action) => {
-      state.loading[action.meta.arg] = false;
-      state.error[action.meta.arg] = action.error.message || 'Failed to fetch official timetable';
+      state.loading[`official_${action.meta.arg}`] = false;
+      state.error[`official_${action.meta.arg}`] = action.error.message || 'Failed to fetch official timetable';
     });
 
     // Personal
     builder.addCase(fetchPersonalTimetable.pending, (state, action) => {
-      state.loading[action.meta.arg] = true;
+      state.loading[`personal_${action.meta.arg}`] = true;
     });
     builder.addCase(fetchPersonalTimetable.fulfilled, (state, action) => {
-      state.loading[action.payload.eventId] = false;
+      state.loading[`personal_${action.payload.eventId}`] = false;
       state.personal[action.payload.eventId] = action.payload.data;
     });
     builder.addCase(fetchPersonalTimetable.rejected, (state, action) => {
-      state.loading[action.meta.arg] = false;
-      state.error[action.meta.arg] = action.error.message || 'Failed to fetch personal timetable';
+      state.loading[`personal_${action.meta.arg}`] = false;
+      state.error[`personal_${action.meta.arg}`] = action.error.message || 'Failed to fetch personal timetable';
     });
 
     // Group
     builder.addCase(fetchGroupTimetable.pending, (state, action) => {
-      state.loading[action.meta.arg] = true;
+      state.loading[`group_${action.meta.arg}`] = true;
     });
     builder.addCase(fetchGroupTimetable.fulfilled, (state, action) => {
-      state.loading[action.payload.groupId] = false;
+      state.loading[`group_${action.payload.groupId}`] = false;
       state.groups[action.payload.groupId] = action.payload.data;
     });
     builder.addCase(fetchGroupTimetable.rejected, (state, action) => {
-      state.loading[action.meta.arg] = false;
-      state.error[action.meta.arg] = action.error.message || 'Failed to fetch group timetable';
+      state.loading[`group_${action.meta.arg}`] = false;
+      state.error[`group_${action.meta.arg}`] = action.error.message || 'Failed to fetch group timetable';
     });
 
     // Groups List
@@ -137,6 +163,33 @@ const timetableSlice = createSlice({
     builder.addCase(fetchGroupsList.rejected, (state, action) => {
       state.loading['groupsList'] = false;
       state.error['groupsList'] = action.error.message || 'Failed to fetch groups';
+    });
+
+    // Create Personal
+    builder.addCase(createPersonalTimetable.fulfilled, (state, action) => {
+      state.personal[action.payload.eventId] = action.payload.data;
+      // Also update loading state if we want to be clean
+      state.loading[`personal_${action.payload.eventId}`] = false;
+    });
+
+    // Create Group
+    builder.addCase(createGroupAction.fulfilled, (state, action) => {
+      state.groupsList.push(action.payload);
+    });
+
+    // Create Group Timetable
+    builder.addCase(createGroupTimetableAction.fulfilled, (state, action) => {
+      const { groupId, data } = action.payload;
+      state.groupsList = state.groupsList.map(group => {
+        if (String(group.id) === String(groupId)) {
+          return {
+            ...group,
+            timetables: [...(group.timetables || []), data]
+          };
+        }
+        return group;
+      });
+      state.groups[groupId] = data;
     });
 
     // Optimistic Toggle Attendance

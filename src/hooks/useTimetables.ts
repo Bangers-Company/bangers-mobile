@@ -6,20 +6,23 @@ import {
   fetchPersonalTimetable, 
   fetchGroupTimetable,
   fetchGroupsList,
+  createPersonalTimetable,
+  createGroupAction,
+  createGroupTimetableAction,
   toggleAttendance 
 } from '../store/redux/timetableSlice';
 
 export const useOfficialTimetable = (eventId: string) => {
   const dispatch = useDispatch<AppDispatch>();
   const timetable = useSelector((state: RootState) => state.timetable.official[eventId]);
-  const loading = useSelector((state: RootState) => state.timetable.loading[eventId]);
-  const error = useSelector((state: RootState) => state.timetable.error[eventId]);
+  const loading = useSelector((state: RootState) => state.timetable.loading[`official_${eventId}`]);
+  const error = useSelector((state: RootState) => state.timetable.error[`official_${eventId}`]);
 
   useEffect(() => {
-    if (eventId && !timetable && !loading) {
+    if (eventId && timetable === undefined && !loading && !error) {
       dispatch(fetchOfficialTimetable(eventId));
     }
-  }, [eventId, timetable, loading, dispatch]);
+  }, [eventId, timetable, loading, error, dispatch]);
 
   return { data: timetable, isLoading: loading, error };
 };
@@ -27,14 +30,14 @@ export const useOfficialTimetable = (eventId: string) => {
 export const usePersonalTimetable = (eventId: string) => {
   const dispatch = useDispatch<AppDispatch>();
   const timetable = useSelector((state: RootState) => state.timetable.personal[eventId]);
-  const loading = useSelector((state: RootState) => state.timetable.loading[eventId]);
-  const error = useSelector((state: RootState) => state.timetable.error[eventId]);
+  const loading = useSelector((state: RootState) => state.timetable.loading[`personal_${eventId}`]);
+  const error = useSelector((state: RootState) => state.timetable.error[`personal_${eventId}`]);
 
   useEffect(() => {
-    if (eventId && !timetable && !loading) {
+    if (eventId && timetable === undefined && !loading && !error) {
       dispatch(fetchPersonalTimetable(eventId));
     }
-  }, [eventId, timetable, loading, dispatch]);
+  }, [eventId, timetable, loading, error, dispatch]);
 
   return { data: timetable, isLoading: loading, error };
 };
@@ -42,14 +45,14 @@ export const usePersonalTimetable = (eventId: string) => {
 export const useGroupTimetables = (groupId: string) => {
   const dispatch = useDispatch<AppDispatch>();
   const timetable = useSelector((state: RootState) => state.timetable.groups[groupId]);
-  const loading = useSelector((state: RootState) => state.timetable.loading[groupId]);
-  const error = useSelector((state: RootState) => state.timetable.error[groupId]);
+  const loading = useSelector((state: RootState) => state.timetable.loading[`group_${groupId}`]);
+  const error = useSelector((state: RootState) => state.timetable.error[`group_${groupId}`]);
 
   useEffect(() => {
-    if (groupId && !timetable && !loading) {
+    if (groupId && timetable === undefined && !loading && !error) {
       dispatch(fetchGroupTimetable(groupId));
     }
-  }, [groupId, timetable, loading, dispatch]);
+  }, [groupId, timetable, loading, error, dispatch]);
 
   return { data: timetable, isLoading: loading, error };
 };
@@ -59,12 +62,13 @@ export const useGroups = () => {
   const groups = useSelector((state: RootState) => state.timetable.groupsList);
   const loading = useSelector((state: RootState) => state.timetable.loading['groupsList']);
   const error = useSelector((state: RootState) => state.timetable.error['groupsList']);
+  const hasFetched = useSelector((state: RootState) => state.timetable.loading['groupsList'] !== undefined);
 
   useEffect(() => {
-    if (groups.length === 0 && !loading) {
+    if (!hasFetched && !loading && !error) {
       dispatch(fetchGroupsList());
     }
-  }, [groups.length, loading, dispatch]);
+  }, [hasFetched, loading, error, dispatch]);
 
   return { data: groups, isLoading: loading, error };
 };
@@ -89,4 +93,17 @@ export const useToggleAttendance = () => {
   };
 
   return { mutate };
+};
+
+export const useTimetableActions = () => {
+  const dispatch = useDispatch<AppDispatch>();
+
+  return {
+    createPersonal: async (eventId: string, name: string) => 
+      dispatch(createPersonalTimetable({ eventId, name })).unwrap(),
+    createGroup: async (name: string, members: string[]) => 
+      dispatch(createGroupAction({ name, members })).unwrap(),
+    createGroupTimetable: async (groupId: string, eventId: string, name: string) => 
+      dispatch(createGroupTimetableAction({ groupId, eventId, name })).unwrap(),
+  };
 };

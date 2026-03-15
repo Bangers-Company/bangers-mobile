@@ -45,9 +45,32 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
     return () => clearInterval(timer);
   }, []);
 
+  // Merge attendance from personal/group timetable into template (official) timetable
+  // This ensures the personal/group view is a 1-to-1 copy of the official schedule
+  const mergedTimetable = useMemo(() => {
+    if (!templateTimetable) return timetable;
+
+    const attendanceMap = new Map();
+    (timetable?.entries || []).forEach(e => {
+      // Use act_id or entry ID to match? 
+      // If personal timetable has entries, we want to match by the common entry/act
+      attendanceMap.set(e.id, e.pivot);
+    });
+
+    return {
+      ...templateTimetable,
+      id: timetable.id, // Keep the personal/group timetable ID for actions
+      name: timetable.name,
+      entries: templateTimetable.entries.map(e => ({
+        ...e,
+        pivot: attendanceMap.get(e.id) || { is_attending: false, attending_count: 0 }
+      }))
+    };
+  }, [timetable, templateTimetable]);
+
   // Day Logic
   const days = useMemo(() => {
-    const sourceEntries = templateTimetable?.entries || timetable?.entries || [];
+    const sourceEntries = mergedTimetable?.entries || [];
     
     // 1. Find the earliest calendar date
     const calendarDates = sourceEntries
@@ -83,7 +106,7 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
       days: Array.from(dayMap).sort(),
       getFestivalDate, // Export it for use in filtering
     };
-  }, [timetable.entries, templateTimetable?.entries]);
+  }, [mergedTimetable?.entries]);
 
   const { days: availableDays, getFestivalDate } = days;
   const [selectedDay, setSelectedDay] = useState("");
@@ -98,14 +121,14 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
 
   // Optimistic timetable that only contains entries for the selected day
   const dailyTimetable = useMemo(() => {
-    if (!selectedDay || !timetable?.entries) return timetable;
+    if (!selectedDay || !mergedTimetable?.entries) return mergedTimetable;
     return {
-      ...timetable,
-      entries: (timetable.entries as TimetableEntry[]).filter(
+      ...mergedTimetable,
+      entries: (mergedTimetable.entries as TimetableEntry[]).filter(
         (e) => getFestivalDate(e.start_time) === selectedDay
       )
     };
-  }, [selectedDay, timetable, getFestivalDate]);
+  }, [selectedDay, mergedTimetable, getFestivalDate]);
 
   const insets = useSafeAreaInsets();
 

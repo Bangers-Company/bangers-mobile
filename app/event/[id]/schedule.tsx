@@ -19,7 +19,8 @@ import {
   useOfficialTimetable, 
   usePersonalTimetable, 
   useGroups, 
-  useToggleAttendance 
+  useToggleAttendance,
+  useTimetableActions
 } from "../../../src/hooks/useTimetables";
 
 export default function ScheduleScreen() {
@@ -28,6 +29,7 @@ export default function ScheduleScreen() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const { top } = useSafeAreaInsets();
+  const { createPersonal, createGroup, createGroupTimetable } = useTimetableActions();
 
   const [selectedTimetableId, setSelectedTimetableId] = useState<string | null>(null);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
@@ -44,13 +46,12 @@ export default function ScheduleScreen() {
 
   // Zustand Store (for remaining UI state and actions)
   const {
-    createPersonal,
     deletePersonal,
     acceptInvitation,
     rejectInvitation,
-    createGroup,
+    // createGroup, // Use Redux version instead
     deleteGroup,
-    createGroupTimetable,
+    // createGroupTimetable, // Use Redux version instead
     viewMode,
     setViewMode,
   } = useTimetableStore();
@@ -153,11 +154,10 @@ export default function ScheduleScreen() {
   const handleCreate = async (name: string) => {
     setLoadingPersonalOp(true);
     try {
-      await createPersonal(eventId, name);
+      const result = await createPersonal(eventId, name);
       setCreateModalVisible(false);
-      // Finding it by eventId in query data instead
-      if (personalQuery) {
-        setSelectedTimetableId(personalQuery.id);
+      if (result && result.data && result.data.id) {
+        setSelectedTimetableId(result.data.id);
       }
     } catch (e) {
       console.error(e);
@@ -308,13 +308,6 @@ export default function ScheduleScreen() {
                 // Refresh the group reference from the latest query data or use passed group
                 const updatedGroup = groups.find((g: any) => g.id === group.id) || group;
 
-                // If group has no timetables or we need to ensure they are loaded
-                if (!updatedGroup.timetables || updatedGroup.timetables.length === 0) {
-                  // The useGroups query will handle the data, but we might need 
-                  // to wait for it or trigger a refetch if we really want to be sure.
-                  // For now, let's assume useGroups is fresh enough or will refresh.
-                }
-                
                 const groupSchedule = (updatedGroup.timetables || []).find((t: any) => 
                   String(t.event_id).toLowerCase() === String(eventId).toLowerCase()
                 );
@@ -325,10 +318,12 @@ export default function ScheduleScreen() {
                   setSelectedGroupId(updatedGroup.id);
                 } else {
                   console.log("No match found for eventId. Auto-creating group schedule.");
-                  // Auto-create instead of showing a modal
-                  await createGroupTimetable(updatedGroup.id, eventId, `${updatedGroup.name} Schedule`);
-                  
-                  // Query invalidation in mutation handles the refresh
+                  // Use Redux action for instant update
+                  const newT = await createGroupTimetable(updatedGroup.id, eventId, `${updatedGroup.name} Schedule`);
+                  if (newT && newT.data && newT.data.id) {
+                    setSelectedTimetableId(newT.data.id);
+                    setSelectedGroupId(updatedGroup.id);
+                  }
                 }
               } catch (e) {
                 console.error("Failed to select/create group schedule", e);
