@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { Calendar, Heart, MapPin, Users } from "lucide-react-native";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import ContentLoader, { Rect } from "react-content-loader/native";
-import { Dimensions, Image, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { Dimensions, Image, RefreshControl, StyleSheet, View, ScrollView } from "react-native";
 import {
   Button,
   IconButton,
@@ -18,9 +18,10 @@ import { useDashboardData } from "../../../src/hooks/useDashboardData";
 import { useAuthStore } from "../../../src/store/useAuthStore";
 import { AppDispatch, RootState } from "../../../src/store/redux/store";
 import { setAttendanceStatus, fetchFullEvent } from "../../../src/store/redux/eventSlice";
-import { setScrollOffset } from "../../../src/store/redux/uiSlice";
 import { resolveMediaUrl, formatDate } from "../../../src/utils/format";
 import { addAlpha } from "../../../src/utils/theme";
+import Animated, { useAnimatedScrollHandler, runOnJS } from "react-native-reanimated";
+import { useSharedScroll } from "../../../src/hooks/useSharedScroll";
 import { AnimatedCounter } from "../../../src/components/ui/AnimatedCounter";
 
 export default function EventDetailsScreen() {
@@ -32,14 +33,32 @@ export default function EventDetailsScreen() {
   const [showDroplet, setShowDroplet] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const currentUser = useAuthStore((state) => state.user);
-
   const { refresh: refreshDashboard } = useDashboardData();
+  const scrollOffset = useSharedScroll();
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const fetchEventData = useCallback(() => {
+  const fetchEventData = useCallback((force = false) => {
     if (id) {
-      dispatch(fetchFullEvent({ id: id as string, force: true }));
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      abortControllerRef.current = new AbortController();
+      
+      dispatch(fetchFullEvent({ 
+        id: id as string, 
+        force, 
+        signal: abortControllerRef.current.signal 
+      }));
     }
   }, [id, dispatch]);
+
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -58,14 +77,18 @@ export default function EventDetailsScreen() {
 
   const [actionLoading, setActionLoading] = useState(false);
 
-  const handleScroll = (event: any) => {
-    const offsetY = event.nativeEvent.contentOffset.y;
-    setShowDroplet(offsetY > 300);
-    dispatch(setScrollOffset(offsetY));
-  };
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollOffset.value = event.contentOffset.y;
+      
+      if ((event.contentOffset.y > 300) !== showDroplet) {
+         runOnJS(setShowDroplet)(event.contentOffset.y > 300);
+      }
+    },
+  });
 
   const scrollToTop = () => {
-    scrollRef.current?.scrollTo({ y: 0, animated: true });
+    (scrollRef.current as any)?.scrollTo({ y: 0, animated: true });
   };
 
   const toggleAttendance = async (status: "going" | "interested") => {
@@ -75,7 +98,6 @@ export default function EventDetailsScreen() {
     const isRemoving = event.user_status === status;
     const nextStatus = isRemoving ? null : status;
 
-    // Optimistic Update
     dispatch(setAttendanceStatus({ id: id as string, status: nextStatus, currentUser, event }));
 
     try {
@@ -86,7 +108,6 @@ export default function EventDetailsScreen() {
       }
     } catch (err) {
       console.error("Failed to update attendance", err);
-      // Revert optimistic update on failure
       dispatch(setAttendanceStatus({ id: id as string, status: event.user_status || null, currentUser, event }));
     } finally {
       setActionLoading(false);
@@ -154,7 +175,6 @@ export default function EventDetailsScreen() {
         position="top"
         topOffset={insets.top + 8}
       />
-      {/* Absolute TopBar */}
       <View style={[styles.eventHeader, { top: insets.top / 4 }]}>
         <IconButton
           icon="chevron-left"
@@ -187,26 +207,25 @@ export default function EventDetailsScreen() {
         </View>
       </View>
 
-      <ScrollView
-        ref={scrollRef}
+      <Animated.ScrollView
+        ref={scrollRef as any}
         contentContainerStyle={[
           styles.scrollContent,
           { paddingBottom: insets.bottom + 100 },
         ]}
-        onScroll={handleScroll}
+        onScroll={scrollHandler}
         scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
             refreshing={loading || false}
             onRefresh={() => {
-              fetchEventData();
+              fetchEventData(true);
               refreshDashboard();
             }}
             tintColor={theme.colors.primary}
           />
         }
       >
-        {/* Banner */}
         <View style={styles.bannerWrapper}>
           {bannerUrl ? (
             <Image source={{ uri: bannerUrl }} style={styles.bannerImage} />
@@ -221,7 +240,6 @@ export default function EventDetailsScreen() {
           <View style={styles.bannerOverlay} />
         </View>
 
-        {/* Content */}
         <View style={styles.content}>
           <View style={styles.titleSection}>
             <Text variant="displaySmall" style={styles.eventName}>
@@ -310,7 +328,6 @@ export default function EventDetailsScreen() {
             </View>
           )}
 
-          {/* Line-up Preview Section */}
           <View style={styles.lineupSection}>
             <Text variant="titleMedium" style={styles.sectionTitle}>
               Line-up
@@ -355,7 +372,7 @@ export default function EventDetailsScreen() {
             )}
           </View>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }

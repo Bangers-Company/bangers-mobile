@@ -18,6 +18,7 @@ export const useDashboardData = () => {
   const dispatch = useDispatch<AppDispatch>();
   const isSyncing = useSyncStore((state) => state.isSyncing);
   const fetchingRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const loadLocalData = useCallback(async () => {
     try {
@@ -48,26 +49,23 @@ export const useDashboardData = () => {
     }
   }, []);
 
-  const fetchRemoteData = useCallback(async () => {
+  const fetchRemoteData = useCallback(async (signal?: AbortSignal) => {
     if (fetchingRef.current) return;
     fetchingRef.current = true;
 
     try {
       setError(null);
-      const response = await dashboardApi.getDashboard();
+      const response = await dashboardApi.getDashboard({ signal });
       const dashboardData = response.data?.data;
 
       if (dashboardData) {
         setData(dashboardData);
 
-        // 1. Update User Profile in Redux
         if (dashboardData.user) {
           dispatch(setUser(dashboardData.user));
-          // Backward compatibility for components still using useAuthStore
           useAuthStore.getState().setUser(dashboardData.user);
         }
 
-        // 2. Collect all events for batch processing
         const allEventLists = [
           dashboardData.attending_events,
           dashboardData.upcoming_events,
@@ -83,47 +81,69 @@ export const useDashboardData = () => {
           allEvents.push(...items);
         });
 
-        // 3. Upsert to local DB for offline access
-        for (const event of allEvents) {
-          if (event && typeof event === "object" && event.id) {
-            await eventsRepository.upsert(event);
+        if (allEvents.length > 0) {
+          // Guard: If background sync is active, skip local DB update for dashboard
+          // to prevent contention and "database is locked" errors.
+          // The background sync will eventually update these events anyway.
+          if (!isSyncing) {
+            await eventsRepository.batchUpsert(allEvents.filter(e => e && e.id));
+          } else {
+            console.log("Skipping dashboard DB update: background sync in progress");
           }
         }
 
-        // 4. Cache in global Redux Event Store
         dispatch(setEventsData(allEvents));
       }
     } catch (err: any) {
+      if (err.name === 'CanceledError' || err.name === 'AbortError') return;
       setError(err);
       console.error("Failed to fetch remote dashboard data:", err);
     } finally {
       setLoading(false);
       fetchingRef.current = false;
     }
-  }, [dispatch]);
+  }, [dispatch, isSyncing]);
 
   const refresh = useCallback(async () => {
     if (refreshing) return;
+    
+    // Cancel previous fetch if any
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    
     setRefreshing(true);
     try {
       // Manual refresh pulls everything
-      await runDeltaSync();
-      await fetchRemoteData();
-    } catch (err) {
+      await runDeltaSync(controller.signal);
+      await fetchRemoteData(controller.signal);
+    } catch (err: any) {
+      if (err.name === 'CanceledError' || err.name === 'AbortError') return;
       console.error("Manual refresh failed:", err);
     } finally {
       setRefreshing(false);
+      if (abortControllerRef.current === controller) {
+        abortControllerRef.current = null;
+      }
     }
   }, [refreshing, fetchRemoteData]);
 
   // Initial load
   useEffect(() => {
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    
     loadLocalData().then(() => {
-      fetchRemoteData();
+      fetchRemoteData(controller.signal);
     });
-    // We only want this on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+
+    return () => {
+      controller.abort();
+    };
+  }, [loadLocalData, fetchRemoteData]);
 
   // Reload local data when background sync finishes
   useEffect(() => {

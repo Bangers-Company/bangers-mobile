@@ -1,21 +1,21 @@
-import { getDb, sanitizeParams } from "../sqlite";
+import { getDb, sanitizeParams, runExclusive } from "../sqlite";
 
 export const favoritesRepository = {
-  add: async (actId: string) => {
+  add: async (actId: string) => runExclusive(async () => {
     const db = await getDb();
     await db.runAsync(
       "INSERT OR REPLACE INTO favorites (act_id) VALUES (?)",
       sanitizeParams([actId]),
     );
-  },
+  }),
 
-  remove: async (actId: string) => {
+  remove: async (actId: string) => runExclusive(async () => {
     const db = await getDb();
     await db.runAsync(
       "DELETE FROM favorites WHERE act_id = ?",
       sanitizeParams([actId]),
     );
-  },
+  }),
 
   isFavorite: async (actId: string): Promise<boolean> => {
     const db = await getDb();

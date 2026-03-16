@@ -1,18 +1,23 @@
+import { AxiosRequestConfig } from "axios";
 import { Event } from "../types/event";
 import apiClient from "./client";
 
 export const eventsApi = {
-  getById: (id: string) => apiClient.get<Event>(`/events/${id}`),
-  getAttendees: (id: string) => apiClient.get(`/events/${id}/attendees`),
-  getAttendance: (id: string) => apiClient.get(`/events/${id}/attendance`),
-  updateAttendance: (id: string, status: "going" | "interested") =>
-    apiClient.put(`/events/${id}/attendance`, { status }),
-  deleteAttendance: (id: string) =>
-    apiClient.delete(`/events/${id}/attendance`),
+  getById: (id: string, config?: AxiosRequestConfig) => 
+    apiClient.get<Event>(`/events/${id}`, config),
+  getAttendees: (id: string, config?: AxiosRequestConfig) => 
+    apiClient.get(`/events/${id}/attendees`, config),
+  getAttendance: (id: string, config?: AxiosRequestConfig) => 
+    apiClient.get(`/events/${id}/attendance`, config),
+  updateAttendance: (id: string, status: "going" | "interested", config?: AxiosRequestConfig) =>
+    apiClient.put(`/events/${id}/attendance`, { status }, config),
+  deleteAttendance: (id: string, config?: AxiosRequestConfig) =>
+    apiClient.delete(`/events/${id}/attendance`, config),
 };
 
 export const searchApi = {
-  search: (query: string) => apiClient.get("/search", { params: { query } }),
+  search: (query: string, config?: AxiosRequestConfig) => 
+    apiClient.get("/search", { ...config, params: { ...config?.params, query } }),
 };
 
 export const groupsApi = {

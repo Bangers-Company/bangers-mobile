@@ -4,40 +4,59 @@ import { eventsRepository } from "../database/repositories/events.repository";
 
 export const syncHelpers = {
   processEntityUpdates: async (entityType: string, data: any[]) => {
+    const toUpsert: any[] = [];
+    const toDelete: string[] = [];
+
     for (const item of data) {
       if (item.deleted_at) {
-        await syncHelpers.handleDelete(entityType, item.id);
+        toDelete.push(item.id);
       } else {
-        await syncHelpers.handleUpsert(entityType, item);
+        toUpsert.push(item);
       }
+    }
+
+    if (toUpsert.length > 0) {
+      await syncHelpers.batchHandleUpsert(entityType, toUpsert);
+    }
+    if (toDelete.length > 0) {
+      await syncHelpers.batchHandleDelete(entityType, toDelete);
     }
   },
 
-  handleUpsert: async (entityType: string, item: any) => {
+  batchHandleUpsert: async (entityType: string, items: any[]) => {
     switch (entityType) {
       case "events":
-        await eventsRepository.upsert(item);
+        await eventsRepository.batchUpsert(items);
         break;
       case "artists":
-        await artistsRepository.upsert(item);
+        await artistsRepository.batchUpsert(items);
         break;
       case "acts":
-        await actsRepository.upsert(item);
+        await actsRepository.batchUpsert(items);
         break;
     }
+  },
+
+  batchHandleDelete: async (entityType: string, ids: string[]) => {
+    switch (entityType) {
+      case "events":
+        await eventsRepository.batchHardDelete(ids);
+        break;
+      case "artists":
+        await artistsRepository.batchHardDelete(ids);
+        break;
+      case "acts":
+        await actsRepository.batchHardDelete(ids);
+        break;
+    }
+  },
+
+  // Legacy individual handlers if needed, but discouraged for sync
+  handleUpsert: async (entityType: string, item: any) => {
+    await syncHelpers.batchHandleUpsert(entityType, [item]);
   },
 
   handleDelete: async (entityType: string, id: string) => {
-    switch (entityType) {
-      case "events":
-        await eventsRepository.hardDelete(id);
-        break;
-      case "artists":
-        await artistsRepository.hardDelete(id);
-        break;
-      case "acts":
-        await actsRepository.hardDelete(id);
-        break;
-    }
+    await syncHelpers.batchHandleDelete(entityType, [id]);
   },
 };

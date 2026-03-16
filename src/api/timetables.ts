@@ -1,18 +1,19 @@
+import { AxiosRequestConfig } from "axios";
 import { Timetable } from "../types/timetable";
 import apiClient from "./client";
 
 export const timetablesApi = {
-  getOfficial: (eventId: string) =>
-    apiClient.get(`/events/${eventId}/timetable`),
-  getPersonal: (eventId: string) =>
-    apiClient.get<Timetable>(`/personal-timetables/${eventId}`),
+  getOfficial: (eventId: string, config?: AxiosRequestConfig) =>
+    apiClient.get(`/events/${eventId}/timetable`, config),
+  getPersonal: (eventId: string, config?: AxiosRequestConfig) =>
+    apiClient.get<Timetable>(`/personal-timetables/${eventId}`, config),
   createPersonal: (data: { event_id: string; name: string }) => 
     apiClient.post<Timetable>("/personal-timetables", data),
   deletePersonal: (id: string) =>
     apiClient.delete(`/personal-timetables/${id}`),
-  getGroups: () => apiClient.get("/groups"),
-  getGroupTimetables: (groupId: string) => 
-    apiClient.get<Timetable[]>(`/groups/${groupId}/timetables`),
+  getGroups: (config?: AxiosRequestConfig) => apiClient.get("/groups", config),
+  getGroupTimetables: (groupId: string, config?: AxiosRequestConfig) => 
+    apiClient.get<Timetable[]>(`/groups/${groupId}/timetables`, config),
   deleteGroup: (id: string) => apiClient.delete(`/groups/${id}`),
   createGroupTimetable: (groupId: string, data: { event_id: string; name: string }) =>
     apiClient.post<Timetable>(`/groups/${groupId}/timetables`, data),

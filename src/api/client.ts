@@ -6,6 +6,7 @@ const API_BASE_URL = "http://192.168.3.2:8080/api/mobile"; // Replace with actua
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 10000, // 10s timeout to prevent hanging requests
   headers: {
     Accept: "application/json",
     "Content-Type": "application/json",
@@ -24,6 +25,9 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
+// Shared promise for concurrent refresh requests
+let refreshPromise: Promise<string> | null = null;
+
 // Response interceptor to handle token refresh
 apiClient.interceptors.response.use(
   (response) => response,
@@ -34,27 +38,29 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = useAuthStore.getState().refreshToken;
-        if (!refreshToken) {
-          throw new Error("No refresh token available");
+        if (!refreshPromise) {
+          refreshPromise = (async () => {
+            const refreshToken = useAuthStore.getState().refreshToken;
+            if (!refreshToken) {
+              throw new Error("No refresh token available");
+            }
+
+            const response = await axios.post<AuthResponse>(
+              `${API_BASE_URL}/auth/refresh`,
+              {
+                refresh_token: refreshToken,
+              },
+            );
+
+            const { accessToken } = response.data;
+            useAuthStore.getState().updateAccessToken(accessToken);
+            return accessToken;
+          })().finally(() => {
+            refreshPromise = null;
+          });
         }
 
-        const response = await axios.post<AuthResponse>(
-          `${API_BASE_URL}/auth/refresh`,
-          {
-            refresh_token: refreshToken,
-          },
-        );
-
-        const { accessToken, refreshToken: newRefreshToken } = response.data;
-
-        useAuthStore.getState().updateAccessToken(accessToken);
-        // If the API returns a new refresh token, update it too
-        if (newRefreshToken) {
-          // Need to update the store with both if applicable
-          // For now assuming we just update accessToken as per interface
-        }
-
+        const accessToken = await refreshPromise;
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return apiClient(originalRequest);
       } catch (refreshError) {

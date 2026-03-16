@@ -1,12 +1,12 @@
 import { Timetable } from "../../types/timetable";
-import { getDb, sanitizeParams } from "../sqlite";
+import { getDb, sanitizeParams, runExclusive } from "../sqlite";
 
 export const timetablesRepository = {
-  upsert: async (timetable: Timetable) => {
+  upsert: async (timetable: Timetable) => runExclusive(async () => {
     const db = await getDb();
 
-    await db.withExclusiveTransactionAsync(async (txn) => {
-      await txn.runAsync(
+    await db.withTransactionAsync(async () => {
+      await db.runAsync(
         "INSERT OR REPLACE INTO timetables (id, event_id, name, is_official, is_public) VALUES (?, ?, ?, ?, ?)",
         sanitizeParams([
           timetable.id,
@@ -19,13 +19,13 @@ export const timetablesRepository = {
 
       if (timetable.entries) {
         // Clear existing entries for this timetable
-        await txn.runAsync(
+        await db.runAsync(
           "DELETE FROM timetable_entries WHERE timetable_id = ?",
           sanitizeParams([timetable.id]),
         );
 
         for (const entry of timetable.entries) {
-          await txn.runAsync(
+          await db.runAsync(
             `INSERT INTO timetable_entries (id, timetable_id, act_id, stage_id, start_time, end_time) 
                VALUES (?, ?, ?, ?, ?, ?)`,
             sanitizeParams([
@@ -40,7 +40,7 @@ export const timetablesRepository = {
         }
       }
     });
-  },
+  }),
 
   getById: async (id: string): Promise<Timetable | null> => {
     const db = await getDb();

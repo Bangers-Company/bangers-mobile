@@ -1,16 +1,17 @@
 import { useRouter } from "expo-router";
 import React from "react";
-import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { RefreshControl, StyleSheet, View } from "react-native";
 import { ActivityIndicator, Button, Text, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch } from "react-redux";
+import Animated, { useAnimatedScrollHandler, runOnJS } from "react-native-reanimated";
 import { MyEventsCarousel } from "../../src/components/dashboard/MyEventsCarousel";
 import { SuggestedEvents } from "../../src/components/dashboard/SuggestedEvents";
 import { TopBar } from "../../src/components/navigation/TopBar";
 import { Droplet } from "../../src/components/ui/Droplet";
 import { useDashboardData } from "../../src/hooks/useDashboardData";
+import { useSharedScroll } from "../../src/hooks/useSharedScroll";
 import { AppDispatch } from "../../src/store/redux/store";
-import { setScrollOffset } from "../../src/store/redux/uiSlice";
 
 export default function HomeScreen() {
   const theme = useTheme();
@@ -19,14 +20,19 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { data, loading, refreshing, refresh, error } = useDashboardData();
   const [showDroplet, setShowDroplet] = React.useState(false);
-  const scrollRef = React.useRef<ScrollView>(null);
+  const scrollRef = React.useRef<Animated.ScrollView>(null);
+  const scrollOffset = useSharedScroll();
 
-  const handleScroll = (event: any) => {
-    const offsetY = event.nativeEvent.contentOffset.y;
-    // Show after scrolling past "My Events" (approx 200px)
-    setShowDroplet(offsetY > 200);
-    dispatch(setScrollOffset(offsetY));
-  };
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollOffset.value = event.contentOffset.y;
+      
+      // Update showDroplet threshold on JS thread if needed (approx 200px)
+      if ((event.contentOffset.y > 200) !== showDroplet) {
+         runOnJS(setShowDroplet)(event.contentOffset.y > 200);
+      }
+    },
+  });
 
   const scrollToTop = () => {
     scrollRef.current?.scrollTo({ y: 0, animated: true });
@@ -89,9 +95,9 @@ export default function HomeScreen() {
         position="top"
         topOffset={insets.top + 8}
       />
-      <ScrollView
+      <Animated.ScrollView
         ref={scrollRef}
-        onScroll={handleScroll}
+        onScroll={scrollHandler}
         scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
@@ -130,7 +136,7 @@ export default function HomeScreen() {
           refreshing={refreshing}
           onEventPress={(ev) => router.push(`/event/${ev.id}` as any)}
         />
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }

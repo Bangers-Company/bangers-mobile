@@ -16,10 +16,11 @@ export const useOfficialTimetable = (eventId: string) => {
   const error = useSelector((state: RootState) => state.timetable.error[eventId]);
 
   useEffect(() => {
-    if (eventId && !timetable && !loading) {
-      dispatch(fetchOfficialTimetable(eventId));
+    if (eventId && timetable === undefined && !loading && !error) {
+      const promise = dispatch(fetchOfficialTimetable(eventId));
+      return () => promise.abort();
     }
-  }, [eventId, timetable, loading, dispatch]);
+  }, [eventId, timetable, loading, error, dispatch]);
 
   return { data: timetable, isLoading: loading, error };
 };
@@ -31,10 +32,11 @@ export const usePersonalTimetable = (eventId: string) => {
   const error = useSelector((state: RootState) => state.timetable.error[eventId]);
 
   useEffect(() => {
-    if (eventId && !timetable && !loading) {
-      dispatch(fetchPersonalTimetable(eventId));
+    if (eventId && timetable === undefined && !loading && !error) {
+      const promise = dispatch(fetchPersonalTimetable(eventId));
+      return () => promise.abort();
     }
-  }, [eventId, timetable, loading, dispatch]);
+  }, [eventId, timetable, loading, error, dispatch]);
 
   return { data: timetable, isLoading: loading, error };
 };
@@ -46,10 +48,11 @@ export const useGroupTimetables = (groupId: string) => {
   const error = useSelector((state: RootState) => state.timetable.error[groupId]);
 
   useEffect(() => {
-    if (groupId && !timetable && !loading) {
-      dispatch(fetchGroupTimetable(groupId));
+    if (groupId && timetable === undefined && !loading && !error) {
+      const promise = dispatch(fetchGroupTimetable(groupId));
+      return () => promise.abort();
     }
-  }, [groupId, timetable, loading, dispatch]);
+  }, [groupId, timetable, loading, error, dispatch]);
 
   return { data: timetable, isLoading: loading, error };
 };
@@ -61,10 +64,11 @@ export const useGroups = () => {
   const error = useSelector((state: RootState) => state.timetable.error['groupsList']);
 
   useEffect(() => {
-    if (groups.length === 0 && !loading) {
-      dispatch(fetchGroupsList());
+    if (groups === null && !loading && !error) {
+      const promise = dispatch(fetchGroupsList());
+      return () => promise.abort();
     }
-  }, [groups.length, loading, dispatch]);
+  }, [groups, loading, error, dispatch]);
 
   return { data: groups, isLoading: loading, error };
 };

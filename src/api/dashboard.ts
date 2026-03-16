@@ -1,3 +1,4 @@
+import { AxiosRequestConfig } from "axios";
 import { Event } from "../types/event";
 import { User } from "../types/user";
 import apiClient from "./client";
@@ -14,7 +15,7 @@ export interface DashboardData {
 }
 
 export const dashboardApi = {
-  getDashboard: () => apiClient.get<{ data: DashboardData }>("/dashboard"),
-  getSuggestedEvents: () =>
-    apiClient.get<{ data: Event[] }>("/events/suggested"),
+  getDashboard: (config?: AxiosRequestConfig) => apiClient.get<{ data: DashboardData }>("/dashboard", config),
+  getSuggestedEvents: (config?: AxiosRequestConfig) =>
+    apiClient.get<{ data: Event[] }>("/events/suggested", config),
 };

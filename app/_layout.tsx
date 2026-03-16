@@ -10,6 +10,7 @@ import { useAuthStore } from "../src/store/useAuthStore";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Provider } from "react-redux";
 import { store } from "../src/store/redux/store";
+import { ScrollProvider } from "../src/hooks/useSharedScroll";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ export default function RootLayout() {
   routerRef.current = router;
   const [isHydrated, setIsHydrated] = useState(false);
   const [isDbReady, setIsDbReady] = useState(false);
+
   // Handle database initialization
   useEffect(() => {
     initDatabase()
@@ -34,20 +36,16 @@ export default function RootLayout() {
       })
       .catch((err) => {
         console.error("[RootLayout] Database initialization failed:", err);
-        // Still set to ready to avoid blocking app indefinitely,
-        // though queries will likely fail.
         setIsDbReady(true);
       });
   }, []);
 
   // Handle store hydration
   useEffect(() => {
-    console.log("[RootLayout] Starting hydration check...");
     let hydrationFinished = false;
 
     const finishHydration = () => {
       if (hydrationFinished) return;
-      console.log("[RootLayout] Hydration finished successfully.");
       hydrationFinished = true;
       setIsHydrated(true);
     };
@@ -59,9 +57,7 @@ export default function RootLayout() {
         finishHydration();
       });
 
-      // Fallback: Proceed anyway after 1.5s
       const timer = setTimeout(() => {
-        console.log("[RootLayout] Hydration timeout reached, forcing proceed.");
         finishHydration();
       }, 1500);
 
@@ -84,7 +80,6 @@ export default function RootLayout() {
       }
     };
 
-    // Use a small delay to ensure router is ready
     const timer = setTimeout(handleRedirect, 100);
     return () => clearTimeout(timer);
   }, [accessToken, segments, isHydrated]);
@@ -111,26 +106,28 @@ export default function RootLayout() {
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
-          <Stack
-            screenOptions={{
-              animation: "slide_from_right",
-              headerShown: false,
-            }}
-          >
-            <Stack.Screen name="(auth)" options={{ animation: "fade" }} />
-            <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
-            <Stack.Screen
-              name="modal"
-              options={{ presentation: "modal", title: "Modal" }}
-            />
-            <Stack.Screen
-              name="settings"
-              options={{ animation: "slide_from_bottom" }}
-            />
-            <Stack.Screen name="user/[id]" />
-            <Stack.Screen name="friends/[id]" />
-          </Stack>
-          <StatusBar style="auto" />
+          <ScrollProvider>
+            <Stack
+              screenOptions={{
+                animation: "slide_from_right",
+                headerShown: false,
+              }}
+            >
+              <Stack.Screen name="(auth)" options={{ animation: "fade" }} />
+              <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
+              <Stack.Screen
+                name="modal"
+                options={{ presentation: "modal", title: "Modal" }}
+              />
+              <Stack.Screen
+                name="settings"
+                options={{ animation: "slide_from_bottom" }}
+              />
+              <Stack.Screen name="user/[id]" />
+              <Stack.Screen name="friends/[id]" />
+            </Stack>
+            <StatusBar style="auto" />
+          </ScrollProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </Provider>

@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { ShieldAlert, ShieldCheck } from "lucide-react-native";
 import React, { useState } from "react";
 import ContentLoader, { Circle, Rect } from "react-content-loader/native";
-import { Dimensions, FlatList, StyleSheet, View } from "react-native";
+import { Dimensions, StyleSheet, View } from "react-native";
 import {
   Avatar,
   Button,
@@ -14,6 +14,7 @@ import {
 } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
+import Animated, { useAnimatedScrollHandler } from "react-native-reanimated";
 import { PageContainer } from "../../../src/components/PageContainer";
 import { User } from "../../../src/types/user";
 import { resolveMediaUrl } from "../../../src/utils/format";
@@ -21,7 +22,7 @@ import { RootState, AppDispatch } from "../../../src/store/redux/store";
 import {
   fetchFullEvent
 } from "../../../src/store/redux/eventSlice";
-import { setScrollOffset } from "../../../src/store/redux/uiSlice";
+import { useSharedScroll } from "../../../src/hooks/useSharedScroll";
 
 export default function VisitorsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -29,6 +30,7 @@ export default function VisitorsScreen() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const { top, bottom } = useSafeAreaInsets();
+  const scrollOffset = useSharedScroll();
 
   const cachedEvent = useSelector((state: RootState) => state.event.events[id as string]);
   const event = cachedEvent?.event;
@@ -36,9 +38,7 @@ export default function VisitorsScreen() {
   const loading = useSelector((state: RootState) => state.event.loadingEvents[id as string]);
   const error = useSelector((state: RootState) => state.event.errors[id as string]);
 
-  const visitors = attendees; // Use the new attendees variable
-  const isLoadingInitialData = loading && !event; // Adjust loading state based on new variables
-
+  const visitors = attendees;
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = async () => {
@@ -47,10 +47,11 @@ export default function VisitorsScreen() {
     setRefreshing(false);
   };
 
-  const handleScroll = (event: any) => {
-    const offsetY = event.nativeEvent.contentOffset.y;
-    dispatch(setScrollOffset(offsetY));
-  };
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollOffset.value = event.contentOffset.y;
+    },
+  });
 
   const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -83,7 +84,6 @@ export default function VisitorsScreen() {
             backgroundColor="rgba(128,128,128,0.2)"
             foregroundColor="rgba(128,128,128,0.4)"
           >
-            {/* Header placeholder */}
             <Rect
               x="0"
               y="0"
@@ -101,7 +101,6 @@ export default function VisitorsScreen() {
               height="16"
             />
 
-            {/* Visitors placeholder */}
             {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
               <React.Fragment key={i}>
                 <Circle cx="24" cy={100 + i * 80} r="24" />
@@ -182,12 +181,11 @@ export default function VisitorsScreen() {
 
   return (
     <PageContainer withPadding={false} withSafeArea={false}>
-      {/* Absolute TopBar */}
       <View style={[styles.header, { paddingTop: top / 4, paddingBottom: 10 }]}>
         <View style={styles.headerRow}>
           <IconButton
             icon="chevron-left"
-            onPress={() => router.push("/(tabs)")}
+            onPress={() => router.back()}
           />
           <View style={{ flex: 1 }}>
             <Text
@@ -208,7 +206,7 @@ export default function VisitorsScreen() {
         </View>
       </View>
 
-      <FlatList
+      <Animated.FlatList
         data={visitors}
         keyExtractor={(item) => item.id}
         renderItem={renderVisitor}
@@ -218,7 +216,7 @@ export default function VisitorsScreen() {
         ]}
         onRefresh={onRefresh}
         refreshing={refreshing}
-        onScroll={handleScroll}
+        onScroll={scrollHandler}
         scrollEventThrottle={16}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>

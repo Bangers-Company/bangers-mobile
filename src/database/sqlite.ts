@@ -3,6 +3,15 @@ import * as SQLite from "expo-sqlite";
 const DB_NAME = "bangers.db";
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
+// Global write mutex to prevent concurrent writes causing "database is locked" errors
+let writeMutex = Promise.resolve();
+
+export const runExclusive = async <T>(task: () => Promise<T>): Promise<T> => {
+  const result = writeMutex.then(task);
+  writeMutex = result.catch(() => {}).then(() => {});
+  return result;
+};
+
 export const getDb = (): Promise<SQLite.SQLiteDatabase> => {
   if (!dbPromise) {
     dbPromise = SQLite.openDatabaseAsync(DB_NAME);

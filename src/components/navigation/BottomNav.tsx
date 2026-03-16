@@ -21,6 +21,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/redux/store";
 import { addAlpha } from "../../utils/theme";
+import { useSharedScroll } from "../../hooks/useSharedScroll";
 
 interface NavItem {
   label: string;
@@ -32,7 +33,8 @@ export const BottomNav: React.FC = () => {
   const theme = useTheme();
   const pathname = usePathname();
   const router = useRouter();
-  const { scrollOffset, isBottomNavVisible } = useSelector((state: RootState) => state.ui);
+  const { isBottomNavVisible } = useSelector((state: RootState) => state.ui);
+  const scrollOffset = useSharedScroll();
   const insets = useSafeAreaInsets();
 
   const isEventPage = pathname.startsWith("/event/");
@@ -114,30 +116,31 @@ export const BottomNav: React.FC = () => {
   const borderColorTo = addAlpha(theme.colors.outlineVariant, 0.3);
 
   const animatedContainerStyle = useAnimatedStyle(() => {
-    const margin = interpolate(scrollOffset, [0, 50], [0, 24], "clamp");
-    const borderRadius = interpolate(scrollOffset, [0, 50], [0, 100], "clamp");
+    const offset = scrollOffset.value;
+    const margin = interpolate(offset, [0, 50], [0, 24], "clamp");
+    const borderRadius = interpolate(offset, [0, 50], [0, 100], "clamp");
     const bottomPos = interpolate(
-      scrollOffset,
+      offset,
       [0, 50],
       [0, insets.bottom + 16],
       "clamp",
     );
     const paddingBottom = interpolate(
-      scrollOffset,
+      offset,
       [0, 50],
       [insets.bottom + 8, 8],
       "clamp",
     );
-    const opacity = interpolate(scrollOffset, [0, 50], [0, 0.2], "clamp");
+    const opacity = interpolate(offset, [0, 50], [0, 0.2], "clamp");
 
     // Dynamic color values
     const bgColor = interpolateColor(
-      scrollOffset,
+      offset,
       [0, 50],
       [theme.colors.surface, bgColorTo],
     );
     const borderColor = interpolateColor(
-      scrollOffset,
+      offset,
       [0, 50],
       [theme.colors.outlineVariant, borderColorTo],
     );

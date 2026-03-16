@@ -6,7 +6,6 @@ interface UIState {
   themeMode: ThemeMode;
   isAmoled: boolean;
   accentColor: string | null;
-  scrollOffset: number;
   isBottomNavVisible: boolean;
 }
 
@@ -14,7 +13,6 @@ const initialState: UIState = {
   themeMode: 'system',
   isAmoled: false,
   accentColor: null,
-  scrollOffset: 0,
   isBottomNavVisible: true,
 };
 
@@ -31,9 +29,6 @@ const uiSlice = createSlice({
     setAccentColor: (state, action: PayloadAction<string | null>) => {
       state.accentColor = action.payload;
     },
-    setScrollOffset: (state, action: PayloadAction<number>) => {
-      state.scrollOffset = action.payload;
-    },
     setIsBottomNavVisible: (state, action: PayloadAction<boolean>) => {
       state.isBottomNavVisible = action.payload;
     },
@@ -44,7 +39,6 @@ export const {
   setThemeMode, 
   setIsAmoled, 
   setAccentColor, 
-  setScrollOffset, 
   setIsBottomNavVisible 
 } = uiSlice.actions;
 

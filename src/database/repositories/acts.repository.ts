@@ -1,13 +1,13 @@
 import { Act } from "../../types/act";
-import { getDb, sanitizeParams } from "../sqlite";
+import { getDb, sanitizeParams, runExclusive } from "../sqlite";
 
 export const actsRepository = {
-  upsert: async (act: Act) => {
+  upsert: async (act: Act) => runExclusive(async () => {
     const db = await getDb();
 
     // Use transaction for act and its artists
-    await db.withExclusiveTransactionAsync(async (txn) => {
-      await txn.runAsync(
+    await db.withTransactionAsync(async () => {
+      await db.runAsync(
         `INSERT OR REPLACE INTO acts (
             id, name, description, version, stage_id, date, created_at, updated_at, deleted_at
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -26,19 +26,19 @@ export const actsRepository = {
 
       if (act.artists) {
         // Clear existing relations
-        await txn.runAsync("DELETE FROM act_artists WHERE act_id = ?", [
+        await db.runAsync("DELETE FROM act_artists WHERE act_id = ?", [
           act.id,
         ]);
 
         for (const artist of act.artists) {
-          await txn.runAsync(
+          await db.runAsync(
             "INSERT INTO act_artists (act_id, artist_id) VALUES (?, ?)",
             sanitizeParams([act.id, artist.id]),
           );
         }
       }
     });
-  },
+  }),
 
   getAllByEvent: async (eventId: string): Promise<Act[]> => {
     const db = await getDb();
@@ -71,16 +71,59 @@ export const actsRepository = {
     };
   },
 
-  delete: async (id: string) => {
+  delete: async (id: string) => runExclusive(async () => {
     const db = await getDb();
     await db.runAsync(
       "UPDATE acts SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?",
       sanitizeParams([id]),
     );
-  },
+  }),
 
-  hardDelete: async (id: string) => {
+  hardDelete: async (id: string) => runExclusive(async () => {
     const db = await getDb();
     await db.runAsync("DELETE FROM acts WHERE id = ?", sanitizeParams([id]));
-  },
+  }),
+
+  batchUpsert: async (acts: Act[]) => runExclusive(async () => {
+    const db = await getDb();
+    await db.withTransactionAsync(async () => {
+      for (const act of acts) {
+        await db.runAsync(
+          `INSERT OR REPLACE INTO acts (
+              id, name, description, version, stage_id, date, created_at, updated_at, deleted_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          sanitizeParams([
+            act.id,
+            act.name,
+            act.description || null,
+            act.version,
+            act.stage_id || null,
+            act.date || null,
+            act.created_at,
+            act.updated_at,
+            act.deleted_at || null,
+          ]),
+        );
+
+        if (act.artists) {
+          await db.runAsync("DELETE FROM act_artists WHERE act_id = ?", [act.id]);
+          for (const artist of act.artists) {
+            await db.runAsync(
+              "INSERT INTO act_artists (act_id, artist_id) VALUES (?, ?)",
+              sanitizeParams([act.id, artist.id]),
+            );
+          }
+        }
+      }
+    });
+  }),
+
+  batchHardDelete: async (ids: string[]) => runExclusive(async () => {
+    const db = await getDb();
+    await db.withTransactionAsync(async () => {
+      for (const id of ids) {
+        await db.runAsync("DELETE FROM acts WHERE id = ?", sanitizeParams([id]));
+      }
+    });
+  }),
 };

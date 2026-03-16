@@ -24,7 +24,7 @@ const initialState: EventState = {
 
 export const fetchFullEvent = createAsyncThunk(
   'event/fetchFull',
-  async ({ id, force = false }: { id: string; force?: boolean }, { getState, rejectWithValue }) => {
+  async ({ id, force = false, signal }: { id: string; force?: boolean; signal?: AbortSignal }, { getState, rejectWithValue }) => {
     const state = (getState() as any).event as EventState;
     const cached = state.events[id];
     const CACHE_TTL = 1000 * 60 * 5; // 5 minutes
@@ -34,7 +34,7 @@ export const fetchFullEvent = createAsyncThunk(
     }
 
     try {
-      const eventRes = await eventsApi.getById(id);
+      const eventRes = await eventsApi.getById(id, { signal });
       const fetchedEvent = (eventRes.data as any).data || eventRes.data;
       const fetchedAttendees = fetchedEvent.attendees || [];
       const visibleAttendees = fetchedAttendees.filter((u: User) => u.is_public !== false);
@@ -45,6 +45,7 @@ export const fetchFullEvent = createAsyncThunk(
         attendees: visibleAttendees,
       };
     } catch (error: any) {
+      if (error.name === 'CanceledError') return null;
       return rejectWithValue(error.message || 'Failed to load event data');
     }
   }

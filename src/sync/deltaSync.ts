@@ -2,44 +2,34 @@ import { syncApi } from "../api/sync";
 import { useSyncStore } from "../store/useSyncStore";
 import { syncHelpers } from "./syncHelpers";
 
-export const runDeltaSync = async () => {
+export const runDeltaSync = async (signal?: AbortSignal) => {
   const { lastSyncTimestamp, setLastSyncTimestamp, setSyncing } =
     useSyncStore.getState();
 
   setSyncing(true);
   try {
-    // 1. Sync Events
-    const eventsResponse = await syncApi.getEvents(
-      lastSyncTimestamp.events || undefined,
-    );
+    // Run all fetches in parallel
+    const [eventsResponse, artistsResponse, actsResponse] = await Promise.all([
+      syncApi.getEvents(lastSyncTimestamp.events || undefined, { signal }),
+      syncApi.getArtists(lastSyncTimestamp.artists || undefined, { signal }),
+      syncApi.getActs(lastSyncTimestamp.acts || undefined, { signal }),
+    ]);
+
+    // Process results
     if (eventsResponse.data?.data && eventsResponse.data.data.length > 0) {
-      await syncHelpers.processEntityUpdates(
-        "events",
-        eventsResponse.data.data,
-      );
+      await syncHelpers.processEntityUpdates("events", eventsResponse.data.data);
     }
     if (eventsResponse.data?.sync_timestamp) {
       setLastSyncTimestamp("events", eventsResponse.data.sync_timestamp);
     }
 
-    // 2. Sync Artists
-    const artistsResponse = await syncApi.getArtists(
-      lastSyncTimestamp.artists || undefined,
-    );
     if (artistsResponse.data?.data && artistsResponse.data.data.length > 0) {
-      await syncHelpers.processEntityUpdates(
-        "artists",
-        artistsResponse.data.data,
-      );
+      await syncHelpers.processEntityUpdates("artists", artistsResponse.data.data);
     }
     if (artistsResponse.data?.sync_timestamp) {
       setLastSyncTimestamp("artists", artistsResponse.data.sync_timestamp);
     }
 
-    // 3. Sync Acts
-    const actsResponse = await syncApi.getActs(
-      lastSyncTimestamp.acts || undefined,
-    );
     if (actsResponse.data?.data && actsResponse.data.data.length > 0) {
       await syncHelpers.processEntityUpdates("acts", actsResponse.data.data);
     }

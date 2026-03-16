@@ -54,7 +54,7 @@ export const TopBar: React.FC = () => {
     });
   };
   // Friend requests and group invitations
-  const { groups, fetchGroups, acceptInvitation, rejectInvitation } = useTimetableStore();
+  const { groups, groupsFetched, fetchGroups, acceptInvitation, rejectInvitation } = useTimetableStore();
   const [notifications, setNotifications] = React.useState<any[]>([]);
 
   React.useEffect(() => {
@@ -75,11 +75,11 @@ export const TopBar: React.FC = () => {
         }).catch(console.error);
       }
       
-      if (groups.length === 0) {
+      if (!groupsFetched) {
         fetchGroups();
       }
     }
-  }, [user, groups, fetchGroups]);
+  }, [user, groupsFetched, fetchGroups, groups]);
 
   const [removingIds, setRemovingIds] = React.useState<Set<string>>(new Set());
   const slideAnimations = useRef<{ [key: string]: Animated.Value }>({}).current;
@@ -361,6 +361,7 @@ export const TopBar: React.FC = () => {
               onPress={() => {
                 setMenuVisible(false);
                 setTimeout(() => {
+                  useTimetableStore.getState().reset();
                   useAuthStore.getState().logout();
                   router.replace("/(auth)/login");
                 }, 200);

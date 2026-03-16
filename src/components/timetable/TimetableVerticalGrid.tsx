@@ -1,9 +1,11 @@
 import React from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { StyleSheet, View, ScrollView } from "react-native";
 import { Text, useTheme } from "react-native-paper";
+import Animated, { useAnimatedScrollHandler } from "react-native-reanimated";
 import { Timetable, TimetableEntry } from "../../types/timetable";
 import { addAlpha } from "../../utils/theme";
 import { TimetableActItem } from "./TimetableActItem";
+import { useSharedScroll } from "../../hooks/useSharedScroll";
 
 interface VerticalGridProps {
   timetable: Timetable;
@@ -27,6 +29,13 @@ export const TimetableVerticalGrid: React.FC<VerticalGridProps> = ({
   currentTime,
 }) => {
   const theme = useTheme();
+  const scrollOffset = useSharedScroll();
+
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollOffset.value = event.contentOffset.y;
+    },
+  });
 
   // 1. Group by stage and calculate time range
   const stageMap: Record<
@@ -34,7 +43,6 @@ export const TimetableVerticalGrid: React.FC<VerticalGridProps> = ({
     { id: string; name: string; entries: TimetableEntry[] }
   > = {};
   
-  // If template exists, initialize all stages from it
   if (templateTimetable) {
     (templateTimetable?.entries || []).forEach((entry) => {
       if (!stageMap[entry.stage.id]) {
@@ -56,7 +64,6 @@ export const TimetableVerticalGrid: React.FC<VerticalGridProps> = ({
     return h < 6 ? h + 24 : h;
   };
 
-  // Default range: 09:00 AM to 02:00 AM (next day = 26)
   let min = 9;
   let max = 26;
 
@@ -89,9 +96,12 @@ export const TimetableVerticalGrid: React.FC<VerticalGridProps> = ({
 
   return (
     <View style={styles.container}>
-      <ScrollView style={{ flex: 1 }}>
+      <Animated.ScrollView 
+        style={{ flex: 1 }}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+      >
         <View style={{ flexDirection: "row" }}>
-          {/* Time Sidebar */}
           <View style={[styles.timeSidebar]}>
             {hours.map((hour) => {
               const displayHour = hour >= 24 ? hour - 24 : hour;
@@ -110,7 +120,6 @@ export const TimetableVerticalGrid: React.FC<VerticalGridProps> = ({
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View>
-              {/* Stage Headers */}
               <View style={styles.stageHeaders}>
                 {stages.map((stage) => (
                   <View
@@ -128,7 +137,6 @@ export const TimetableVerticalGrid: React.FC<VerticalGridProps> = ({
                 ))}
               </View>
 
-              {/* Grid Body */}
               <View
                 style={[
                   styles.gridBody,
@@ -138,7 +146,6 @@ export const TimetableVerticalGrid: React.FC<VerticalGridProps> = ({
                   },
                 ]}
               >
-                {/* Horizontal Grid Lines */}
                 {hours.map((hour) => (
                   <View
                     key={hour}
@@ -153,7 +160,6 @@ export const TimetableVerticalGrid: React.FC<VerticalGridProps> = ({
                   />
                 ))}
 
-                {/* Stages Columns */}
                 {stages.map((stage, sIdx) => (
                   <View
                     key={stage.id}
@@ -188,7 +194,6 @@ export const TimetableVerticalGrid: React.FC<VerticalGridProps> = ({
                   </View>
                 ))}
 
-                {/* Current Time Indicator */}
                 {currentTime &&
                   toFestivalHour(currentTime) >= timeRange.start &&
                   toFestivalHour(currentTime) <= timeRange.end && (
@@ -207,7 +212,7 @@ export const TimetableVerticalGrid: React.FC<VerticalGridProps> = ({
             </View>
           </ScrollView>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 };
@@ -222,7 +227,7 @@ const styles = StyleSheet.create({
     zIndex: 5,
     borderRightWidth: 1,
     borderRightColor: "rgba(0,0,0,0.05)",
-    paddingTop: 40, // Match header height
+    paddingTop: 40, 
   },
   timeLabelContainer: {
     height: HOUR_HEIGHT,

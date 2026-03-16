@@ -26,11 +26,11 @@ const initialState: UserState = {
 
 export const fetchProfile = createAsyncThunk(
   'user/fetchProfile',
-  async (_, { rejectWithValue }) => {
+  async ({ signal }: { signal?: AbortSignal } = {}, { rejectWithValue }) => {
     try {
       const [response, friendsRes] = await Promise.all([
-        userApi.getMe(),
-        friendsApi.getFriends()
+        userApi.getMe({ signal }),
+        friendsApi.getFriends({ signal })
       ]);
       
       const userData = (response as any).data.data || (response as any).data;
@@ -43,7 +43,6 @@ export const fetchProfile = createAsyncThunk(
       const attending = userData.upcoming_events?.data || userData.upcoming_events || [];
       const past = userData.past_events?.data || userData.past_events || [];
       
-      // Prioritize API-data counters if available
       const friendsCount = userData.friends_count ?? friendsResData.length;
       
       const stats: UserStats = {
@@ -58,6 +57,7 @@ export const fetchProfile = createAsyncThunk(
         friendsCount: friendsCount,
       };
     } catch (error: any) {
+      if (error.name === 'CanceledError') return null;
       return rejectWithValue(error.message || 'Failed to fetch profile');
     }
   }
@@ -90,10 +90,12 @@ const userSlice = createSlice({
     });
     builder.addCase(fetchProfile.fulfilled, (state, action) => {
       state.loading = false;
-      state.user = action.payload.user;
-      state.attendingEvents = action.payload.attendingEvents;
-      state.pastEvents = action.payload.pastEvents;
-      state.friendsCount = action.payload.friendsCount;
+      if (action.payload) {
+        state.user = action.payload.user;
+        state.attendingEvents = action.payload.attendingEvents;
+        state.pastEvents = action.payload.pastEvents;
+        state.friendsCount = action.payload.friendsCount;
+      }
     });
     builder.addCase(fetchProfile.rejected, (state, action) => {
       state.loading = false;

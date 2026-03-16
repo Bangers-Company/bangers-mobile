@@ -1,8 +1,8 @@
 import { Event } from "../../types/event";
-import { getDb, sanitizeParams } from "../sqlite";
+import { getDb, sanitizeParams, runExclusive } from "../sqlite";
 
 export const eventsRepository = {
-  upsert: async (event: Event) => {
+  upsert: async (event: Event) => runExclusive(async () => {
     const db = await getDb();
     await db.runAsync(
       `INSERT OR REPLACE INTO events (
@@ -23,17 +23,50 @@ export const eventsRepository = {
       ]),
     );
 
-    // Also persist current user's attendance status if provided
     if (event.user_status) {
       await db.runAsync(
         "INSERT OR REPLACE INTO user_event_attendance (event_id, status) VALUES (?, ?)",
         [event.id, event.user_status]
       );
     } else if (event.user_status === null) {
-      // If explicitly null, it means we definitely aren't attending
       await db.runAsync("DELETE FROM user_event_attendance WHERE event_id = ?", [event.id]);
     }
-  },
+  }),
+
+  batchUpsert: async (events: Event[]) => runExclusive(async () => {
+    const db = await getDb();
+    await db.withTransactionAsync(async () => {
+      for (const event of events) {
+        await db.runAsync(
+          `INSERT OR REPLACE INTO events (
+              id, name, description, location, start_date, end_date, version, banner_url, created_at, updated_at, deleted_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          sanitizeParams([
+            event.id,
+            event.name,
+            event.description,
+            event.location,
+            event.start_date,
+            event.end_date,
+            event.version,
+            event.banner?.url || null,
+            event.created_at,
+            event.updated_at,
+            event.deleted_at || null,
+          ]),
+        );
+
+        if (event.user_status) {
+          await db.runAsync(
+            "INSERT OR REPLACE INTO user_event_attendance (event_id, status) VALUES (?, ?)",
+            [event.id, event.user_status]
+          );
+        } else if (event.user_status === null) {
+          await db.runAsync("DELETE FROM user_event_attendance WHERE event_id = ?", [event.id]);
+        }
+      }
+    });
+  }),
 
   getAll: async (): Promise<Event[]> => {
     const db = await getDb();
@@ -59,18 +92,27 @@ export const eventsRepository = {
     };
   },
 
-  delete: async (id: string) => {
+  delete: async (id: string) => runExclusive(async () => {
     const db = await getDb();
     await db.runAsync(
       "UPDATE events SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?",
       [id],
     );
-  },
+  }),
 
-  hardDelete: async (id: string) => {
+  hardDelete: async (id: string) => runExclusive(async () => {
     const db = await getDb();
     await db.runAsync("DELETE FROM events WHERE id = ?", [id]);
-  },
+  }),
+
+  batchHardDelete: async (ids: string[]) => runExclusive(async () => {
+    const db = await getDb();
+    await db.withTransactionAsync(async () => {
+      for (const id of ids) {
+        await db.runAsync("DELETE FROM events WHERE id = ?", [id]);
+      }
+    });
+  }),
 
   getAttendingCount: async (): Promise<number> => {
     const db = await getDb();

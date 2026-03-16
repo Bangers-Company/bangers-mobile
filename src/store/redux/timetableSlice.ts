@@ -6,7 +6,7 @@ interface TimetableState {
   official: Record<string, Timetable | null>; // eventId -> Timetable
   personal: Record<string, Timetable | null>; // eventId -> Timetable
   groups: Record<string, Timetable | null>;   // groupId -> Timetable
-  groupsList: any[];
+  groupsList: any[] | null;
   loading: Record<string, boolean>;
   error: Record<string, string | null>;
 }
@@ -15,15 +15,15 @@ const initialState: TimetableState = {
   official: {},
   personal: {},
   groups: {},
-  groupsList: [],
+  groupsList: null,
   loading: {},
   error: {},
 };
 
 export const fetchOfficialTimetable = createAsyncThunk(
   'timetable/fetchOfficial',
-  async (eventId: string) => {
-    const res = await timetablesApi.getOfficial(eventId);
+  async (eventId: string, { signal }) => {
+    const res = await timetablesApi.getOfficial(eventId, { signal });
     // If backend returns { data: Timetable }, use res.data.data, else use res.data
     const data = (res.data as any).data || res.data;
     return { eventId, data: data as Timetable };
@@ -32,8 +32,8 @@ export const fetchOfficialTimetable = createAsyncThunk(
 
 export const fetchPersonalTimetable = createAsyncThunk(
   'timetable/fetchPersonal',
-  async (eventId: string) => {
-    const res = await timetablesApi.getPersonal(eventId);
+  async (eventId: string, { signal }) => {
+    const res = await timetablesApi.getPersonal(eventId, { signal });
     const data = (res.data as any).data || res.data;
     return { eventId, data: data as Timetable };
   }
@@ -41,18 +41,19 @@ export const fetchPersonalTimetable = createAsyncThunk(
 
 export const fetchGroupTimetable = createAsyncThunk(
   'timetable/fetchGroup',
-  async (groupId: string) => {
-    const res = await timetablesApi.getGroupTimetables(groupId);
-    // getGroupTimetables returns Timetable[]
-    const data = Array.isArray(res.data) ? res.data[0] : (res.data as any).data || res.data;
+  async (groupId: string, { signal }) => {
+    const res = await timetablesApi.getGroupTimetables(groupId, { signal });
+    // Handle both { data: Timetable[] } and Timetable[]
+    const list = Array.isArray(res.data) ? res.data : (res.data as any).data;
+    const data = Array.isArray(list) ? list[0] : list;
     return { groupId, data: data as Timetable };
   }
 );
 
 export const fetchGroupsList = createAsyncThunk(
   'timetable/fetchGroupsList',
-  async () => {
-    const res = await timetablesApi.getGroups();
+  async (_, { signal }) => {
+    const res = await timetablesApi.getGroups({ signal });
     return res.data;
   }
 );
@@ -90,6 +91,7 @@ const timetableSlice = createSlice({
     // Official
     builder.addCase(fetchOfficialTimetable.pending, (state, action) => {
       state.loading[action.meta.arg] = true;
+      state.error[action.meta.arg] = null;
     });
     builder.addCase(fetchOfficialTimetable.fulfilled, (state, action) => {
       state.loading[action.payload.eventId] = false;
@@ -103,6 +105,7 @@ const timetableSlice = createSlice({
     // Personal
     builder.addCase(fetchPersonalTimetable.pending, (state, action) => {
       state.loading[action.meta.arg] = true;
+      state.error[action.meta.arg] = null;
     });
     builder.addCase(fetchPersonalTimetable.fulfilled, (state, action) => {
       state.loading[action.payload.eventId] = false;
@@ -116,6 +119,7 @@ const timetableSlice = createSlice({
     // Group
     builder.addCase(fetchGroupTimetable.pending, (state, action) => {
       state.loading[action.meta.arg] = true;
+      state.error[action.meta.arg] = null;
     });
     builder.addCase(fetchGroupTimetable.fulfilled, (state, action) => {
       state.loading[action.payload.groupId] = false;
@@ -129,6 +133,7 @@ const timetableSlice = createSlice({
     // Groups List
     builder.addCase(fetchGroupsList.pending, (state) => {
       state.loading['groupsList'] = true;
+      state.error['groupsList'] = null;
     });
     builder.addCase(fetchGroupsList.fulfilled, (state, action) => {
       state.loading['groupsList'] = false;
@@ -173,7 +178,7 @@ const timetableSlice = createSlice({
       }
 
       // ALSO update groupsList if this is a group toggle
-      if (type === 'group') {
+      if (type === 'group' && state.groupsList) {
         state.groupsList = state.groupsList.map(group => {
           if (String(group.id) === String(targetId) && group.timetables) {
             return {
@@ -244,7 +249,7 @@ const timetableSlice = createSlice({
         else if (type === 'group') state.groups[targetId] = newTimetable;
       }
 
-      if (type === 'group') {
+      if (type === 'group' && state.groupsList) {
         state.groupsList = state.groupsList.map(group => {
           if (String(group.id) === String(targetId) && group.timetables) {
              // ... analogous rollback for groupsList if needed ...

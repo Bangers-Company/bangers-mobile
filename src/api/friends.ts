@@ -1,3 +1,4 @@
+import { AxiosRequestConfig } from "axios";
 import { User } from "../types/user";
 import apiClient from "./client";
 
@@ -15,11 +16,18 @@ export interface Friendship {
 }
 
 export const friendsApi = {
-  getFriends: () => apiClient.get<{ data: User[] }>("/friends"),
-  getUserFriends: (userId: string) => apiClient.get<{ data: User[] }>(`/friends/${userId}/friends`),
-  getRequests: () => apiClient.get<{ data: Friendship[] }>("/friends/requests"),
-  sendRequest: (userId: string) => apiClient.post<{ data: Friendship }>(`/friends/${userId}`),
-  acceptRequest: (userId: string) => apiClient.put<{ data: Friendship }>(`/friends/${userId}/accept`),
-  rejectRequest: (userId: string) => apiClient.put(`/friends/${userId}/reject`),
-  removeFriend: (userId: string) => apiClient.delete(`/friends/${userId}`),
+  getFriends: (config?: AxiosRequestConfig) => 
+    apiClient.get<{ data: User[] }>("/friends", config),
+  getUserFriends: (userId: string, config?: AxiosRequestConfig) => 
+    apiClient.get<{ data: User[] }>(`/friends/${userId}/friends`, config),
+  getRequests: (config?: AxiosRequestConfig) => 
+    apiClient.get<{ data: Friendship[] }>("/friends/requests", config),
+  sendRequest: (userId: string, config?: AxiosRequestConfig) => 
+    apiClient.post<{ data: Friendship }>(`/friends/${userId}`, config),
+  acceptRequest: (userId: string, config?: AxiosRequestConfig) => 
+    apiClient.put<{ data: Friendship }>(`/friends/${userId}/accept`, config),
+  rejectRequest: (userId: string, config?: AxiosRequestConfig) => 
+    apiClient.put(`/friends/${userId}/reject`, config),
+  removeFriend: (userId: string, config?: AxiosRequestConfig) => 
+    apiClient.delete(`/friends/${userId}`, config),
 };

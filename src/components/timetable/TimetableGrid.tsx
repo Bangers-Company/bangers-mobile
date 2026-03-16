@@ -46,46 +46,41 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
   }, []);
 
   // Day Logic
-  const days = useMemo(() => {
+  const firstCalendarDate = useMemo(() => {
     const sourceEntries = templateTimetable?.entries || timetable?.entries || [];
-    
-    // 1. Find the earliest calendar date
     const calendarDates = sourceEntries
       .map((e) => e.start_time.split("T")[0])
       .sort();
-    const firstCalendarDate = calendarDates[0] || "";
+    return calendarDates[0] || "";
+  }, [timetable.entries, templateTimetable?.entries]);
 
-    const getFestivalDate = (dateStr: string) => {
-      const date = new Date(dateStr);
-      const calendarDate = dateStr.split("T")[0];
-      const hour = date.getHours();
+  const getFestivalDate = React.useCallback((dateStr: string) => {
+    const date = new Date(dateStr);
+    const calendarDate = dateStr.split("T")[0];
+    const hour = date.getHours();
 
-      // Only shift back if it's NOT the first calendar day of the event
-      // This prevents "Friday 02:00 AM" from becoming "Thursday" if the festival starts Friday
-      if (hour < 6 && calendarDate !== firstCalendarDate) {
-        const festivalDate = new Date(date);
-        festivalDate.setDate(festivalDate.getDate() - 1);
+    if (hour < 6 && calendarDate !== firstCalendarDate) {
+      const festivalDate = new Date(date);
+      festivalDate.setDate(festivalDate.getDate() - 1);
 
-        const year = festivalDate.getFullYear();
-        const month = (festivalDate.getMonth() + 1).toString().padStart(2, "0");
-        const day = festivalDate.getDate().toString().padStart(2, "0");
-        return `${year}-${month}-${day}`;
-      }
+      const year = festivalDate.getFullYear();
+      const month = (festivalDate.getMonth() + 1).toString().padStart(2, "0");
+      const day = festivalDate.getDate().toString().padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
 
-      return calendarDate;
-    };
+    return calendarDate;
+  }, [firstCalendarDate]);
 
+  const availableDays = useMemo(() => {
+    const sourceEntries = templateTimetable?.entries || timetable?.entries || [];
     const dayMap = new Set<string>();
     sourceEntries.forEach((e) => {
       dayMap.add(getFestivalDate(e.start_time));
     });
-    return {
-      days: Array.from(dayMap).sort(),
-      getFestivalDate, // Export it for use in filtering
-    };
-  }, [timetable.entries, templateTimetable?.entries]);
+    return Array.from(dayMap).sort();
+  }, [timetable.entries, templateTimetable?.entries, getFestivalDate]);
 
-  const { days: availableDays, getFestivalDate } = days;
   const [selectedDay, setSelectedDay] = useState("");
 
   useEffect(() => {

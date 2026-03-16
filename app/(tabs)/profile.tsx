@@ -1,7 +1,7 @@
 import { useRouter, useFocusEffect } from "expo-router";
 import { Calendar, History, Users, ShieldAlert, ShieldCheck } from "lucide-react-native";
 import React, { useCallback } from "react";
-import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { RefreshControl, StyleSheet, View } from "react-native";
 import {
   Avatar,
   Button,
@@ -13,8 +13,9 @@ import ContentLoader, { Rect } from "react-content-loader/native";
 import { useProfile } from "../../src/hooks/useProfile";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../src/store/redux/store";
-import { setScrollOffset } from "../../src/store/redux/uiSlice";
 import { resolveMediaUrl } from "../../src/utils/format";
+import { useSharedScroll } from "../../src/hooks/useSharedScroll";
+import Animated, { useAnimatedScrollHandler } from "react-native-reanimated";
 import {
   EventCard,
   EventCardSkeleton,
@@ -24,10 +25,10 @@ import { AnimatedCounter } from "../../src/components/ui/AnimatedCounter";
 export default function ProfileScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
   const [focusKey, setFocusKey] = React.useState(0);
   const { user, attendingEvents, pastEvents, friendsCount, loading, refreshProfile } =
     useProfile();
+  const scrollOffset = useSharedScroll();
 
   useFocusEffect(
     useCallback(() => {
@@ -36,9 +37,11 @@ export default function ProfileScreen() {
     }, [refreshProfile])
   );
 
-  const handleScroll = (event: any) => {
-    dispatch(setScrollOffset(event.nativeEvent.contentOffset.y));
-  };
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollOffset.value = event.contentOffset.y;
+    },
+  });
 
   const statItems = [
     {
@@ -62,12 +65,12 @@ export default function ProfileScreen() {
   ];
 
   return (
-    <ScrollView
+    <Animated.ScrollView
       style={styles.container}
       refreshControl={
         <RefreshControl refreshing={loading} onRefresh={refreshProfile} />
       }
-      onScroll={handleScroll}
+      onScroll={scrollHandler}
       scrollEventThrottle={16}
     >
       <View style={styles.header}>
@@ -162,7 +165,7 @@ export default function ProfileScreen() {
             View All
           </Button>
         </View>
-        <ScrollView
+        <Animated.ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.horizontalScroll}
@@ -186,14 +189,14 @@ export default function ProfileScreen() {
           ) : (
             <Text style={styles.emptyText}>No upcoming events</Text>
           )}
-        </ScrollView>
+        </Animated.ScrollView>
       </View>
 
       <View style={styles.section}>
         <Text variant="titleLarge" style={styles.sectionTitle}>
           Past Events
         </Text>
-        <ScrollView
+        <Animated.ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.horizontalScroll}
@@ -217,7 +220,7 @@ export default function ProfileScreen() {
           ) : (
             <Text style={styles.emptyText}>No past events recorded</Text>
           )}
-        </ScrollView>
+        </Animated.ScrollView>
       </View>
 
       <View style={styles.footer}>
@@ -225,7 +228,7 @@ export default function ProfileScreen() {
           Version 1.0.0 (Beta)
         </Text>
       </View>
-    </ScrollView>
+    </Animated.ScrollView>
   );
 }
 

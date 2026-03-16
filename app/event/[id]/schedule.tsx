@@ -22,6 +22,8 @@ import {
   useToggleAttendance 
 } from "../../../src/hooks/useTimetables";
 
+const EMPTY_ARRAY: any[] = [];
+
 export default function ScheduleScreen() {
   const { id: eventId } = useLocalSearchParams<{ id: string }>();
   const theme = useTheme();
@@ -58,16 +60,18 @@ export default function ScheduleScreen() {
   const cachedEvent = useSelector((state: RootState) => state.event.events[eventId as string]?.event);
 
   // Derive timetables from queries
-  const official = officialQuery || (cachedEvent?.official_timetable ? {
-    ...cachedEvent.official_timetable,
-    event_id: eventId,
-    entries: (cachedEvent.official_timetable as any).entries || [],
-  } as Timetable : null);
+  const official = React.useMemo(() => {
+    return officialQuery || (cachedEvent?.official_timetable ? {
+      ...cachedEvent.official_timetable,
+      event_id: eventId,
+      entries: (cachedEvent.official_timetable as any).entries || [],
+    } as Timetable : null);
+  }, [officialQuery, cachedEvent, eventId]);
+  
+  const personal = React.useMemo(() => personalQuery || (cachedEvent as any)?.personal_timetable || null, [personalQuery, cachedEvent]);
+  const groups = React.useMemo(() => groupsQuery || EMPTY_ARRAY, [groupsQuery]);
 
-  const personal = personalQuery || (cachedEvent as any)?.personal_timetable || null;
-  const groups = groupsQuery || [];
-
-  const selectedTimetable = (() => {
+  const selectedTimetable = React.useMemo(() => {
     if (selectedTimetableId) {
       if (selectedTimetableId === official?.id) return official;
       if (selectedTimetableId === personal?.id) return personal;
@@ -76,18 +80,15 @@ export default function ScheduleScreen() {
       if (t) return t;
     }
     return null;
-  })();
+  }, [selectedTimetableId, official, personal, groups, selectedGroupId]);
 
   const isPersonal = !!selectedTimetable && 
     (selectedTimetable.id === personal?.id || !!selectedGroupId);
 
   // Handle BottomNav visibility
   useEffect(() => {
-    if (selectedTimetable) {
-      dispatch(setIsBottomNavVisible(false));
-    } else {
-      dispatch(setIsBottomNavVisible(true));
-    }
+    dispatch(setIsBottomNavVisible(!selectedTimetable));
+    
     return () => {
       dispatch(setIsBottomNavVisible(true));
     };
@@ -179,7 +180,7 @@ export default function ScheduleScreen() {
   };
 
 
-  const handleEntryPress = (entry: TimetableEntry) => {
+  const handleEntryPress = React.useCallback((entry: TimetableEntry) => {
     if (!selectedTimetable || selectedTimetable.is_official) return;
     toggleMutation.mutate({
       id: selectedTimetable.id,
@@ -188,7 +189,7 @@ export default function ScheduleScreen() {
       type: selectedGroupId ? 'group' : 'personal',
       targetId: selectedGroupId || eventId
     });
-  };
+  }, [selectedTimetable, selectedGroupId, eventId, toggleMutation]);
 
   const toggleViewMode = () => {
     setViewMode(viewMode === "vertical" ? "horizontal" : "vertical");

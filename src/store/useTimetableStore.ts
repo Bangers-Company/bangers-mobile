@@ -10,6 +10,8 @@ interface TimetableState {
   loading: Record<string, boolean>;
   error: Record<string, string | null>;
   viewMode: "vertical" | "horizontal";
+  groupsFetched: boolean;
+  isInitialized: boolean;
   
   // Actions
   fetchGroups: () => Promise<void>;
@@ -17,8 +19,9 @@ interface TimetableState {
   fetchPersonal: (eventId: string) => Promise<void>;
   createPersonal: (eventId: string, name: string) => Promise<void>;
   deletePersonal: (eventId: string, timetableId: string) => Promise<void>;
-  toggleAttend: (timetableId: string, entryId: string, isGroup: boolean, eventId: string, groupId?: string) => Promise<void>;
+  toggleAttend: (timetableId: string, entryId: string, isGroup: boolean, eventId?: string, groupId?: string) => Promise<void>;
   setViewMode: (mode: "vertical" | "horizontal") => void;
+  reset: () => void;
   acceptInvitation: (groupId: string) => Promise<void>;
   rejectInvitation: (groupId: string) => Promise<void>;
   createGroup: (name: string, user_ids: string[]) => Promise<void>;
@@ -34,13 +37,16 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   loading: {},
   error: {},
   viewMode: "vertical",
+  groupsFetched: false,
+  isInitialized: false,
 
   fetchGroups: async () => {
     try {
       const res = await timetablesApi.getGroups();
-      set({ groups: res.data });
+      set({ groups: res.data, groupsFetched: true });
     } catch {
       console.error("Failed to fetch groups");
+      set({ groupsFetched: true }); // Still mark as fetched to avoid loops
     }
   },
 
@@ -129,7 +135,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
     const state = get();
     let timetable = isGroup 
       ? state.groups.find(g => g.id === groupId)?.timetables?.find((t: any) => t.id === timetableId)
-      : (timetableId === state.officialTimetable[eventId]?.id ? state.officialTimetable[eventId] : state.personalTimetable[eventId]);
+      : (timetableId === state.officialTimetable[eventId!]?.id ? state.officialTimetable[eventId!] : state.personalTimetable[eventId!]);
     
     if (!timetable || timetable.id !== timetableId) {
        console.warn("Timetable not found for toggleAttend:", timetableId);
@@ -143,7 +149,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
          await timetablesApi.toggleAttend(timetableId, entryId, isGroup, groupId);
          if (isGroup) {
             get().fetchGroupTimetable(groupId!, timetableId);
-         } else {
+         } else if (eventId) {
             get().fetchPersonal(eventId);
          }
        } catch (e) {
@@ -172,7 +178,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
           // Re-fetch the record from the state to be sure we don't overwrite other changes
           const target = timetable.is_official ? "officialTimetable" : "personalTimetable";
           const currentDict = state[target as "officialTimetable" | "personalTimetable"];
-          const currentT = currentDict[eventId];
+          const currentT = currentDict[eventId!];
           if (!currentT) return state;
 
           const newEntries = updaterFn(currentT.entries || []);
@@ -180,7 +186,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
           return {
             [target]: {
               ...currentDict,
-              [eventId]: { ...currentT, entries: newEntries },
+              [eventId!]: { ...currentT, entries: newEntries },
             },
           };
         }
@@ -371,4 +377,14 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   },
 
   setViewMode: (viewMode) => set({ viewMode }),
+
+  reset: () => {
+    set({
+      groups: [],
+      groupsFetched: false,
+      isInitialized: false,
+      loading: {},
+      error: {},
+    });
+  },
 }));
