@@ -3,7 +3,6 @@ import React from "react";
 import { RefreshControl, StyleSheet, View } from "react-native";
 import { ActivityIndicator, Button, Text, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useDispatch } from "react-redux";
 import Animated, { useAnimatedScrollHandler, runOnJS } from "react-native-reanimated";
 import { MyEventsCarousel } from "../../src/components/dashboard/MyEventsCarousel";
 import { SuggestedEvents } from "../../src/components/dashboard/SuggestedEvents";
@@ -11,12 +10,10 @@ import { TopBar } from "../../src/components/navigation/TopBar";
 import { Droplet } from "../../src/components/ui/Droplet";
 import { useDashboardData } from "../../src/hooks/useDashboardData";
 import { useSharedScroll } from "../../src/hooks/useSharedScroll";
-import { AppDispatch } from "../../src/store/redux/store";
 
 export default function HomeScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
   const insets = useSafeAreaInsets();
   const { data, loading, refreshing, refresh, error } = useDashboardData();
   const [showDroplet, setShowDroplet] = React.useState(false);
@@ -24,12 +21,11 @@ export default function HomeScreen() {
   const scrollOffset = useSharedScroll();
 
   const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      scrollOffset.value = event.contentOffset.y;
+    onScroll: (ev) => {
+      scrollOffset.value = ev.contentOffset.y;
       
-      // Update showDroplet threshold on JS thread if needed (approx 200px)
-      if ((event.contentOffset.y > 200) !== showDroplet) {
-         runOnJS(setShowDroplet)(event.contentOffset.y > 200);
+      if ((ev.contentOffset.y > 200) !== showDroplet) {
+         runOnJS(setShowDroplet)(ev.contentOffset.y > 200);
       }
     },
   });
@@ -75,17 +71,17 @@ export default function HomeScreen() {
   const rawAttending = data?.attending_events;
   const attendingEvents = Array.isArray(rawAttending)
     ? rawAttending
-    : rawAttending?.data || [];
+    : (rawAttending as any)?.data || [];
 
   const rawUpcoming = data?.upcoming_events;
   const upcomingEvents = Array.isArray(rawUpcoming)
     ? rawUpcoming
-    : rawUpcoming?.data || [];
+    : (rawUpcoming as any)?.data || [];
 
   const rawSuggested = data?.suggested_events;
   const suggestedEvents = Array.isArray(rawSuggested)
     ? rawSuggested
-    : rawSuggested?.data || [];
+    : (rawSuggested as any)?.data || [];
 
   return (
     <View style={styles.container}>
@@ -111,7 +107,6 @@ export default function HomeScreen() {
           { paddingBottom: insets.bottom + 100 },
         ]}
       >
-        {/* Attending Section */}
         {attendingEvents.length > 0 && (
           <MyEventsCarousel
             title="My Events"
@@ -120,7 +115,6 @@ export default function HomeScreen() {
           />
         )}
 
-        {/* Upcoming Section */}
         {upcomingEvents.length > 0 && (
           <MyEventsCarousel
             title="Maybe interested in"
@@ -129,7 +123,6 @@ export default function HomeScreen() {
           />
         )}
 
-        {/* Suggested Section */}
         <SuggestedEvents
           events={suggestedEvents}
           onRefresh={refresh}

@@ -1,13 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useDispatch } from "react-redux";
 import { dashboardApi, DashboardData } from "../api/dashboard";
 import { eventsRepository } from "../database/repositories/events.repository";
 import { useSyncStore } from "../store/useSyncStore";
 import { runDeltaSync } from "../sync/deltaSync";
 import { useAuthStore } from "../store/useAuthStore";
-import { AppDispatch } from "../store/redux/store";
-import { setEventsData } from "../store/redux/eventSlice";
-import { setUser } from "../store/redux/userSlice";
 
 export const useDashboardData = () => {
   const [data, setData] = useState<DashboardData | null>(null);
@@ -15,7 +11,6 @@ export const useDashboardData = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const dispatch = useDispatch<AppDispatch>();
   const isSyncing = useSyncStore((state) => state.isSyncing);
   const fetchingRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -62,7 +57,6 @@ export const useDashboardData = () => {
         setData(dashboardData);
 
         if (dashboardData.user) {
-          dispatch(setUser(dashboardData.user));
           useAuthStore.getState().setUser(dashboardData.user);
         }
 
@@ -82,17 +76,12 @@ export const useDashboardData = () => {
         });
 
         if (allEvents.length > 0) {
-          // Guard: If background sync is active, skip local DB update for dashboard
-          // to prevent contention and "database is locked" errors.
-          // The background sync will eventually update these events anyway.
           if (!isSyncing) {
             await eventsRepository.batchUpsert(allEvents.filter(e => e && e.id));
           } else {
             console.log("Skipping dashboard DB update: background sync in progress");
           }
         }
-
-        dispatch(setEventsData(allEvents));
       }
     } catch (err: any) {
       if (err.name === 'CanceledError' || err.name === 'AbortError') return;
@@ -102,12 +91,11 @@ export const useDashboardData = () => {
       setLoading(false);
       fetchingRef.current = false;
     }
-  }, [dispatch, isSyncing]);
+  }, [isSyncing]);
 
   const refresh = useCallback(async () => {
     if (refreshing) return;
     
-    // Cancel previous fetch if any
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -117,7 +105,6 @@ export const useDashboardData = () => {
     
     setRefreshing(true);
     try {
-      // Manual refresh pulls everything
       await runDeltaSync(controller.signal);
       await fetchRemoteData(controller.signal);
     } catch (err: any) {
@@ -131,7 +118,6 @@ export const useDashboardData = () => {
     }
   }, [refreshing, fetchRemoteData]);
 
-  // Initial load
   useEffect(() => {
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -145,7 +131,6 @@ export const useDashboardData = () => {
     };
   }, [loadLocalData, fetchRemoteData]);
 
-  // Reload local data when background sync finishes
   useEffect(() => {
     if (!isSyncing) {
       loadLocalData();

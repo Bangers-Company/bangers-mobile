@@ -13,43 +13,37 @@ import {
   useTheme,
 } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useDispatch, useSelector } from "react-redux";
 import Animated, { useAnimatedScrollHandler } from "react-native-reanimated";
 import { PageContainer } from "../../../src/components/PageContainer";
 import { User } from "../../../src/types/user";
 import { resolveMediaUrl } from "../../../src/utils/format";
-import { RootState, AppDispatch } from "../../../src/store/redux/store";
-import {
-  fetchFullEvent
-} from "../../../src/store/redux/eventSlice";
 import { useSharedScroll } from "../../../src/hooks/useSharedScroll";
+import { useEvent, useAttendees } from "../../../src/hooks/useEvent";
 
 export default function VisitorsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useTheme();
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
   const { top, bottom } = useSafeAreaInsets();
   const scrollOffset = useSharedScroll();
 
-  const cachedEvent = useSelector((state: RootState) => state.event.events[id as string]);
-  const event = cachedEvent?.event;
-  const attendees = cachedEvent?.attendees || [];
-  const loading = useSelector((state: RootState) => state.event.loadingEvents[id as string]);
-  const error = useSelector((state: RootState) => state.event.errors[id as string]);
+  const { data: event, isLoading: eventLoading, error: eventError, refetch: refetchEvent } = useEvent(id as string);
+  const { data: attendees = [], isLoading: attendeesLoading, refetch: refetchAttendees } = useAttendees(id as string);
+  
+  const loading = eventLoading || attendeesLoading;
+  const error = eventError ? (eventError as any).message : null;
 
-  const visitors = attendees;
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await dispatch(fetchFullEvent({ id: id as string, force: true }));
+    await Promise.all([refetchEvent(), refetchAttendees()]);
     setRefreshing(false);
   };
 
   const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      scrollOffset.value = event.contentOffset.y;
+    onScroll: (ev) => {
+      scrollOffset.value = ev.contentOffset.y;
     },
   });
 
@@ -63,7 +57,7 @@ export default function VisitorsScreen() {
         </Text>
         <Button
           mode="contained"
-          onPress={() => dispatch(fetchFullEvent({ id: id as string, force: true }))}
+          onPress={onRefresh}
           style={{ marginTop: 16 }}
         >
           Try Again
@@ -72,7 +66,7 @@ export default function VisitorsScreen() {
     );
   }
 
-  if (loading || !event) {
+  if (loading && !event) {
     return (
       <PageContainer withPadding={false} withSafeArea={false}>
         <View style={{ paddingTop: top, paddingHorizontal: 16 }}>
@@ -84,42 +78,14 @@ export default function VisitorsScreen() {
             backgroundColor="rgba(128,128,128,0.2)"
             foregroundColor="rgba(128,128,128,0.4)"
           >
-            <Rect
-              x="0"
-              y="0"
-              rx="4"
-              ry="4"
-              width={SCREEN_WIDTH * 0.4}
-              height="28"
-            />
-            <Rect
-              x="0"
-              y="36"
-              rx="4"
-              ry="4"
-              width={SCREEN_WIDTH * 0.2}
-              height="16"
-            />
+            <Rect x="0" y="0" rx="4" ry="4" width={SCREEN_WIDTH * 0.4} height="28" />
+            <Rect x="0" y="36" rx="4" ry="4" width={SCREEN_WIDTH * 0.2} height="16" />
 
             {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
               <React.Fragment key={i}>
                 <Circle cx="24" cy={100 + i * 80} r="24" />
-                <Rect
-                  x="64"
-                  y={86 + i * 80}
-                  rx="4"
-                  ry="4"
-                  width={SCREEN_WIDTH * 0.5}
-                  height="16"
-                />
-                <Rect
-                  x="64"
-                  y={110 + i * 80}
-                  rx="4"
-                  ry="4"
-                  width={SCREEN_WIDTH * 0.3}
-                  height="12"
-                />
+                <Rect x="64" y={86 + i * 80} rx="4" ry="4" width={SCREEN_WIDTH * 0.5} height="16" />
+                <Rect x="64" y={110 + i * 80} rx="4" ry="4" width={SCREEN_WIDTH * 0.3} height="12" />
               </React.Fragment>
             ))}
           </ContentLoader>
@@ -162,12 +128,8 @@ export default function VisitorsScreen() {
                 <Text variant="titleMedium" style={styles.visitorName}>
                   {item.first_name} {item.last_name}
                 </Text>
-                {isAdmin && (
-                  <ShieldAlert size={16} color={theme.colors.error} />
-                )}
-                {isModerator && (
-                  <ShieldCheck size={16} color={theme.colors.primary} />
-                )}
+                {isAdmin && <ShieldAlert size={16} color={theme.colors.error} />}
+                {isModerator && <ShieldCheck size={16} color={theme.colors.primary} />}
               </View>
               <Text variant="bodySmall" style={styles.visitorUsername}>
                 @{item.username}
@@ -183,37 +145,21 @@ export default function VisitorsScreen() {
     <PageContainer withPadding={false} withSafeArea={false}>
       <View style={[styles.header, { paddingTop: top / 4, paddingBottom: 10 }]}>
         <View style={styles.headerRow}>
-          <IconButton
-            icon="chevron-left"
-            onPress={() => router.back()}
-          />
+          <IconButton icon="chevron-left" onPress={() => router.back()} />
           <View style={{ flex: 1 }}>
-            <Text
-              variant="titleLarge"
-              style={styles.headerTitle}
-              numberOfLines={1}
-            >
-              Visitors
-            </Text>
-            <Text
-              variant="bodySmall"
-              style={styles.headerSubtitle}
-              numberOfLines={1}
-            >
-              {visitors.length} attending
+            <Text variant="titleLarge" style={styles.headerTitle} numberOfLines={1}>Visitors</Text>
+            <Text variant="bodySmall" style={styles.headerSubtitle} numberOfLines={1}>
+              {attendees.length} attending
             </Text>
           </View>
         </View>
       </View>
 
       <Animated.FlatList
-        data={visitors}
+        data={attendees}
         keyExtractor={(item) => item.id}
         renderItem={renderVisitor}
-        contentContainerStyle={[
-          styles.listContent,
-          { paddingBottom: bottom + 120 },
-        ]}
+        contentContainerStyle={[styles.listContent, { paddingBottom: bottom + 120 }]}
         onRefresh={onRefresh}
         refreshing={refreshing}
         onScroll={scrollHandler}
@@ -231,58 +177,18 @@ export default function VisitorsScreen() {
 }
 
 const styles = StyleSheet.create({
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  header: {
-    paddingHorizontal: 16,
-    zIndex: 10,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontWeight: "900",
-  },
-  headerSubtitle: {
-    opacity: 0.6,
-  },
-  listContent: {
-    padding: 16,
-    gap: 12,
-  },
-  visitorCard: {
-    borderRadius: 16,
-    overflow: "hidden",
-  },
-  visitorRipple: {
-    padding: 16,
-  },
-  visitorContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-  },
-  visitorInfo: {
-    flex: 1,
-  },
-  nameRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  visitorName: {
-    fontWeight: "800",
-  },
-  visitorUsername: {
-    opacity: 0.6,
-  },
-  emptyContainer: {
-    padding: 40,
-    alignItems: "center",
-    marginTop: 60,
-  },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  header: { paddingHorizontal: 16, zIndex: 10 },
+  headerRow: { flexDirection: "row", alignItems: "center" },
+  headerTitle: { fontWeight: "900" },
+  headerSubtitle: { opacity: 0.6 },
+  listContent: { padding: 16, gap: 12 },
+  visitorCard: { borderRadius: 16, overflow: "hidden" },
+  visitorRipple: { padding: 16 },
+  visitorContent: { flexDirection: "row", alignItems: "center", gap: 16 },
+  visitorInfo: { flex: 1 },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  visitorName: { fontWeight: "800" },
+  visitorUsername: { opacity: 0.6 },
+  emptyContainer: { padding: 40, alignItems: "center", marginTop: 60 },
 });

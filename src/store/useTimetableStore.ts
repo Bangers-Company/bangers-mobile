@@ -57,8 +57,9 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
     }));
     try {
       const res = await timetablesApi.getOfficial(eventId);
+      const data = (res.data as any).data || res.data;
       set((state) => ({
-        officialTimetable: { ...state.officialTimetable, [eventId]: res.data },
+        officialTimetable: { ...state.officialTimetable, [eventId]: data },
       }));
     } catch {
       set((state) => ({ 
@@ -74,8 +75,9 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   fetchPersonal: async (eventId: string) => {
     try {
       const res = await timetablesApi.getPersonal(eventId);
+      const data = (res.data as any).data || res.data;
       set((state) => ({
-        personalTimetable: { ...state.personalTimetable, [eventId]: res.data },
+        personalTimetable: { ...state.personalTimetable, [eventId]: data },
       }));
     } catch {
       // Might not exist yet, that's fine
@@ -100,8 +102,9 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
     try {
       const res = await timetablesApi.createPersonal({ event_id: eventId, name });
+      const data = (res.data as any).data || res.data;
       set((state) => ({
-        personalTimetable: { ...state.personalTimetable, [eventId]: res.data },
+        personalTimetable: { ...state.personalTimetable, [eventId]: data },
       }));
     } catch {
       set((state) => ({ 
@@ -285,9 +288,10 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
     try {
       const res = await timetablesApi.createGroup({ name, user_ids });
+      const resData = (res.data as any).data || res.data;
       // Replace temp with real
       set((state) => ({
-        groups: state.groups.map(g => g.id === tempId ? res.data : g)
+        groups: state.groups.map(g => g.id === tempId ? resData : g)
       }));
     } catch (e) {
       console.error("Failed to create group", e);
@@ -334,13 +338,14 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
     try {
       const res = await timetablesApi.createGroupTimetable(groupId, { event_id: eventId, name });
+      const resData = (res.data as any).data || res.data;
       // Replace temp with real
       set((state) => ({
         groups: state.groups.map(g => {
           if (g.id === groupId) {
             return { 
               ...g, 
-              timetables: g.timetables.map((t: any) => t.id === tempId ? res.data : t) 
+              timetables: g.timetables.map((t: any) => t.id === tempId ? resData : t) 
             };
           }
           return g;

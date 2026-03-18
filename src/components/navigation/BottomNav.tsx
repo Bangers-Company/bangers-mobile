@@ -18,8 +18,7 @@ import Animated, {
   useAnimatedStyle,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useSelector } from "react-redux";
-import { RootState } from "../../store/redux/store";
+import { useUIStore } from "../../store/useUIStore";
 import { addAlpha } from "../../utils/theme";
 import { useSharedScroll } from "../../hooks/useSharedScroll";
 
@@ -33,7 +32,7 @@ export const BottomNav: React.FC = () => {
   const theme = useTheme();
   const pathname = usePathname();
   const router = useRouter();
-  const { isBottomNavVisible } = useSelector((state: RootState) => state.ui);
+  const isBottomNavVisible = useUIStore((state) => state.isBottomNavVisible);
   const scrollOffset = useSharedScroll();
   const insets = useSafeAreaInsets();
 

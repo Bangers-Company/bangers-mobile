@@ -47,7 +47,9 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
 
   // Day Logic
   const firstCalendarDate = useMemo(() => {
-    const sourceEntries = templateTimetable?.entries || timetable?.entries || [];
+    const sourceEntries = (templateTimetable?.entries && templateTimetable.entries.length > 0) 
+      ? templateTimetable.entries 
+      : (timetable?.entries || []);
     const calendarDates = sourceEntries
       .map((e) => e.start_time.split("T")[0])
       .sort();
@@ -73,7 +75,9 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
   }, [firstCalendarDate]);
 
   const availableDays = useMemo(() => {
-    const sourceEntries = templateTimetable?.entries || timetable?.entries || [];
+    const sourceEntries = (templateTimetable?.entries && templateTimetable.entries.length > 0) 
+      ? templateTimetable.entries 
+      : (timetable?.entries || []);
     const dayMap = new Set<string>();
     sourceEntries.forEach((e) => {
       dayMap.add(getFestivalDate(e.start_time));

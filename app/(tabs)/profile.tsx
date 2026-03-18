@@ -11,8 +11,6 @@ import {
 } from "react-native-paper";
 import ContentLoader, { Rect } from "react-content-loader/native";
 import { useProfile } from "../../src/hooks/useProfile";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "../../src/store/redux/store";
 import { resolveMediaUrl } from "../../src/utils/format";
 import { useSharedScroll } from "../../src/hooks/useSharedScroll";
 import Animated, { useAnimatedScrollHandler } from "react-native-reanimated";
@@ -26,8 +24,13 @@ export default function ProfileScreen() {
   const theme = useTheme();
   const router = useRouter();
   const [focusKey, setFocusKey] = React.useState(0);
-  const { user, attendingEvents, pastEvents, friendsCount, loading, refreshProfile } =
-    useProfile();
+  const { data: userProfile, isLoading: loading, refetch: refreshProfile } = useProfile();
+  
+  const user = userProfile;
+  const attendingEvents = userProfile?.attendingEvents || [];
+  const pastEvents = userProfile?.pastEvents || [];
+  const friendsCount = userProfile?.friends_count || 0;
+
   const scrollOffset = useSharedScroll();
 
   useFocusEffect(
@@ -38,8 +41,8 @@ export default function ProfileScreen() {
   );
 
   const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      scrollOffset.value = event.contentOffset.y;
+    onScroll: (ev) => {
+      scrollOffset.value = ev.contentOffset.y;
     },
   });
 
@@ -144,7 +147,7 @@ export default function ProfileScreen() {
                   />
                 )}
                 <Text variant="labelSmall" style={styles.statLabel}>
-                  {item.label}
+                   {item.label}
                 </Text>
               </View>
             </TouchableRipple>
@@ -177,7 +180,7 @@ export default function ProfileScreen() {
               <EventCardSkeleton variant="horizontal" style={{ marginRight: 16 }} />
             </>
           ) : attendingEvents.length > 0 ? (
-            attendingEvents.map((event) => (
+            attendingEvents.map((event: any) => (
               <EventCard
                 key={event.id}
                 event={event}
@@ -208,7 +211,7 @@ export default function ProfileScreen() {
               <EventCardSkeleton variant="horizontal" style={{ marginRight: 16 }} />
             </>
           ) : pastEvents.length > 0 ? (
-            pastEvents.map((event) => (
+            pastEvents.map((event: any) => (
               <EventCard
                 key={event.id}
                 event={event}

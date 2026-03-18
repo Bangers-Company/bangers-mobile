@@ -26,49 +26,28 @@ import {
     useTheme,
 } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useDispatch, useSelector } from "react-redux";
-import { SearchResponse } from "../../src/api/search";
 import { EventHorizontalCard } from "../../src/components/event/EventHorizontalCard";
 import { resolveMediaUrl } from "../../src/utils/format";
 import { addAlpha } from "../../src/utils/theme";
-import { RootState, AppDispatch } from "../../src/store/redux/store";
-import { 
-    setSearchQuery, 
-    toggleEntity, 
-    performSearchAction 
-} from "../../src/store/redux/searchSlice";
+import { useSearch } from "../../src/hooks/useSearch";
 
 export default function SearchScreen() {
   const theme = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const dispatch = useDispatch<AppDispatch>();
 
-  const { 
-    searchQuery, 
-    results, 
-    loading, 
-    entities 
-  } = useSelector((state: RootState) => state.search);
-
+  const [searchQuery, setSearchQuery] = useState("");
+  const [entities, setEntities] = useState<string[]>(["events", "artists", "acts", "users"]);
   const [showFilters, setShowFilters] = useState(false);
 
-  const performSearch = useCallback(
-    (query: string, selectedEntities: string[]) => {
-      dispatch(performSearchAction({ query, entities: selectedEntities }));
-    },
-    [dispatch],
-  );
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      performSearch(searchQuery, entities);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [searchQuery, entities, performSearch]);
+  const { data: results, isLoading: loading } = useSearch(searchQuery, entities);
 
   const onToggleEntity = (entity: string) => {
-    dispatch(toggleEntity(entity));
+    setEntities(prev => 
+      prev.includes(entity) 
+        ? prev.filter(e => e !== entity) 
+        : [...prev, entity]
+    );
   };
 
   const renderSection = (
@@ -192,7 +171,7 @@ export default function SearchScreen() {
         <View style={styles.searchRow}>
           <Searchbar
             placeholder="Search..."
-            onChangeText={(text) => dispatch(setSearchQuery(text))}
+            onChangeText={setSearchQuery}
             value={searchQuery}
             style={[
               styles.searchBar,
@@ -226,7 +205,7 @@ export default function SearchScreen() {
             {!results.events?.data?.length &&
               !results.artists?.data?.length &&
               !results.acts?.data?.length &&
-              !results.users?.data?.length && (
+              !results.users?.data?.length && searchQuery.length > 0 && (
                 <View style={styles.emptyContainer}>
                   <Text variant="bodyLarge">
                     No results found for &quot;{searchQuery}&quot;

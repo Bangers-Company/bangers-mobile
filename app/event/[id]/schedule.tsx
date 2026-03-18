@@ -2,9 +2,8 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { LayoutGrid, Plus, Share2 } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import { Alert, StyleSheet, View } from "react-native";
-import { IconButton, Text, useTheme } from "react-native-paper";
+import { IconButton, Text, useTheme, ActivityIndicator } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useDispatch, useSelector } from "react-redux";
 import { PageContainer } from "../../../src/components/PageContainer";
 import { CreateGroupModal } from "../../../src/components/timetable/CreateGroupModal";
 import { CreateTimetableModal } from "../../../src/components/timetable/CreateTimetableModal";
@@ -12,8 +11,6 @@ import { TimetableGrid } from "../../../src/components/timetable/TimetableGrid";
 import { TimetableOverview } from "../../../src/components/timetable/TimetableOverview";
 import { useAuthStore } from "../../../src/store/useAuthStore";
 import { useTimetableStore } from "../../../src/store/useTimetableStore";
-import { RootState, AppDispatch } from "../../../src/store/redux/store";
-import { setIsBottomNavVisible } from "../../../src/store/redux/uiSlice";
 import { Timetable, TimetableEntry } from "../../../src/types/timetable";
 import { 
   useOfficialTimetable, 
@@ -21,6 +18,8 @@ import {
   useGroups, 
   useToggleAttendance 
 } from "../../../src/hooks/useTimetables";
+import { useUIStore } from "../../../src/store/useUIStore";
+import { useEvent } from "../../../src/hooks/useEvent";
 
 const EMPTY_ARRAY: any[] = [];
 
@@ -28,7 +27,6 @@ export default function ScheduleScreen() {
   const { id: eventId } = useLocalSearchParams<{ id: string }>();
   const theme = useTheme();
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
   const { top } = useSafeAreaInsets();
 
   const [selectedTimetableId, setSelectedTimetableId] = useState<string | null>(null);
@@ -39,12 +37,13 @@ export default function ScheduleScreen() {
   const [loadingGroupsOp, setLoadingGroupsOp] = useState(false);
 
   // TanStack Query Hooks
+  const { data: event } = useEvent(eventId as string);
   const { data: officialQuery, isLoading: isLoadingOfficial } = useOfficialTimetable(eventId);
   const { data: personalQuery, isLoading: isLoadingPersonal } = usePersonalTimetable(eventId);
   const { data: groupsQuery, isLoading: isLoadingGroups } = useGroups();
   const toggleMutation = useToggleAttendance();
 
-  // Zustand Store (for remaining UI state and actions)
+  // Zustand Store
   const {
     createPersonal,
     deletePersonal,
@@ -57,18 +56,18 @@ export default function ScheduleScreen() {
     setViewMode,
   } = useTimetableStore();
 
-  const cachedEvent = useSelector((state: RootState) => state.event.events[eventId as string]?.event);
+  const setIsBottomNavVisible = useUIStore((state) => state.setIsBottomNavVisible);
 
   // Derive timetables from queries
   const official = React.useMemo(() => {
-    return officialQuery || (cachedEvent?.official_timetable ? {
-      ...cachedEvent.official_timetable,
+    return officialQuery || (event?.official_timetable ? {
+      ...event.official_timetable,
       event_id: eventId,
-      entries: (cachedEvent.official_timetable as any).entries || [],
+      entries: (event.official_timetable as any).entries || [],
     } as Timetable : null);
-  }, [officialQuery, cachedEvent, eventId]);
+  }, [officialQuery, event, eventId]);
   
-  const personal = React.useMemo(() => personalQuery || (cachedEvent as any)?.personal_timetable || null, [personalQuery, cachedEvent]);
+  const personal = React.useMemo(() => personalQuery || (event as any)?.personal_timetable || null, [personalQuery, event]);
   const groups = React.useMemo(() => groupsQuery || EMPTY_ARRAY, [groupsQuery]);
 
   const selectedTimetable = React.useMemo(() => {
@@ -87,36 +86,22 @@ export default function ScheduleScreen() {
 
   // Handle BottomNav visibility
   useEffect(() => {
-    dispatch(setIsBottomNavVisible(!selectedTimetable));
-    
-    return () => {
-      dispatch(setIsBottomNavVisible(true));
-    };
-  }, [selectedTimetable, dispatch]);
+    setIsBottomNavVisible(!selectedTimetable);
+    return () => setIsBottomNavVisible(true);
+  }, [selectedTimetable, setIsBottomNavVisible]);
 
   const handleDeletePersonal = async (id: string) => {
-    Alert.alert(
-      "Delete Timetable",
-      "Are you sure you want to delete your personal timetable?",
-      [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "Delete", 
-          style: "destructive",
-          onPress: async () => {
-            setLoadingPersonalOp(true);
-            try {
-              await deletePersonal(eventId, id);
-              if (selectedTimetableId === id) {
-                setSelectedTimetableId(null);
-              }
-            } finally {
-              setLoadingPersonalOp(false);
-            }
-          }
+    Alert.alert("Delete Timetable", "Are you sure you want to delete your personal timetable?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Delete", style: "destructive", onPress: async () => {
+          setLoadingPersonalOp(true);
+          try {
+            await deletePersonal(eventId, id);
+            if (selectedTimetableId === id) setSelectedTimetableId(null);
+          } finally { setLoadingPersonalOp(false); }
         }
-      ]
-    );
+      }
+    ]);
   };
 
   const handleDeleteGroup = async (group: any) => {
@@ -126,29 +111,20 @@ export default function ScheduleScreen() {
       ? "Are you sure you want to delete this group? This will remove all members and schedules for everyone."
       : "Are you sure you want to leave this group? You will lose access to its schedules.";
 
-    Alert.alert(
-      title,
-      message,
-      [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: isOwner ? "Delete" : "Leave", 
-          style: "destructive",
-          onPress: async () => {
-            setLoadingGroupsOp(true);
-            try {
-              await deleteGroup(group.id);
-              if (selectedGroupId === group.id) {
-                 setSelectedTimetableId(null);
-                 setSelectedGroupId(null);
-              }
-            } finally {
-              setLoadingGroupsOp(false);
+    Alert.alert(title, message, [
+      { text: "Cancel", style: "cancel" },
+      { text: isOwner ? "Delete" : "Leave", style: "destructive", onPress: async () => {
+          setLoadingGroupsOp(true);
+          try {
+            await deleteGroup(group.id);
+            if (selectedGroupId === group.id) {
+               setSelectedTimetableId(null);
+               setSelectedGroupId(null);
             }
-          }
+          } finally { setLoadingGroupsOp(false); }
         }
-      ]
-    );
+      }
+    ]);
   };
 
   const handleCreate = async (name: string) => {
@@ -156,15 +132,8 @@ export default function ScheduleScreen() {
     try {
       await createPersonal(eventId, name);
       setCreateModalVisible(false);
-      // Finding it by eventId in query data instead
-      if (personalQuery) {
-        setSelectedTimetableId(personalQuery.id);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoadingPersonalOp(false);
-    }
+      if (personalQuery) setSelectedTimetableId(personalQuery.id);
+    } catch (e) { console.error(e); } finally { setLoadingPersonalOp(false); }
   };
 
   const handleCreateGroup = async (name: string, members: string[]) => {
@@ -172,13 +141,8 @@ export default function ScheduleScreen() {
     try {
       await createGroup(name, members);
       setCreateGroupModalVisible(false);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoadingGroupsOp(false);
-    }
+    } catch (e) { console.error(e); } finally { setLoadingGroupsOp(false); }
   };
-
 
   const handleEntryPress = React.useCallback((entry: TimetableEntry) => {
     if (!selectedTimetable || selectedTimetable.is_official) return;
@@ -200,63 +164,29 @@ export default function ScheduleScreen() {
       <View style={[styles.header, { paddingTop: top / 4 }]}>
         <View style={styles.headerRow}>
           {selectedTimetable ? (
-            <IconButton
-              icon="arrow-left"
-              onPress={() => {
-                setSelectedTimetableId(null);
-                setSelectedGroupId(null);
-              }}
-            />
+            <IconButton icon="arrow-left" onPress={() => { setSelectedTimetableId(null); setSelectedGroupId(null); }} />
           ) : (
-            <IconButton
-              icon="chevron-left"
-              onPress={() => router.push("/(tabs)")}
-            />
+            <IconButton icon="chevron-left" onPress={() => router.back()} />
           )}
 
           <View style={{ flex: 1 }}>
-            <Text
-              variant="titleLarge"
-              style={styles.headerTitle}
-              numberOfLines={1}
-            >
+            <Text variant="titleLarge" style={styles.headerTitle} numberOfLines={1}>
               {selectedTimetable ? selectedTimetable.name : "Timetables"}
             </Text>
-            <Text
-              variant="bodySmall"
-              style={styles.headerSubtitle}
-              numberOfLines={1}
-            >
-              {selectedTimetable
-                ? selectedTimetable.is_official
-                  ? "Official Schedule"
-                  : "My Plan"
-                : "Schedules"}
+            <Text variant="bodySmall" style={styles.headerSubtitle} numberOfLines={1}>
+              {selectedTimetable ? (selectedTimetable.is_official ? "Official Schedule" : "My Plan") : "Schedules"}
             </Text>
           </View>
 
           <View style={styles.headerActions}>
             {selectedTimetable ? (
               <>
-                <IconButton
-                  icon={() => (
-                    <LayoutGrid size={20} color={theme.colors.primary} />
-                  )}
-                  onPress={toggleViewMode}
-                />
-                <IconButton
-                  icon={() => <Share2 size={20} color={theme.colors.outline} />}
-                  disabled
-                  onPress={() => {}}
-                />
+                <IconButton icon={() => <LayoutGrid size={20} color={theme.colors.primary} />} onPress={toggleViewMode} />
+                <IconButton icon={() => <Share2 size={20} color={theme.colors.outline} />} disabled onPress={() => {}} />
               </>
             ) : (
-              official &&
-              !personal && (
-                <IconButton
-                  icon={() => <Plus size={24} color={theme.colors.primary} />}
-                  onPress={() => setCreateModalVisible(true)}
-                />
+              official && !personal && (
+                <IconButton icon={() => <Plus size={24} color={theme.colors.primary} />} onPress={() => setCreateModalVisible(true)} />
               )
             )}
           </View>
@@ -265,13 +195,19 @@ export default function ScheduleScreen() {
 
       <View style={styles.content}>
         {selectedTimetable ? (
-          <TimetableGrid
-            timetable={selectedTimetable}
-            templateTimetable={official}
-            isPersonal={isPersonal}
-            onEntryPress={handleEntryPress}
-            toggleMutation={toggleMutation}
-          />
+          ((isLoadingOfficial && selectedTimetable.id === official?.id) || 
+           (isLoadingPersonal && selectedTimetable.id === personal?.id)) && 
+          (!selectedTimetable.entries || selectedTimetable.entries.length === 0) ? (
+            <View style={styles.center}><ActivityIndicator color={theme.colors.primary} /></View>
+          ) : (
+            <TimetableGrid
+              timetable={selectedTimetable}
+              templateTimetable={official}
+              isPersonal={isPersonal}
+              onEntryPress={handleEntryPress}
+              toggleMutation={toggleMutation}
+            />
+          )
         ) : (
           <TimetableOverview
             official={official}
@@ -285,57 +221,29 @@ export default function ScheduleScreen() {
             onDeletePersonal={handleDeletePersonal}
             onAcceptInvitation={async (gid: string) => {
                setLoadingGroupsOp(true);
-               try {
-                 await acceptInvitation(gid);
-               } finally {
-                 setLoadingGroupsOp(false);
-               }
+               try { await acceptInvitation(gid); } finally { setLoadingGroupsOp(false); }
             }}
             onRejectInvitation={async (gid) => {
               setLoadingGroupsOp(true);
-              try {
-                await rejectInvitation(gid);
-              } finally {
-                setLoadingGroupsOp(false);
-              }
+              try { await rejectInvitation(gid); } finally { setLoadingGroupsOp(false); }
             }}
             onCreateGroup={() => setCreateGroupModalVisible(true)}
             onDeleteGroup={(group: any) => handleDeleteGroup(group)}
             onSelectGroup={async (group: any) => {
-              console.log("onSelectGroup triggered for group:", group.id);
-              
               setLoadingGroupsOp(true);
               try {
-                // Refresh the group reference from the latest query data or use passed group
                 const updatedGroup = groups.find((g: any) => g.id === group.id) || group;
-
-                // If group has no timetables or we need to ensure they are loaded
-                if (!updatedGroup.timetables || updatedGroup.timetables.length === 0) {
-                  // The useGroups query will handle the data, but we might need 
-                  // to wait for it or trigger a refetch if we really want to be sure.
-                  // For now, let's assume useGroups is fresh enough or will refresh.
-                }
-                
                 const groupSchedule = (updatedGroup.timetables || []).find((t: any) => 
                   String(t.event_id).toLowerCase() === String(eventId).toLowerCase()
                 );
                 
                 if (groupSchedule) {
-                  console.log("Match found! Selecting timetable:", groupSchedule.id);
                   setSelectedTimetableId(groupSchedule.id);
                   setSelectedGroupId(updatedGroup.id);
                 } else {
-                  console.log("No match found for eventId. Auto-creating group schedule.");
-                  // Auto-create instead of showing a modal
                   await createGroupTimetable(updatedGroup.id, eventId, `${updatedGroup.name} Schedule`);
-                  
-                  // Query invalidation in mutation handles the refresh
                 }
-              } catch (e) {
-                console.error("Failed to select/create group schedule", e);
-              } finally {
-                setLoadingGroupsOp(false);
-              }
+              } catch (e) { console.error("Failed to select/create group schedule", e); } finally { setLoadingGroupsOp(false); }
             }}
           />
         )}
@@ -343,9 +251,7 @@ export default function ScheduleScreen() {
 
       <CreateTimetableModal
         visible={createModalVisible}
-        onDismiss={() => {
-          setCreateModalVisible(false);
-        }}
+        onDismiss={() => setCreateModalVisible(false)}
         onConfirm={handleCreate}
         loading={loadingPersonalOp}
         title="Create Personal Timetable"
@@ -362,27 +268,11 @@ export default function ScheduleScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    paddingHorizontal: 8,
-    paddingBottom: 8,
-    backgroundColor: "transparent",
-    zIndex: 10,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontWeight: "900",
-  },
-  headerSubtitle: {
-    opacity: 0.6,
-  },
-  headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  content: {
-    flex: 1,
-  },
+  header: { paddingHorizontal: 8, paddingBottom: 8, backgroundColor: "transparent", zIndex: 10 },
+  headerRow: { flexDirection: "row", alignItems: "center" },
+  headerTitle: { fontWeight: "900" },
+  headerSubtitle: { opacity: 0.6 },
+  headerActions: { flexDirection: "row", alignItems: "center" },
+  content: { flex: 1 },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
 });

@@ -11,24 +11,25 @@ import {
   useTheme,
 } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useDispatch, useSelector } from "react-redux";
 import { eventsApi } from "../../../src/api/events";
 import { Droplet } from "../../../src/components/ui/Droplet";
 import { useDashboardData } from "../../../src/hooks/useDashboardData";
 import { useAuthStore } from "../../../src/store/useAuthStore";
-import { AppDispatch, RootState } from "../../../src/store/redux/store";
-import { setAttendanceStatus, fetchFullEvent } from "../../../src/store/redux/eventSlice";
 import { resolveMediaUrl, formatDate } from "../../../src/utils/format";
 import { addAlpha } from "../../../src/utils/theme";
 import Animated, { useAnimatedScrollHandler, runOnJS } from "react-native-reanimated";
 import { useSharedScroll } from "../../../src/hooks/useSharedScroll";
 import { AnimatedCounter } from "../../../src/components/ui/AnimatedCounter";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEvent, useAttendees } from "../../../src/hooks/useEvent";
+import { useAttendance } from "../../../src/hooks/useAttendance";
+import { Act } from "../../../src/types/act";
 
 export default function EventDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useTheme();
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
+  const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const [showDroplet, setShowDroplet] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
@@ -38,19 +39,11 @@ export default function EventDetailsScreen() {
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchEventData = useCallback((force = false) => {
-    if (id) {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-      abortControllerRef.current = new AbortController();
-      
-      dispatch(fetchFullEvent({ 
-        id: id as string, 
-        force, 
-        signal: abortControllerRef.current.signal 
-      }));
+    if (force) {
+      queryClient.invalidateQueries({ queryKey: ['event', id] });
+      queryClient.invalidateQueries({ queryKey: ['attendees', id] });
     }
-  }, [id, dispatch]);
+  }, [id, queryClient]);
 
   useEffect(() => {
     return () => {
@@ -66,11 +59,12 @@ export default function EventDetailsScreen() {
     }, [fetchEventData])
   );
 
-  const cachedEvent = useSelector((state: RootState) => state.event.events[id as string]);
-  const event = cachedEvent?.event;
-  const attendees = cachedEvent?.attendees || [];
-  const loading = useSelector((state: RootState) => state.event.loadingEvents[id as string]);
-  const error = useSelector((state: RootState) => state.event.errors[id as string]);
+  const { data: event, isLoading: eventLoading, error: eventError } = useEvent(id as string);
+  const { data: attendees = [] } = useAttendees(id as string);
+  const { updateAttendance: updateAttendanceMutation, removeAttendance: removeAttendanceMutation } = useAttendance(id as string);
+  
+  const loading = eventLoading;
+  const error = eventError ? (eventError as any).message : null;
 
   const isGoing = event?.user_status === "going";
   const isInterested = event?.user_status === "interested";
@@ -78,11 +72,11 @@ export default function EventDetailsScreen() {
   const [actionLoading, setActionLoading] = useState(false);
 
   const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      scrollOffset.value = event.contentOffset.y;
+    onScroll: (ev) => {
+      scrollOffset.value = ev.contentOffset.y;
       
-      if ((event.contentOffset.y > 300) !== showDroplet) {
-         runOnJS(setShowDroplet)(event.contentOffset.y > 300);
+      if ((ev.contentOffset.y > 300) !== showDroplet) {
+         runOnJS(setShowDroplet)(ev.contentOffset.y > 300);
       }
     },
   });
@@ -92,25 +86,21 @@ export default function EventDetailsScreen() {
   };
 
   const toggleAttendance = async (status: "going" | "interested") => {
-    if (!event || !currentUser || actionLoading) return;
-    setActionLoading(true);
+    if (!event || !currentUser) return;
 
-    const isRemoving = event.user_status === status;
-    const nextStatus = isRemoving ? null : status;
-
-    dispatch(setAttendanceStatus({ id: id as string, status: nextStatus, currentUser, event }));
-
-    try {
-      if (nextStatus) {
-        await eventsApi.updateAttendance(id as string, nextStatus);
-      } else {
-        await eventsApi.deleteAttendance(id as string);
+    if (status === "going") {
+      try {
+        setActionLoading(true);
+        if (event.user_status === "going") {
+          await removeAttendanceMutation.mutateAsync();
+        } else {
+          await updateAttendanceMutation.mutateAsync();
+        }
+      } catch (err) {
+        console.error("Failed to toggle attendance", err);
+      } finally {
+        setActionLoading(false);
       }
-    } catch (err) {
-      console.error("Failed to update attendance", err);
-      dispatch(setAttendanceStatus({ id: id as string, status: event.user_status || null, currentUser, event }));
-    } finally {
-      setActionLoading(false);
     }
   };
 
@@ -335,7 +325,7 @@ export default function EventDetailsScreen() {
             {acts.length > 0 ? (
               <>
                 <View style={styles.actGrid}>
-                  {previewActs.map((act) => (
+                  {previewActs.map((act: Act) => (
                     <Surface key={act.id} style={styles.actCard} elevation={1}>
                       <Text
                         variant="bodyLarge"

@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Calendar, History, ShieldAlert, ShieldCheck } from "lucide-react-native";
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import { ShieldAlert, ShieldCheck } from "lucide-react-native";
+import React, { useState, useRef, useMemo } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, View, KeyboardAvoidingView, Platform, Animated } from "react-native";
 import {
     Avatar,
@@ -11,10 +11,10 @@ import {
     Searchbar,
 } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { friendsApi } from "../../src/api/friends";
 import { User } from "../../src/types/user";
 import { resolveMediaUrl } from "../../src/utils/format";
 import { PageContainer } from "../../src/components/PageContainer";
+import { useFriends } from "../../src/hooks/useFriends";
 
 export default function FriendsListScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -22,11 +22,11 @@ export default function FriendsListScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
 
-    const [friends, setFriends] = useState<User[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [isFocused, setIsFocused] = useState(false);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+
+    const { data: friends = [], isLoading, error: friendsError, refetch } = useFriends(id);
+    const error = friendsError ? (friendsError as any).message : null;
 
     const focusAnim = useRef(new Animated.Value(0)).current;
 
@@ -73,28 +73,16 @@ export default function FriendsListScreen() {
         }),
     };
 
-    const fetchFriends = useCallback(async () => {
-        if (!id) return;
-        setLoading(true);
-        setError(null);
-        try {
-            const res =
-                id === "me"
-                    ? await friendsApi.getFriends()
-                    : await friendsApi.getUserFriends(id);
-
-            setFriends((res as any).data.data || []);
-        } catch (err) {
-            console.error(err);
-            setError("Failed to load friends.");
-        } finally {
-            setLoading(false);
-        }
-    }, [id]);
-
-    useEffect(() => {
-        fetchFriends();
-    }, [fetchFriends]);
+    const filteredFriends = useMemo(() => {
+        return friends.filter((f: User) => {
+            const query = searchQuery.toLowerCase();
+            return (
+                f.first_name.toLowerCase().includes(query) ||
+                f.last_name.toLowerCase().includes(query) ||
+                f.username.toLowerCase().includes(query)
+            );
+        });
+    }, [friends, searchQuery]);
 
     const renderFriend = ({ item }: { item: User }) => {
         return (
@@ -111,7 +99,7 @@ export default function FriendsListScreen() {
                     ) : (
                         <Avatar.Text
                             size={48}
-                            label={item.first_name.charAt(0)}
+                            label={item.first_name?.charAt(0) || "U"}
                             style={{ backgroundColor: theme.colors.primary }}
                         />
                     )}
@@ -137,15 +125,6 @@ export default function FriendsListScreen() {
         );
     };
 
-    const filteredFriends = friends.filter((f) => {
-        const query = searchQuery.toLowerCase();
-        return (
-            f.first_name.toLowerCase().includes(query) ||
-            f.last_name.toLowerCase().includes(query) ||
-            f.username.toLowerCase().includes(query)
-        );
-    });
-
     return (
         <KeyboardAvoidingView
             style={{ flex: 1 }}
@@ -165,13 +144,14 @@ export default function FriendsListScreen() {
                     </View>
                 </View>
 
-                {loading ? (
+                {isLoading ? (
                     <View style={styles.center}>
                         <ActivityIndicator size="large" color={theme.colors.primary} />
                     </View>
                 ) : error ? (
                     <View style={styles.center}>
                         <Text style={{ color: theme.colors.error }}>{error}</Text>
+                        <IconButton icon="refresh" onPress={() => refetch()} />
                     </View>
                 ) : (
                     <FlatList
@@ -188,7 +168,7 @@ export default function FriendsListScreen() {
                         }
                     />
                 )}
-                {!loading && !error && friends.length > 0 && (
+                {!isLoading && !error && friends.length > 0 && (
                     <View style={[styles.searchWrapper, { paddingBottom: Math.max(insets.bottom, 16) }]}>
                         <Animated.View style={[styles.searchAnimatedContainer, searchContainerStyle]}>
                             <Searchbar
@@ -217,9 +197,7 @@ export default function FriendsListScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
+    container: { flex: 1 },
     header: {
         paddingHorizontal: 16,
         paddingBottom: 16,
@@ -230,56 +208,17 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         zIndex: 10,
     },
-    headerTop: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: 8,
-    },
-    searchWrapper: {
-        paddingHorizontal: 16,
-        paddingTop: 8,
-        backgroundColor: "transparent",
-    },
-    searchAnimatedContainer: {
-        borderRadius: 28,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-    },
-    searchBar: {
-        height: 56,
-        borderRadius: 28,
-    },
-    searchInput: {
-        fontSize: 16,
-    },
-    backButton: {
-        marginRight: 8,
-    },
-    title: {
-        fontWeight: "bold",
-    },
-    center: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        padding: 24,
-    },
-    listContainer: {
-        paddingVertical: 16,
-    },
-    friendCardRipple: {
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-    },
-    friendCard: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 16,
-    },
-    friendInfo: {
-        flex: 1,
-    },
-    friendName: {
-        fontWeight: "bold",
-    },
+    headerTop: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
+    searchWrapper: { paddingHorizontal: 16, paddingTop: 8, backgroundColor: "transparent" },
+    searchAnimatedContainer: { borderRadius: 28, shadowColor: "#000", shadowOffset: { width: 0, height: 4 } },
+    searchBar: { height: 56, borderRadius: 28 },
+    searchInput: { fontSize: 16 },
+    backButton: { marginRight: 8 },
+    title: { fontWeight: "bold" },
+    center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 24 },
+    listContainer: { paddingVertical: 16 },
+    friendCardRipple: { paddingHorizontal: 16, paddingVertical: 12 },
+    friendCard: { flexDirection: "row", alignItems: "center", gap: 16 },
+    friendInfo: { flex: 1 },
+    friendName: { fontWeight: "bold" },
 });

@@ -23,15 +23,9 @@ import {
   useTheme,
 } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useDispatch, useSelector } from "react-redux";
 import { PageContainer } from "../src/components/PageContainer";
 import { useAuthStore } from "../src/store/useAuthStore";
-import { RootState, AppDispatch } from "../src/store/redux/store";
-import { 
-  setThemeMode, 
-  setIsAmoled, 
-  setAccentColor 
-} from "../src/store/redux/uiSlice";
+import { useUIStore } from "../src/store/useUIStore";
 import { addAlpha, COLORS } from "../src/utils/theme";
 
 const ACCENT_COLORS = [
@@ -56,9 +50,6 @@ const AnimatedSection = ({
 }) => {
   const height = useSharedValue(0);
   const opacity = useSharedValue(0);
-
-  // We use a specific height for simplicity, or we could measure it.
-  // For most settings sections, 250 is enough.
   const MAX_HEIGHT = 400; 
 
   React.useEffect(() => {
@@ -85,14 +76,16 @@ export default function SettingsScreen() {
   const { bottom } = useSafeAreaInsets();
   const theme = useTheme();
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
   const systemColorScheme = useColorScheme();
   
   const {
     themeMode,
     isAmoled,
     accentColor,
-  } = useSelector((state: RootState) => state.ui);
+    setThemeMode,
+    setIsAmoled,
+    setAccentColor
+  } = useUIStore();
 
   const logout = useAuthStore((state) => state.logout);
 
@@ -150,7 +143,6 @@ export default function SettingsScreen() {
 
   return (
     <PageContainer withPadding={false}>
-      {/* Centered Top Bar */}
       <View
         style={[
           styles.topBar,
@@ -204,7 +196,7 @@ export default function SettingsScreen() {
               </View>
               <SegmentedButtons
                 value={themeMode}
-                onValueChange={(val) => dispatch(setThemeMode(val as any))}
+                onValueChange={(val) => setThemeMode(val as any)}
                 buttons={[
                   { value: "system", label: "System" },
                   { value: "light", label: "Light" },
@@ -226,7 +218,7 @@ export default function SettingsScreen() {
               <Switch
                 value={isAmoled}
                 onValueChange={(val) => {
-                  dispatch(setIsAmoled(val));
+                  setIsAmoled(val);
                 }}
                 disabled={!isDarkActive}
                 color={theme.colors.primary}
@@ -243,7 +235,7 @@ export default function SettingsScreen() {
                   return (
                     <TouchableOpacity
                       key={color}
-                      onPress={() => dispatch(setAccentColor(color))}
+                      onPress={() => setAccentColor(color)}
                       style={[
                         styles.colorCircle,
                         { backgroundColor: color },
@@ -296,7 +288,6 @@ export default function SettingsScreen() {
           </Text>,
         )}
 
-        {/* Logout */}
         <TouchableRipple
           style={[
             styles.logoutButton,
@@ -321,9 +312,7 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   topBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -351,70 +340,32 @@ const styles = StyleSheet.create({
     textAlign: "center",
     flex: 1,
   },
-  scrollContent: {
-    padding: 16,
-  },
-  section: {
-    marginBottom: 8,
-  },
+  scrollContent: { padding: 16 },
+  section: { marginBottom: 8 },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingVertical: 16,
   },
-  sectionTitleWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  sectionTitle: {
-    fontWeight: "600",
-  },
-  sectionContent: {
-    paddingBottom: 16,
-    paddingLeft: 36,
-  },
-  divider: {
-    opacity: 0.1,
-  },
-  appearanceContent: {
-    paddingTop: 8,
-  },
+  sectionTitleWrapper: { flexDirection: "row", alignItems: "center", gap: 12 },
+  sectionTitle: { fontWeight: "600" },
+  sectionContent: { paddingBottom: 16, paddingLeft: 36 },
+  divider: { opacity: 0.1 },
+  appearanceContent: { paddingTop: 8 },
   settingRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 20,
   },
-  settingLabel: {
-    fontWeight: "600",
-  },
-  settingSubtext: {
-    opacity: 0.6,
-  },
-  segmentedButtons: {
-    width: "100%",
-  },
-  accentSection: {
-    marginTop: 8,
-  },
-  colorGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 16,
-    marginTop: 12,
-    maxWidth: 240, // 5 * 32px + 4 * 16px gap = 224px, plus some buffer
-  },
-  colorCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-  },
-  selectedColorCircle: {
-    borderWidth: 2,
-    transform: [{ scale: 1.2 }],
-  },
+  settingLabel: { fontWeight: "600" },
+  settingSubtext: { opacity: 0.6 },
+  segmentedButtons: { width: "100%" },
+  accentSection: { marginTop: 8 },
+  colorGrid: { flexDirection: "row", flexWrap: "wrap", gap: 16, marginTop: 12, maxWidth: 240 },
+  colorCircle: { width: 32, height: 32, borderRadius: 16 },
+  selectedColorCircle: { borderWidth: 2, transform: [{ scale: 1.2 }] },
   selectionRing: {
     position: "absolute",
     top: -6,
@@ -425,16 +376,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     opacity: 0.5,
   },
-  placeholderText: {
-    opacity: 0.6,
-    lineHeight: 20,
-  },
-  logoutButton: {
-    marginTop: 32,
-    borderRadius: 16,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
+  placeholderText: { opacity: 0.6, lineHeight: 20 },
+  logoutButton: { marginTop: 32, borderRadius: 16, borderWidth: 1, overflow: "hidden" },
   logoutContent: {
     flexDirection: "row",
     alignItems: "center",
@@ -442,8 +385,5 @@ const styles = StyleSheet.create({
     gap: 8,
     padding: 16,
   },
-  logoutText: {
-    fontWeight: "700",
-    fontSize: 16,
-  },
+  logoutText: { fontWeight: "700", fontSize: 16 },
 });

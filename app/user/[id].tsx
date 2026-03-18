@@ -1,8 +1,7 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Calendar, History, UserPlus, UserCheck, Clock, Users, ShieldAlert, ShieldCheck } from "lucide-react-native";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
-import { useDispatch } from "react-redux";
 import {
     Avatar,
     Button,
@@ -13,102 +12,48 @@ import {
     IconButton,
 } from "react-native-paper";
 import ContentLoader, { Rect } from "react-content-loader/native";
-import { userApi } from "../../src/api/user";
-import { friendsApi } from "../../src/api/friends";
 import { useAuthStore } from "../../src/store/useAuthStore";
-import { updateFriendsCount } from "../../src/store/redux/userSlice";
-import { Event } from "../../src/types/event";
-import { User } from "../../src/types/user";
 import { resolveMediaUrl } from "../../src/utils/format";
 import {
     EventCard,
 } from "../../src/components/event/EventCard";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PageContainer } from "../../src/components/PageContainer";
+import { useUser } from "../../src/hooks/useUser";
+import { useFriendshipStatus, useFriendshipActions } from "../../src/hooks/useFriendship";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function PublicProfileScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const theme = useTheme();
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const dispatch = useDispatch();
     const currentUser = useAuthStore((state) => state.user);
+    const queryClient = useQueryClient();
 
-    const [profileUser, setProfileUser] = useState<User | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const { data: profileUser, isLoading: userLoading, error: userError, refetch: refetchUser } = useUser(id);
+    const { data: friendshipStatus = "none", isLoading: friendshipLoading } = useFriendshipStatus(id);
+    const { sendRequest, acceptRequest, removeFriend } = useFriendshipActions(id);
 
-    const [friendshipStatus, setFriendshipStatus] = useState<"none" | "pending_sent" | "pending_received" | "friends">("none");
-    const [friendsCount, setFriendsCount] = useState<number>(0);
     const [actionLoading, setActionLoading] = useState(false);
 
-    const fetchProfileAndFriendship = useCallback(async () => {
-        if (!id) return;
-        setLoading(true);
-        setError(null);
-        try {
-            // Fetch public profile
-            const userRes = await userApi.getUserById(id);
-            const fetchedUser = (userRes as any).data.data || userRes.data;
-            setProfileUser(fetchedUser);
-
-            // Fetch friendships to determine status
-            if (currentUser) {
-                const [friendsRes, requestsRes, targetFriendsRes] = await Promise.all([
-                    friendsApi.getFriends(),
-                    friendsApi.getRequests(),
-                    friendsApi.getUserFriends(id)
-                ]);
-
-                const targetFriendsData = targetFriendsRes.data.data || [];
-                setFriendsCount(targetFriendsData.length);
-
-                const isFriend = friendsRes.data.data.some((f: any) => f.id === id);
-                if (isFriend) {
-                    setFriendshipStatus("friends");
-                } else {
-                    const receivedReq = requestsRes.data.data.find(r => r.requester?.id === id);
-                    if (receivedReq) {
-                        setFriendshipStatus("pending_received");
-                    } else {
-                        // To rigorously check 'pending_sent', we might need to rely on backend failure or 
-                        // a specific endpoint. Assuming we don't have it explicitly in getRequests, 
-                        // we'll rely on catching errors on sendRequest for now, or assume "none".
-                        // Actually, FriendshipController::index/requests only shows received. 
-                        // Let's assume none until proven otherwise or updated by sending.
-                        setFriendshipStatus("none");
-                    }
-                }
-            }
-        } catch (err: any) {
-            console.error(err);
-            setError("Failed to load profile. It might be private or not exist.");
-        } finally {
-            setLoading(false);
-        }
-    }, [id, currentUser]);
-
-    useEffect(() => {
-        fetchProfileAndFriendship();
-    }, [fetchProfileAndFriendship]);
+    const handleRefresh = useCallback(async () => {
+        await Promise.all([
+            refetchUser(),
+            queryClient.invalidateQueries({ queryKey: ['friendship', id] })
+        ]);
+    }, [id, refetchUser, queryClient]);
 
     const handleFriendAction = async () => {
         if (!id || actionLoading) return;
         setActionLoading(true);
         try {
             if (friendshipStatus === "none") {
-                await friendsApi.sendRequest(id);
-                setFriendshipStatus("pending_sent");
+                await sendRequest.mutateAsync();
             } else if (friendshipStatus === "pending_received") {
-                await friendsApi.acceptRequest(id);
-                setFriendshipStatus("friends");
-                setFriendsCount(prev => prev + 1);
-                dispatch(updateFriendsCount(1));
+                await acceptRequest.mutateAsync();
             } else if (friendshipStatus === "friends") {
-                await friendsApi.removeFriend(id);
-                setFriendshipStatus("none");
-                setFriendsCount(prev => Math.max(0, prev - 1));
-                dispatch(updateFriendsCount(-1));
+                await removeFriend.mutateAsync();
             }
         } catch (e) {
             console.error("Failed friend action", e);
@@ -117,7 +62,7 @@ export default function PublicProfileScreen() {
         }
     };
 
-    if (loading && !profileUser) {
+    if (userLoading && !profileUser) {
         return (
             <PageContainer style={styles.center}>
                 <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -125,10 +70,12 @@ export default function PublicProfileScreen() {
         );
     }
 
-    if (error || !profileUser) {
+    if (userError || !profileUser) {
         return (
             <PageContainer style={styles.center}>
-                <Text variant="titleMedium" style={{ color: theme.colors.error }}>{error || "User not found"}</Text>
+                <Text variant="titleMedium" style={{ color: theme.colors.error }}>
+                    {(userError as any)?.message || "User not found"}
+                </Text>
                 <Button mode="contained" onPress={() => router.back()} style={{ marginTop: 16 }}>Go Back</Button>
             </PageContainer>
         );
@@ -143,13 +90,14 @@ export default function PublicProfileScreen() {
     const stats = {
         upcoming: attendingEvents.length,
         past: pastEvents.length,
+        friendsCount: profileUser.friends_count || 0
     };
 
     return (
         <PageContainer withPadding={false} withSafeArea={false}>
             <ScrollView
                 style={styles.container}
-                refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchProfileAndFriendship} />}
+                refreshControl={<RefreshControl refreshing={userLoading} onRefresh={handleRefresh} />}
             >
             <View style={[styles.header, { paddingTop: insets.top + 40 }]}>
                 <IconButton
@@ -166,7 +114,7 @@ export default function PublicProfileScreen() {
                     ) : (
                         <Avatar.Text
                             size={100}
-                            label={profileUser.first_name.charAt(0)}
+                            label={profileUser.first_name?.charAt(0) || "U"}
                             style={{ backgroundColor: theme.colors.primary }}
                         />
                     )}
@@ -191,7 +139,7 @@ export default function PublicProfileScreen() {
                             <Button
                                 mode={friendshipStatus === "friends" ? "outlined" : "contained"}
                                 onPress={handleFriendAction}
-                                loading={actionLoading}
+                                loading={actionLoading || sendRequest.isPending || acceptRequest.isPending || removeFriend.isPending}
                                 disabled={friendshipStatus === "pending_sent"}
                                 icon={
                                     friendshipStatus === "none" ? () => <UserPlus size={18} color="white" /> :
@@ -217,41 +165,22 @@ export default function PublicProfileScreen() {
                 <View style={styles.statsContainer}>
                     <View style={styles.statItem}>
                         <Calendar size={24} color={theme.colors.primary} style={{ marginBottom: 4 }} />
-                        {loading ? (
-                            <ContentLoader viewBox="0 0 40 20" width={40} height={20} backgroundColor="rgba(128,128,128,0.2)" foregroundColor="rgba(128,128,128,0.4)">
-                                <Rect x="0" y="0" rx="4" ry="4" width="40" height="20" />
-                            </ContentLoader>
-                        ) : (
-                            <Text variant="titleMedium" style={styles.statValue}>{stats.upcoming}</Text>
-                        )}
+                        <Text variant="titleMedium" style={styles.statValue}>{stats.upcoming}</Text>
                         <Text variant="labelSmall" style={styles.statLabel}>Events</Text>
                     </View>
                     <View style={styles.statItem}>
                         <History size={24} color={theme.colors.primary} style={{ marginBottom: 4 }} />
-                        {loading ? (
-                            <ContentLoader viewBox="0 0 40 20" width={40} height={20} backgroundColor="rgba(128,128,128,0.2)" foregroundColor="rgba(128,128,128,0.4)">
-                                <Rect x="0" y="0" rx="4" ry="4" width="40" height="20" />
-                            </ContentLoader>
-                        ) : (
-                            <Text variant="titleMedium" style={styles.statValue}>{stats.past}</Text>
-                        )}
+                        <Text variant="titleMedium" style={styles.statValue}>{stats.past}</Text>
                         <Text variant="labelSmall" style={styles.statLabel}>Past</Text>
                     </View>
                     <TouchableRipple onPress={() => {
-                        // Only let them view friends list if they're friends or looking at themselves
                         if (friendshipStatus === "friends" || id === currentUser?.id) {
                             router.push(`/friends/${id}` as any);
                         }
                     }}>
                         <View style={styles.statItem}>
                             <Users size={24} color={theme.colors.primary} style={{ marginBottom: 4 }} />
-                            {loading ? (
-                                <ContentLoader viewBox="0 0 40 20" width={40} height={20} backgroundColor="rgba(128,128,128,0.2)" foregroundColor="rgba(128,128,128,0.4)">
-                                    <Rect x="0" y="0" rx="4" ry="4" width="40" height="20" />
-                                </ContentLoader>
-                            ) : (
-                                <Text variant="titleMedium" style={styles.statValue}>{friendsCount}</Text>
-                            )}
+                            <Text variant="titleMedium" style={styles.statValue}>{stats.friendsCount}</Text>
                             <Text variant="labelSmall" style={styles.statLabel}>Friends</Text>
                         </View>
                     </TouchableRipple>
@@ -262,7 +191,7 @@ export default function PublicProfileScreen() {
                 <Text variant="titleLarge" style={styles.sectionTitle}>Upcoming Events</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
                     {attendingEvents.length > 0 ? (
-                        attendingEvents.map((event: Event) => (
+                        attendingEvents.map((event: any) => (
                             <EventCard
                                 key={event.id}
                                 event={event}
@@ -281,7 +210,7 @@ export default function PublicProfileScreen() {
                 <Text variant="titleLarge" style={styles.sectionTitle}>Past Events</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
                     {pastEvents.length > 0 ? (
-                        pastEvents.map((event: Event) => (
+                        pastEvents.map((event: any) => (
                             <EventCard
                                 key={event.id}
                                 event={event}
