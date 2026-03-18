@@ -20,6 +20,8 @@ interface TimetableGridProps {
   isPersonal: boolean;
   onEntryPress: (entry: TimetableEntry) => void;
   toggleMutation?: any;
+  groupId?: string | null;
+  timetableId?: string | null;
 }
 
 export const TimetableGrid: React.FC<TimetableGridProps> = ({
@@ -28,6 +30,8 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
   isPersonal,
   onEntryPress,
   toggleMutation,
+  groupId,
+  timetableId,
 }) => {
   const theme = useTheme();
   const viewMode = useTimetableStore((state) => state.viewMode);
@@ -51,7 +55,7 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
       ? templateTimetable.entries 
       : (timetable?.entries || []);
     const calendarDates = sourceEntries
-      .map((e) => e.start_time.split("T")[0])
+      .map((e: any) => e.start_time.split("T")[0])
       .sort();
     return calendarDates[0] || "";
   }, [timetable.entries, templateTimetable?.entries]);
@@ -79,7 +83,7 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
       ? templateTimetable.entries 
       : (timetable?.entries || []);
     const dayMap = new Set<string>();
-    sourceEntries.forEach((e) => {
+    sourceEntries.forEach((e: any) => {
       dayMap.add(getFestivalDate(e.start_time));
     });
     return Array.from(dayMap).sort();
@@ -206,6 +210,9 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
         visible={infoVisible}
         onDismiss={() => setInfoVisible(false)}
         entry={selectedEntry}
+        isGroup={!!groupId}
+        groupId={groupId}
+        timetableId={timetableId}
       />
     </View>
   );

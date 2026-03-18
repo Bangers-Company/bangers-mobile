@@ -27,6 +27,8 @@ interface ActInfoBottomSheetProps {
   onDismiss: () => void;
   entry: TimetableEntry | null;
   isGroup?: boolean;
+  groupId?: string | null;
+  timetableId?: string | null;
 }
 
 export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
@@ -34,11 +36,16 @@ export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
   onDismiss,
   entry,
   isGroup = false,
+  groupId,
+  timetableId
 }) => {
   const theme = useTheme();
   const { bottom } = useSafeAreaInsets();
   const translateY = useSharedValue(SCREEN_HEIGHT);
   const opacity = useSharedValue(0);
+
+  const attendees = entry?.attendees || [];
+  const isLoadingAttendees = false;
 
   useEffect(() => {
     if (visible) {
@@ -168,9 +175,17 @@ export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
                       </View>
                       
                       <View style={styles.friendList}>
-                        <Text variant="bodyMedium" style={styles.emptyFriends}>
-                           Check your group timetable for attendees.
-                        </Text>
+                        {isLoadingAttendees ? (
+                           <Text variant="bodyMedium" style={styles.emptyFriends}>Loading attendees...</Text>
+                        ) : attendees && attendees.length > 0 ? (
+                           attendees.map((a: any) => (
+                             <Text key={a.id} variant="bodyMedium" style={{ marginBottom: 4 }}>• {a.name}</Text>
+                           ))
+                        ) : (
+                           <Text variant="bodyMedium" style={styles.emptyFriends}>
+                              No one from your group is attending yet.
+                           </Text>
+                        )}
                       </View>
                     </View>
                   )}

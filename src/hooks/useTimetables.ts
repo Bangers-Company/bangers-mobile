@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { timetablesApi } from '../api/timetables';
 import { Timetable, TimetableEntry } from '../types/timetable';
+import { useAuthStore } from '../store/useAuthStore';
 
 export const useOfficialTimetable = (eventId: string) => {
   return useQuery({
@@ -23,6 +24,18 @@ export const useGroupTimetables = (groupId: string) => {
       return Array.isArray(list) ? list[0] : list;
     },
     enabled: !!groupId,
+  });
+};
+
+export const useGroupTimetable = (groupId: string | null, timetableId: string | null) => {
+  return useQuery({
+    queryKey: ['timetable', 'group', groupId, timetableId],
+    queryFn: async () => {
+      if (!groupId || !timetableId) return null;
+      const res = await timetablesApi.getGroupTimetable(groupId, timetableId);
+      return (res.data as any).data || res.data;
+    },
+    enabled: !!groupId && !!timetableId,
   });
 };
 
@@ -59,7 +72,9 @@ export const useToggleAttendance = () => {
     },
     onMutate: async (variables) => {
       const { id, entryId, type, targetId, isGroup } = variables;
-      const queryKey = ['timetable', type, targetId];
+      const queryKey = type === 'group'
+        ? ['timetable', 'group', targetId, id]
+        : ['timetable', type, targetId];
 
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey });
@@ -77,8 +92,25 @@ export const useToggleAttendance = () => {
               
             const currentCount = entry.pivot?.attending_count ?? 0;
             
+            let newAttendees = entry.attendees ? [...entry.attendees] : [];
+            if (isGroup) {
+              const currentUser = useAuthStore.getState().user;
+              if (currentUser) {
+                if (wasAttending) {
+                  newAttendees = newAttendees.filter((u: any) => u.id !== currentUser.id);
+                } else {
+                  newAttendees.push({
+                    id: currentUser.id,
+                    name: `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim(),
+                    profile_photo_path: null // optimistic
+                  });
+                }
+              }
+            }
+            
             return {
               ...entry,
+              attendees: isGroup ? newAttendees : entry.attendees,
               is_attending: !isGroup ? !wasAttending : entry.is_attending,
               pivot: isGroup ? {
                 ...entry.pivot,
@@ -113,8 +145,24 @@ export const useToggleAttendance = () => {
                         if (String(entry.id) === String(entryId)) {
                           const wasAttending = entry.pivot?.is_attending ?? false;
                           const currentCount = entry.pivot?.attending_count ?? 0;
+
+                          let newAttendees = entry.attendees ? [...entry.attendees] : [];
+                          const currentUser = useAuthStore.getState().user;
+                          if (currentUser) {
+                            if (wasAttending) {
+                              newAttendees = newAttendees.filter((u: any) => u.id !== currentUser.id);
+                            } else {
+                              newAttendees.push({
+                                id: currentUser.id,
+                                name: `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim(),
+                                profile_photo_path: null
+                              });
+                            }
+                          }
+
                           return {
                             ...entry,
+                            attendees: newAttendees,
                             pivot: {
                               ...entry.pivot,
                               is_attending: !wasAttending,
@@ -139,17 +187,26 @@ export const useToggleAttendance = () => {
       return { previousTimetable, previousGroups };
     },
     onError: (err, variables, context: any) => {
+      const queryKey = variables.type === 'group'
+        ? ['timetable', 'group', variables.targetId, variables.id]
+        : ['timetable', variables.type, variables.targetId];
+
       if (context?.previousTimetable) {
-        queryClient.setQueryData(['timetable', variables.type, variables.targetId], context.previousTimetable);
+        queryClient.setQueryData(queryKey, context.previousTimetable);
       }
       if (context?.previousGroups) {
         queryClient.setQueryData(['groups'], context.previousGroups);
       }
     },
     onSettled: (data, error, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['timetable', variables.type, variables.targetId] });
+      const queryKey = variables.type === 'group'
+        ? ['timetable', 'group', variables.targetId, variables.id]
+        : ['timetable', variables.type, variables.targetId];
+
+      queryClient.invalidateQueries({ queryKey });
       if (variables.type === 'group') {
         queryClient.invalidateQueries({ queryKey: ['groups'] });
+        queryClient.invalidateQueries({ queryKey: ['attendance', variables.targetId, variables.id, variables.entryId] });
       }
     },
   });

@@ -13,6 +13,7 @@ export interface TimetableEntry {
     attending_count?: number;
   };
   is_attending?: boolean;
+  attendees?: any[];
 }
 
 export interface Timetable {

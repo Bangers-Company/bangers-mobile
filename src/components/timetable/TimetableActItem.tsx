@@ -71,11 +71,6 @@ export const TimetableActItem: React.FC<TimetableActItemProps> = ({
             >
               {entry.act.name}
             </Text>
-            {!isPersonal && attendingCount > 0 && (
-              <View style={[styles.countBadge, { backgroundColor: isFavorited ? 'rgba(255,255,255,0.2)' : theme.colors.primaryContainer }]}>
-                 <Text style={[styles.countText, { color: isFavorited ? 'white' : theme.colors.primary }]}>{attendingCount}</Text>
-              </View>
-            )}
           </View>
           <Text
             variant="labelSmall"
@@ -88,6 +83,13 @@ export const TimetableActItem: React.FC<TimetableActItemProps> = ({
             {format(new Date(entry.start_time), "HH:mm")}
             {variant === "vertical" && ` - ${format(new Date(entry.end_time), "HH:mm")}`}
           </Text>
+          {attendingCount > 0 && (
+            <View style={[styles.countDot, { backgroundColor: isFavorited ? 'white' : theme.colors.primary }]}>
+               <Text style={[styles.countDotText, { color: isFavorited ? theme.colors.primary : 'white' }]}>
+                 {attendingCount}
+               </Text>
+            </View>
+          )}
         </View>
       </TouchableRipple>
     </View>
@@ -124,15 +126,17 @@ const styles = StyleSheet.create({
     fontSize: 10,
     marginTop: 2,
   },
-  countBadge: {
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 6,
-    minWidth: 16,
+  countDot: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  countText: {
+  countDotText: {
     fontSize: 9,
     fontWeight: 'bold',
   }

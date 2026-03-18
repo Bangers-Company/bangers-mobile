@@ -14,8 +14,12 @@ import { Timetable, TimetableEntry } from "../../../src/types/timetable";
 import { 
   useOfficialTimetable, 
   useGroups, 
+  useGroupTimetable,
   useToggleAttendance 
 } from "../../../src/hooks/useTimetables";
+import { timetablesApi } from "../../../src/api/timetables";
+import { useQueryClient } from "@tanstack/react-query";
+
 import { useUIStore } from "../../../src/store/useUIStore";
 import { useEvent } from "../../../src/hooks/useEvent";
 
@@ -33,9 +37,11 @@ export default function ScheduleScreen() {
   const [loadingGroupsOp, setLoadingGroupsOp] = useState(false);
 
   // TanStack Query Hooks
+  const queryClient = useQueryClient();
   const { data: event } = useEvent(eventId as string);
   const { data: officialQuery, isLoading: isLoadingOfficial } = useOfficialTimetable(eventId as string);
   const { data: groupsQuery, isLoading: isLoadingGroups } = useGroups();
+  const { data: specificGroupTimetable, isLoading: isLoadingSpecificGroup } = useGroupTimetable(selectedGroupId, selectedTimetableId);
   const toggleMutation = useToggleAttendance();
 
   // Zustand Store
@@ -65,12 +71,14 @@ export default function ScheduleScreen() {
   const selectedTimetable = React.useMemo(() => {
     if (selectedTimetableId) {
       if (selectedTimetableId === official?.id) return official;
+      if (specificGroupTimetable && specificGroupTimetable.id === selectedTimetableId) return specificGroupTimetable;
+      
       const g = groups.find((g: any) => g.id === selectedGroupId);
       const t = g?.timetables?.find((t: any) => t.id === selectedTimetableId);
       if (t) return t;
     }
     return null;
-  }, [selectedTimetableId, official, groups, selectedGroupId]);
+  }, [selectedTimetableId, official, groups, selectedGroupId, specificGroupTimetable]);
 
   const isPersonal = !!selectedTimetable && 
     (selectedTimetable.is_official || !!selectedGroupId);
@@ -108,6 +116,7 @@ export default function ScheduleScreen() {
     setLoadingGroupsOp(true);
     try {
       await createGroup(name, members);
+      queryClient.invalidateQueries({ queryKey: ["groups"] });
       setCreateGroupModalVisible(false);
     } catch (e) { console.error(e); } finally { setLoadingGroupsOp(false); }
   };
@@ -171,6 +180,8 @@ export default function ScheduleScreen() {
               isPersonal={isPersonal}
               onEntryPress={handleEntryPress}
               toggleMutation={toggleMutation}
+              groupId={selectedGroupId}
+              timetableId={selectedTimetableId}
             />
           )
         ) : (
@@ -202,7 +213,10 @@ export default function ScheduleScreen() {
                   setSelectedTimetableId(groupSchedule.id);
                   setSelectedGroupId(updatedGroup.id);
                 } else {
-                  await createGroupTimetable(updatedGroup.id, eventId as string, `${updatedGroup.name} Schedule`);
+                  const res = await timetablesApi.createGroupTimetable(updatedGroup.id, { event_id: eventId as string, name: `${updatedGroup.name} Schedule` });
+                  queryClient.invalidateQueries({ queryKey: ["groups"] });
+                  setSelectedGroupId(updatedGroup.id);
+                  setSelectedTimetableId(res.data.id);
                 }
               } catch (e) { console.error("Failed to select/create group schedule", e); } finally { setLoadingGroupsOp(false); }
             }}

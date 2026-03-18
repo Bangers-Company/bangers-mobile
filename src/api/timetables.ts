@@ -10,6 +10,8 @@ export const timetablesApi = {
   getGroups: (config?: AxiosRequestConfig) => apiClient.get("/groups", config),
   getGroupTimetables: (groupId: string, config?: AxiosRequestConfig) => 
     apiClient.get<Timetable[]>(`/groups/${groupId}/timetables`, config),
+  getGroupTimetable: (groupId: string, id: string, config?: AxiosRequestConfig) => 
+    apiClient.get<Timetable>(`/groups/${groupId}/timetables/${id}`, config),
   deleteGroup: (id: string) => apiClient.delete(`/groups/${id}`),
   createGroupTimetable: (groupId: string, data: { event_id: string; name: string }) =>
     apiClient.post<Timetable>(`/groups/${groupId}/timetables`, data),
