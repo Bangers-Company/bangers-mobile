@@ -107,7 +107,7 @@ export const TimetableOverview: React.FC<TimetableOverviewProps> = ({
         >
           <Card.Title
             title={group.name}
-            subtitle={`${group.timetables?.length || 0} Timetables • Long press to delete`}
+            subtitle={`${(group as any).members_count || 1} Members • Long press to delete`}
             left={(props) => <Users {...props} size={24} color={theme.colors.primary} />}
             right={(props) => <IconButton {...props} icon="chevron-right" />}
           />
