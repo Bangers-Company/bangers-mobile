@@ -12,6 +12,7 @@ export interface TimetableEntry {
     added_by?: string;
     attending_count?: number;
   };
+  is_attending?: boolean;
 }
 
 export interface Timetable {

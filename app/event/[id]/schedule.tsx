@@ -6,7 +6,6 @@ import { IconButton, Text, useTheme, ActivityIndicator } from "react-native-pape
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PageContainer } from "../../../src/components/PageContainer";
 import { CreateGroupModal } from "../../../src/components/timetable/CreateGroupModal";
-import { CreateTimetableModal } from "../../../src/components/timetable/CreateTimetableModal";
 import { TimetableGrid } from "../../../src/components/timetable/TimetableGrid";
 import { TimetableOverview } from "../../../src/components/timetable/TimetableOverview";
 import { useAuthStore } from "../../../src/store/useAuthStore";
@@ -14,7 +13,6 @@ import { useTimetableStore } from "../../../src/store/useTimetableStore";
 import { Timetable, TimetableEntry } from "../../../src/types/timetable";
 import { 
   useOfficialTimetable, 
-  usePersonalTimetable, 
   useGroups, 
   useToggleAttendance 
 } from "../../../src/hooks/useTimetables";
@@ -31,22 +29,17 @@ export default function ScheduleScreen() {
 
   const [selectedTimetableId, setSelectedTimetableId] = useState<string | null>(null);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-  const [createModalVisible, setCreateModalVisible] = useState(false);
   const [createGroupModalVisible, setCreateGroupModalVisible] = useState(false);
-  const [loadingPersonalOp, setLoadingPersonalOp] = useState(false);
   const [loadingGroupsOp, setLoadingGroupsOp] = useState(false);
 
   // TanStack Query Hooks
   const { data: event } = useEvent(eventId as string);
-  const { data: officialQuery, isLoading: isLoadingOfficial } = useOfficialTimetable(eventId);
-  const { data: personalQuery, isLoading: isLoadingPersonal } = usePersonalTimetable(eventId);
+  const { data: officialQuery, isLoading: isLoadingOfficial } = useOfficialTimetable(eventId as string);
   const { data: groupsQuery, isLoading: isLoadingGroups } = useGroups();
   const toggleMutation = useToggleAttendance();
 
   // Zustand Store
   const {
-    createPersonal,
-    deletePersonal,
     acceptInvitation,
     rejectInvitation,
     createGroup,
@@ -67,42 +60,26 @@ export default function ScheduleScreen() {
     } as Timetable : null);
   }, [officialQuery, event, eventId]);
   
-  const personal = React.useMemo(() => personalQuery || (event as any)?.personal_timetable || null, [personalQuery, event]);
   const groups = React.useMemo(() => groupsQuery || EMPTY_ARRAY, [groupsQuery]);
 
   const selectedTimetable = React.useMemo(() => {
     if (selectedTimetableId) {
       if (selectedTimetableId === official?.id) return official;
-      if (selectedTimetableId === personal?.id) return personal;
       const g = groups.find((g: any) => g.id === selectedGroupId);
       const t = g?.timetables?.find((t: any) => t.id === selectedTimetableId);
       if (t) return t;
     }
     return null;
-  }, [selectedTimetableId, official, personal, groups, selectedGroupId]);
+  }, [selectedTimetableId, official, groups, selectedGroupId]);
 
   const isPersonal = !!selectedTimetable && 
-    (selectedTimetable.id === personal?.id || !!selectedGroupId);
+    (selectedTimetable.is_official || !!selectedGroupId);
 
   // Handle BottomNav visibility
   useEffect(() => {
     setIsBottomNavVisible(!selectedTimetable);
     return () => setIsBottomNavVisible(true);
   }, [selectedTimetable, setIsBottomNavVisible]);
-
-  const handleDeletePersonal = async (id: string) => {
-    Alert.alert("Delete Timetable", "Are you sure you want to delete your personal timetable?", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: async () => {
-          setLoadingPersonalOp(true);
-          try {
-            await deletePersonal(eventId, id);
-            if (selectedTimetableId === id) setSelectedTimetableId(null);
-          } finally { setLoadingPersonalOp(false); }
-        }
-      }
-    ]);
-  };
 
   const handleDeleteGroup = async (group: any) => {
     const isOwner = group.owner_id === (useAuthStore.getState().user?.id);
@@ -127,15 +104,6 @@ export default function ScheduleScreen() {
     ]);
   };
 
-  const handleCreate = async (name: string) => {
-    setLoadingPersonalOp(true);
-    try {
-      await createPersonal(eventId, name);
-      setCreateModalVisible(false);
-      if (personalQuery) setSelectedTimetableId(personalQuery.id);
-    } catch (e) { console.error(e); } finally { setLoadingPersonalOp(false); }
-  };
-
   const handleCreateGroup = async (name: string, members: string[]) => {
     setLoadingGroupsOp(true);
     try {
@@ -145,13 +113,15 @@ export default function ScheduleScreen() {
   };
 
   const handleEntryPress = React.useCallback((entry: TimetableEntry) => {
-    if (!selectedTimetable || selectedTimetable.is_official) return;
+    if (!selectedTimetable) return;
+    
     toggleMutation.mutate({
       id: selectedTimetable.id,
       entryId: entry.id,
       isGroup: !!selectedGroupId,
-      type: selectedGroupId ? 'group' : 'personal',
-      targetId: selectedGroupId || eventId
+      type: selectedGroupId ? 'group' : 'official',
+      targetId: selectedGroupId || (eventId as string),
+      eventId: eventId as string
     });
   }, [selectedTimetable, selectedGroupId, eventId, toggleMutation]);
 
@@ -174,20 +144,16 @@ export default function ScheduleScreen() {
               {selectedTimetable ? selectedTimetable.name : "Timetables"}
             </Text>
             <Text variant="bodySmall" style={styles.headerSubtitle} numberOfLines={1}>
-              {selectedTimetable ? (selectedTimetable.is_official ? "Official Schedule" : "My Plan") : "Schedules"}
+              {selectedTimetable ? (selectedTimetable.is_official ? "Official Schedule" : "Group Plan") : "Schedules"}
             </Text>
           </View>
 
           <View style={styles.headerActions}>
-            {selectedTimetable ? (
+            {selectedTimetable && (
               <>
                 <IconButton icon={() => <LayoutGrid size={20} color={theme.colors.primary} />} onPress={toggleViewMode} />
                 <IconButton icon={() => <Share2 size={20} color={theme.colors.outline} />} disabled onPress={() => {}} />
               </>
-            ) : (
-              official && !personal && (
-                <IconButton icon={() => <Plus size={24} color={theme.colors.primary} />} onPress={() => setCreateModalVisible(true)} />
-              )
             )}
           </View>
         </View>
@@ -195,8 +161,7 @@ export default function ScheduleScreen() {
 
       <View style={styles.content}>
         {selectedTimetable ? (
-          ((isLoadingOfficial && selectedTimetable.id === official?.id) || 
-           (isLoadingPersonal && selectedTimetable.id === personal?.id)) && 
+          (isLoadingOfficial && selectedTimetable.id === official?.id) && 
           (!selectedTimetable.entries || selectedTimetable.entries.length === 0) ? (
             <View style={styles.center}><ActivityIndicator color={theme.colors.primary} /></View>
           ) : (
@@ -211,21 +176,17 @@ export default function ScheduleScreen() {
         ) : (
           <TimetableOverview
             official={official}
-            personal={personal}
             groups={groups}
             loadingOfficial={isLoadingOfficial}
-            loadingPersonal={loadingPersonalOp || isLoadingPersonal}
             loadingGroups={loadingGroupsOp || isLoadingGroups}
             onSelect={(t: Timetable) => setSelectedTimetableId(t.id)}
-            onCreatePersonal={() => setCreateModalVisible(true)}
-            onDeletePersonal={handleDeletePersonal}
             onAcceptInvitation={async (gid: string) => {
                setLoadingGroupsOp(true);
                try { await acceptInvitation(gid); } finally { setLoadingGroupsOp(false); }
             }}
             onRejectInvitation={async (gid) => {
-              setLoadingGroupsOp(true);
-              try { await rejectInvitation(gid); } finally { setLoadingGroupsOp(false); }
+               setLoadingGroupsOp(true);
+               try { await rejectInvitation(gid); } finally { setLoadingGroupsOp(false); }
             }}
             onCreateGroup={() => setCreateGroupModalVisible(true)}
             onDeleteGroup={(group: any) => handleDeleteGroup(group)}
@@ -241,21 +202,13 @@ export default function ScheduleScreen() {
                   setSelectedTimetableId(groupSchedule.id);
                   setSelectedGroupId(updatedGroup.id);
                 } else {
-                  await createGroupTimetable(updatedGroup.id, eventId, `${updatedGroup.name} Schedule`);
+                  await createGroupTimetable(updatedGroup.id, eventId as string, `${updatedGroup.name} Schedule`);
                 }
               } catch (e) { console.error("Failed to select/create group schedule", e); } finally { setLoadingGroupsOp(false); }
             }}
           />
         )}
       </View>
-
-      <CreateTimetableModal
-        visible={createModalVisible}
-        onDismiss={() => setCreateModalVisible(false)}
-        onConfirm={handleCreate}
-        loading={loadingPersonalOp}
-        title="Create Personal Timetable"
-      />
 
       <CreateGroupModal
         visible={createGroupModalVisible}

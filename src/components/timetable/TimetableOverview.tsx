@@ -7,14 +7,10 @@ import { Timetable } from "../../types/timetable";
 
 interface TimetableOverviewProps {
   official: Timetable | null;
-  personal: Timetable | null;
   groups: any[];
-  loadingPersonal: boolean;
   loadingGroups: boolean;
   loadingOfficial: boolean;
   onSelect: (timetable: Timetable) => void;
-  onCreatePersonal: () => void;
-  onDeletePersonal: (id: string) => void;
   onAcceptInvitation: (groupId: string) => void;
   onRejectInvitation: (groupId: string) => void;
   onCreateGroup: () => void;
@@ -24,14 +20,10 @@ interface TimetableOverviewProps {
 
 export const TimetableOverview: React.FC<TimetableOverviewProps> = ({
   official,
-  personal,
   groups,
-  loadingPersonal,
   loadingGroups,
   loadingOfficial,
   onSelect,
-  onCreatePersonal,
-  onDeletePersonal,
   onAcceptInvitation,
   onRejectInvitation,
   onCreateGroup,
@@ -99,43 +91,6 @@ export const TimetableOverview: React.FC<TimetableOverviewProps> = ({
             </Card>
           ))}
         </>
-      )}
-
-      <View style={styles.sectionHeader}>
-        <Text variant="titleMedium" style={styles.sectionTitle}>My Timetables</Text>
-        {loadingPersonal && <ActivityIndicator size="small" color={theme.colors.primary} />}
-      </View>
-
-      {personal ? (
-        <Card 
-          style={styles.card} 
-          onPress={() => onSelect(personal)}
-          onLongPress={() => onDeletePersonal(personal.id)}
-        >
-          <Card.Title
-            title={personal.name || "Personal Timetable"}
-            subtitle="Your custom schedule • Long press to delete"
-            left={(props) => <Calendar {...props} size={24} color={theme.colors.primary} />}
-            right={(props) => <IconButton {...props} icon="chevron-right" />}
-          />
-        </Card>
-      ) : (
-        <TouchableOpacity 
-          style={styles.createPlaceholder} 
-          onPress={onCreatePersonal}
-          disabled={loadingPersonal}
-        >
-          {loadingPersonal ? (
-            <ActivityIndicator size="small" color={theme.colors.primary} />
-          ) : (
-            <>
-              <Calendar size={24} color={theme.colors.primary} />
-              <Text variant="bodyMedium" style={{ color: theme.colors.primary, marginTop: 4 }}>
-                Create your personal timetable
-              </Text>
-            </>
-          )}
-        </TouchableOpacity>
       )}
 
       <View style={styles.sectionHeader}>

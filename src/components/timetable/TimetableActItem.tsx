@@ -25,7 +25,8 @@ export const TimetableActItem: React.FC<TimetableActItemProps> = ({
   
   // Since Redux updates the state immediately in 'pending', 
   // we just render what's in the entry object!
-  const isFavorited = entry.pivot?.is_attending ?? false;
+  // Support both official (entry.is_attending) and group (entry.pivot.is_attending)
+  const isFavorited = entry.is_attending || (entry.pivot?.is_attending ?? false);
   const attendingCount = entry.pivot?.attending_count ?? 0;
 
   const backgroundColor = isFavorited

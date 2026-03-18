@@ -13,16 +13,6 @@ export const useOfficialTimetable = (eventId: string) => {
   });
 };
 
-export const usePersonalTimetable = (eventId: string) => {
-  return useQuery({
-    queryKey: ['timetable', 'personal', eventId],
-    queryFn: async () => {
-      const res = await timetablesApi.getPersonal(eventId);
-      return (res.data as any).data || res.data;
-    },
-    enabled: !!eventId,
-  });
-};
 
 export const useGroupTimetables = (groupId: string) => {
   return useQuery({
@@ -55,13 +45,15 @@ export const useToggleAttendance = () => {
       entryId: string, 
       isGroup: boolean,
       type: 'official' | 'personal' | 'group',
-      targetId: string 
+      targetId: string,
+      eventId?: string
     }) => {
       const res = await timetablesApi.toggleAttend(
         variables.id, 
         variables.entryId, 
         variables.isGroup, 
-        variables.type === 'group' ? variables.targetId : undefined
+        variables.type === 'group' ? variables.targetId : undefined,
+        variables.eventId
       );
       return { ...variables, serverData: res.data };
     },
@@ -79,17 +71,20 @@ export const useToggleAttendance = () => {
       if (previousTimetable && previousTimetable.entries) {
         const newEntries = previousTimetable.entries.map(entry => {
           if (String(entry.id) === String(entryId)) {
-            const wasAttending = entry.pivot?.is_attending ?? false;
+            const wasAttending = isGroup 
+              ? (entry.pivot?.is_attending ?? false)
+              : (entry.is_attending ?? false);
+              
             const currentCount = entry.pivot?.attending_count ?? 0;
+            
             return {
               ...entry,
-              pivot: {
+              is_attending: !isGroup ? !wasAttending : entry.is_attending,
+              pivot: isGroup ? {
                 ...entry.pivot,
                 is_attending: !wasAttending,
-                attending_count: isGroup
-                  ? (wasAttending ? Math.max(0, currentCount - 1) : currentCount + 1)
-                  : currentCount
-              }
+                attending_count: wasAttending ? Math.max(0, currentCount - 1) : currentCount + 1
+              } : entry.pivot
             };
           }
           return entry;
