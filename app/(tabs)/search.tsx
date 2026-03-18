@@ -30,6 +30,7 @@ import { EventHorizontalCard } from "../../src/components/event/EventHorizontalC
 import { resolveMediaUrl } from "../../src/utils/format";
 import { addAlpha } from "../../src/utils/theme";
 import { useSearch } from "../../src/hooks/useSearch";
+import { useDebounce } from "../../src/hooks/useDebounce";
 
 export default function SearchScreen() {
   const theme = useTheme();
@@ -37,10 +38,11 @@ export default function SearchScreen() {
   const insets = useSafeAreaInsets();
 
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const [entities, setEntities] = useState<string[]>(["events", "artists", "acts", "users"]);
   const [showFilters, setShowFilters] = useState(false);
 
-  const { data: results, isLoading: loading } = useSearch(searchQuery, entities);
+  const { data: results, isLoading: loading } = useSearch(debouncedSearchQuery, entities);
 
   const onToggleEntity = (entity: string) => {
     setEntities(prev => 
