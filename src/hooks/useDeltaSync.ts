@@ -5,15 +5,25 @@ import { runDeltaSync } from "../sync/deltaSync";
 
 export const useDeltaSync = () => {
   const isSyncing = useSyncStore((state) => state.isSyncing);
+  const lastSyncTime = useSyncStore((state) => state.lastSyncTime);
+  const setLastSyncTime = useSyncStore((state) => state.setLastSyncTime);
 
   const sync = useCallback(async () => {
     if (isSyncing) return;
-    try {
-      await runDeltaSync();
-    } catch (error) {
-      // Error handled in runner, but could add UI notification here
+    
+    // Throttle syncs to 1 minute
+    const now = Date.now();
+    if (lastSyncTime && now - lastSyncTime < 60000) {
+      return;
     }
-  }, [isSyncing]);
+
+    try {
+      setLastSyncTime(now);
+      await runDeltaSync();
+    } catch {
+      // Error handled in runner
+    }
+  }, [isSyncing, lastSyncTime, setLastSyncTime]);
 
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {

@@ -1,14 +1,25 @@
 import { SQLiteDatabase } from "expo-sqlite";
 
-export const runMigrations = async (db: SQLiteDatabase) => {
-  // For now, schema is handled in sqlite.ts init.
-  // This will be used for future schema updates.
-  const { user_version } = (await db.getFirstAsync<{ user_version: number }>(
-    "PRAGMA user_version",
-  )) || { user_version: 0 };
+const migrations: Record<number, (_db: SQLiteDatabase) => Promise<void>> = {
+  1: async (_db) => {
+    // Schema already exist in initDatabase for version 1
+  },
+  2: async (_db) => {
+    // Example for future migration:
+    // await db.execAsync("ALTER TABLE events ADD COLUMN category TEXT");
+  },
+};
 
-  if (user_version < 1) {
-    // Schema already created in initDatabase for version 1
-    await db.execAsync("PRAGMA user_version = 1");
+export const runMigrations = async (db: SQLiteDatabase) => {
+  const result = await db.getFirstAsync<{ user_version: number }>("PRAGMA user_version");
+  let user_version = result?.user_version || 0;
+
+  for (const [version, migrate] of Object.entries(migrations)) {
+    const v = Number(version);
+    if (user_version < v) {
+      await migrate(db);
+      await db.execAsync(`PRAGMA user_version = ${v}`);
+      user_version = v;
+    }
   }
 };

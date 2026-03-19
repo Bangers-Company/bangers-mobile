@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/27</span>
+                <span class='fraction'>0/25</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/12</span>
+                <span class='fraction'>0/10</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/27</span>
+                <span class='fraction'>0/23</span>
             </div>
         
             
@@ -122,15 +122,7 @@
 <a name='L57'></a><a href='#L57'>57</a>
 <a name='L58'></a><a href='#L58'>58</a>
 <a name='L59'></a><a href='#L59'>59</a>
-<a name='L60'></a><a href='#L60'>60</a>
-<a name='L61'></a><a href='#L61'>61</a>
-<a name='L62'></a><a href='#L62'>62</a>
-<a name='L63'></a><a href='#L63'>63</a>
-<a name='L64'></a><a href='#L64'>64</a>
-<a name='L65'></a><a href='#L65'>65</a>
-<a name='L66'></a><a href='#L66'>66</a>
-<a name='L67'></a><a href='#L67'>67</a>
-<a name='L68'></a><a href='#L68'>68</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L60'></a><a href='#L60'>60</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -141,6 +133,15 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -151,20 +152,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -176,17 +163,14 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -205,6 +189,15 @@ import { Artist } from "../types/artist";
 import { Act } from "../types/act";
 &nbsp;
 type SyncItem = Event | Artist | Act;
+&nbsp;
+const syncRegistry = <span class="cstat-no" title="statement not covered" >new Map&lt;string, { </span>
+  batchUpsert: (items: any[]) =&gt; Promise&lt;void&gt;; 
+  batchHardDelete: (ids: string[]) =&gt; Promise&lt;void&gt;; 
+}&gt;();
+&nbsp;
+<span class="cstat-no" title="statement not covered" >syncRegistry.set("events", eventsRepository);</span>
+<span class="cstat-no" title="statement not covered" >syncRegistry.set("artists", artistsRepository);</span>
+<span class="cstat-no" title="statement not covered" >syncRegistry.set("acts", actsRepository);</span>
 &nbsp;
 export const syncHelpers = <span class="cstat-no" title="statement not covered" >{</span>
   processEntityUpdates: <span class="fstat-no" title="function not covered" >as</span>ync (entityType: string, data: SyncItem[]) =&gt; {
@@ -228,34 +221,17 @@ export const syncHelpers = <span class="cstat-no" title="statement not covered" 
   },
 &nbsp;
   batchHandleUpsert: <span class="fstat-no" title="function not covered" >as</span>ync (entityType: string, items: SyncItem[]) =&gt; {
-<span class="cstat-no" title="statement not covered" >    switch (entityType) {</span>
-      case "events":
-<span class="cstat-no" title="statement not covered" >        await eventsRepository.batchUpsert(items as Event[]);</span>
-<span class="cstat-no" title="statement not covered" >        break;</span>
-      case "artists":
-<span class="cstat-no" title="statement not covered" >        await artistsRepository.batchUpsert(items as Artist[]);</span>
-<span class="cstat-no" title="statement not covered" >        break;</span>
-      case "acts":
-<span class="cstat-no" title="statement not covered" >        await actsRepository.batchUpsert(items as Act[]);</span>
-<span class="cstat-no" title="statement not covered" >        break;</span>
-    }
+    const repo = <span class="cstat-no" title="statement not covered" >syncRegistry.get(entityType);</span>
+<span class="cstat-no" title="statement not covered" >    if (!repo) <span class="cstat-no" title="statement not covered" >throw new Error(`Unknown entity type: ${entityType}`);</span></span>
+<span class="cstat-no" title="statement not covered" >    await repo.batchUpsert(items);</span>
   },
 &nbsp;
   batchHandleDelete: <span class="fstat-no" title="function not covered" >as</span>ync (entityType: string, ids: string[]) =&gt; {
-<span class="cstat-no" title="statement not covered" >    switch (entityType) {</span>
-      case "events":
-<span class="cstat-no" title="statement not covered" >        await eventsRepository.batchHardDelete(ids);</span>
-<span class="cstat-no" title="statement not covered" >        break;</span>
-      case "artists":
-<span class="cstat-no" title="statement not covered" >        await artistsRepository.batchHardDelete(ids);</span>
-<span class="cstat-no" title="statement not covered" >        break;</span>
-      case "acts":
-<span class="cstat-no" title="statement not covered" >        await actsRepository.batchHardDelete(ids);</span>
-<span class="cstat-no" title="statement not covered" >        break;</span>
-    }
+    const repo = <span class="cstat-no" title="statement not covered" >syncRegistry.get(entityType);</span>
+<span class="cstat-no" title="statement not covered" >    if (!repo) <span class="cstat-no" title="statement not covered" >throw new Error(`Unknown entity type: ${entityType}`);</span></span>
+<span class="cstat-no" title="statement not covered" >    await repo.batchHardDelete(ids);</span>
   },
 &nbsp;
-  // Legacy individual handlers if needed, but discouraged for sync
   handleUpsert: <span class="fstat-no" title="function not covered" >as</span>ync (entityType: string, item: any) =&gt; {
 <span class="cstat-no" title="statement not covered" >    await syncHelpers.batchHandleUpsert(entityType, [item]);</span>
   },
@@ -271,7 +247,7 @@ export const syncHelpers = <span class="cstat-no" title="statement not covered" 
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-03-19T13:23:48.375Z
+                at 2026-03-19T16:28:19.954Z
             </div>
         <script src="../prettify.js"></script>
         <script>

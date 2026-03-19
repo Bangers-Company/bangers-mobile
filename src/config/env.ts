@@ -10,14 +10,17 @@ import Constants from "expo-constants";
  * to be available in the client bundle. Expo strips non-prefixed vars.
  */
 const getEnvVar = (name: string): string | undefined => {
-  // Expo requires literal access for some build-time optimizations, 
-  // but we provide a fallback for flexibility.
-  if (name === "EXPO_PUBLIC_API_BASE_URL") return process.env.EXPO_PUBLIC_API_BASE_URL;
-  if (name === "EXPO_PUBLIC_STORAGE_BASE_URL") return process.env.EXPO_PUBLIC_STORAGE_BASE_URL;
+  // Expo requires literal access for some build-time optimizations
+  const processEnv = (process.env as any) || {};
+  
+  // Use a map for literal lookups to help bundlers
+  const literalMap: Record<string, string | undefined> = {
+    EXPO_PUBLIC_API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL,
+    EXPO_PUBLIC_STORAGE_BASE_URL: process.env.EXPO_PUBLIC_STORAGE_BASE_URL,
+  };
 
-  if (typeof process !== "undefined" && process.env) {
-    return (process.env as any)[name];
-  }
+  if (literalMap[name]) return literalMap[name];
+  if (processEnv[name]) return processEnv[name];
 
   // Fallback to app.json extra
   const extra = Constants.expoConfig?.extra || {};
@@ -31,24 +34,25 @@ const getEnvVar = (name: string): string | undefined => {
   return extra[camelKey];
 };
 
-const ENV = {
-  /**
-   * The full base URL for the mobile API.
-   * Example: "https://api.bangers.app/api/mobile"
-   * Dev:     "http://192.168.x.x:8080/api/mobile"
-   */
-  API_BASE_URL:
-    getEnvVar("EXPO_PUBLIC_API_BASE_URL") ||
-    "http://localhost:8080/api/mobile",
+const validateUrl = (url: string, name: string) => {
+  if (!__DEV__ && url.startsWith("http://")) {
+    throw new Error(`SECURITY CRITICAL: Non-HTTPS URL detected for ${name} in production: ${url}`);
+  }
+  if (__DEV__ && url.startsWith("http://") && !url.includes("localhost") && !url.includes("127.0.0.1") && !url.includes("192.168.")) {
+    console.warn(`[Security Warning] Non-HTTPS external URL for ${name} in development: ${url}`);
+  }
+  return url;
+};
 
-  /**
-   * The base URL for serving media files (images, banners, profile photos).
-   * Should point to the same backend or a CDN in production.
-   * Example: "https://cdn.bangers.app" or "http://192.168.x.x:8080"
-   */
-  STORAGE_BASE_URL:
-    getEnvVar("EXPO_PUBLIC_STORAGE_BASE_URL") ||
-    "http://localhost:8080",
+const ENV = {
+  API_BASE_URL: validateUrl(
+    getEnvVar("EXPO_PUBLIC_API_BASE_URL") || "http://localhost:8080/api/mobile",
+    "API_BASE_URL"
+  ),
+  STORAGE_BASE_URL: validateUrl(
+    getEnvVar("EXPO_PUBLIC_STORAGE_BASE_URL") || "http://localhost:8080",
+    "STORAGE_BASE_URL"
+  ),
 } as const;
 
 export default ENV;

@@ -2,6 +2,7 @@ import axios from "axios";
 import { useAuthStore } from "../store/useAuthStore";
 import { AuthResponse } from "../types/user";
 import ENV from "../config/env";
+import { logger } from "../utils/logger";
 
 const API_BASE_URL = ENV.API_BASE_URL;
 
@@ -17,9 +18,9 @@ const apiClient = axios.create({
 // Request interceptor to add the bearer token
 apiClient.interceptors.request.use(
   async (config) => {
-    const token = useAuthStore.getState().accessToken;
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    const session = useAuthStore.getState().session;
+    if (session?.accessToken) {
+      config.headers.Authorization = `Bearer ${session.accessToken}`;
     }
     return config;
   },
@@ -29,7 +30,12 @@ apiClient.interceptors.request.use(
 // Shared promise for concurrent refresh requests
 let refreshPromise: Promise<string> | null = null;
 
-// Response interceptor to handle token refresh and data unwrapping
+
+// Response interceptor to handle token refresh and data unwrapping.
+/**
+ * NOTE: This automatically unwraps Laravel's { data: [...] } wrapper.
+ * So hooks/stores should NOT manually access .data.data.
+ */
 apiClient.interceptors.response.use(
   (response) => {
     // Automatically unwrap Laravel's "data" wrapper if it exists
@@ -42,6 +48,12 @@ apiClient.interceptors.response.use(
     return response;
   },
   async (error) => {
+    logger.error("API Error:", { 
+      url: error.config?.url,
+      status: error.response?.status,
+      message: error.message 
+    });
+    
     const originalRequest = error.config;
 
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -50,15 +62,15 @@ apiClient.interceptors.response.use(
       try {
         if (!refreshPromise) {
           refreshPromise = (async () => {
-            const refreshToken = useAuthStore.getState().refreshToken;
-            if (!refreshToken) {
+            const session = useAuthStore.getState().session;
+            if (!session?.refreshToken) {
               throw new Error("No refresh token available");
             }
 
             const response = await axios.post<AuthResponse>(
               `${API_BASE_URL}/auth/refresh`,
               {
-                refresh_token: refreshToken,
+                refresh_token: session.refreshToken,
               },
             );
 

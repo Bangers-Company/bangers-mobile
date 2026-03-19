@@ -5,8 +5,10 @@ import { createJSONStorage, persist } from "zustand/middleware";
 interface SyncState {
   lastSyncTimestamp: Record<string, string | null>;
   isSyncing: boolean;
+  lastSyncTime: number | null;
   setLastSyncTimestamp: (entity: string, timestamp: string) => void;
   setSyncing: (isSyncing: boolean) => void;
+  setLastSyncTime: (time: number) => void;
 }
 
 export const useSyncStore = create<SyncState>()(
@@ -18,6 +20,7 @@ export const useSyncStore = create<SyncState>()(
         acts: null,
       },
       isSyncing: false,
+      lastSyncTime: null,
       setLastSyncTimestamp: (entity, timestamp) =>
         set((state) => ({
           lastSyncTimestamp: {
@@ -26,6 +29,7 @@ export const useSyncStore = create<SyncState>()(
           },
         })),
       setSyncing: (isSyncing) => set({ isSyncing }),
+      setLastSyncTime: (lastSyncTime) => set({ lastSyncTime }),
     }),
     {
       name: "sync-storage",

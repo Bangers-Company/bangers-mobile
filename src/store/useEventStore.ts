@@ -79,7 +79,7 @@ export const useEventStore = create<EventStore>((set, get) => ({
     try {
       const eventRes = await eventsApi.getById(id);
 
-      const fetchedEvent = (eventRes.data as any).data || eventRes.data;
+      const fetchedEvent = eventRes.data;
       const fetchedAttendees = fetchedEvent.attendees || [];
 
       // Filter public attendees

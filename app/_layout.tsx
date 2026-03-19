@@ -1,7 +1,7 @@
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, View, Text, TouchableOpacity } from "react-native";
 import "react-native-reanimated";
 import { ThemeProvider } from "../src/context/ThemeProvider";
 import { initDatabase } from "../src/database/sqlite";
@@ -9,9 +9,11 @@ import "../src/global.css";
 import { registerLogoutCallback, useAuthStore } from "../src/store/useAuthStore";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ScrollProvider } from "../src/hooks/useSharedScroll";
-import { Text, TouchableOpacity } from "react-native";
 import * as SQLite from "expo-sqlite";
 import { LoadingProvider } from "../src/providers/LoadingProvider";
+import { GlobalErrorBoundary } from "../src/components/GlobalErrorBoundary";
+import { logger } from "../src/utils/logger";
+import { SQLiteDatabase } from "expo-sqlite";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,7 +29,8 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
-  const accessToken = useAuthStore((state) => state.accessToken);
+  const session = useAuthStore((state) => state.session);
+  const accessToken = session?.accessToken;
   const segments = useSegments();
   const router = useRouter();
   const routerRef = useRef(router);
@@ -47,11 +50,11 @@ export default function RootLayout() {
     setDbError(null);
     initDatabase()
       .then(() => {
-        console.log("[RootLayout] Database initialized on retry.");
+        logger.info("[RootLayout] Database initialized on retry.");
         setIsDbReady(true);
       })
       .catch((err) => {
-        console.error("[RootLayout] Database retry failed:", err);
+        logger.error("[RootLayout] Database retry failed:", err);
         setDbError(err);
       });
   };
@@ -62,20 +65,19 @@ export default function RootLayout() {
       // Re-initialize
       retryDbInit();
     } catch (err) {
-      console.error("[RootLayout] Failed to reset database:", err);
+      logger.error("[RootLayout] Failed to reset database:", err);
       setDbError(err as Error);
     }
   };
 
-  // Handle database initialization
   useEffect(() => {
     initDatabase()
       .then(() => {
-        console.log("[RootLayout] Database initialized successfully.");
+        logger.info("[RootLayout] Database initialized successfully.");
         setIsDbReady(true);
       })
       .catch((err) => {
-        console.error("[RootLayout] Database initialization failed:", err);
+        logger.error("[RootLayout] Database initialization failed:", err);
         setDbError(err);
       });
   }, []);
@@ -210,33 +212,35 @@ export default function RootLayout() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <LoadingProvider>
-          <ScrollProvider>
-            <Stack
-              screenOptions={{
-                animation: "slide_from_right",
-                headerShown: false,
-              }}
-            >
-              <Stack.Screen name="(auth)" options={{ animation: "fade" }} />
-              <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
-              <Stack.Screen
-                name="modal"
-                options={{ presentation: "modal", title: "Modal" }}
-              />
-              <Stack.Screen
-                name="settings"
-                options={{ animation: "slide_from_bottom" }}
-              />
-              <Stack.Screen name="user/[id]" />
-              <Stack.Screen name="friends/[id]" />
-            </Stack>
-            <StatusBar style="auto" />
-          </ScrollProvider>
-        </LoadingProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <GlobalErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <LoadingProvider>
+            <ScrollProvider>
+              <Stack
+                screenOptions={{
+                  animation: "slide_from_right",
+                  headerShown: false,
+                }}
+              >
+                <Stack.Screen name="(auth)" options={{ animation: "fade" }} />
+                <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
+                <Stack.Screen
+                  name="modal"
+                  options={{ presentation: "modal", title: "Modal" }}
+                />
+                <Stack.Screen
+                  name="settings"
+                  options={{ animation: "slide_from_bottom" }}
+                />
+                <Stack.Screen name="user/[id]" />
+                <Stack.Screen name="friends/[id]" />
+              </Stack>
+              <StatusBar style="auto" />
+            </ScrollProvider>
+          </LoadingProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </GlobalErrorBoundary>
   );
 }

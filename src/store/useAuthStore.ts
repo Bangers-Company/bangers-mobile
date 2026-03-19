@@ -11,12 +11,16 @@ export const registerLogoutCallback = (callback: () => void) => {
   logoutCallbacks.push(callback);
 };
 
+interface AuthSession {
+  accessToken: string;
+  refreshToken: string;
+}
+
 interface AuthState {
-  accessToken: string | null;
-  refreshToken: string | null;
+  session: AuthSession | null;
   user: User | null;
-  setAuth: (accessToken: string, refreshToken: string, user: User) => void;
-  setUser: (user: User) => void;
+  setAuth: (session: AuthSession, user: User) => void;
+  setUser: (user: Partial<User>) => void;
   updateAccessToken: (accessToken: string) => void;
   updateFriendsCount: (delta: number) => void;
   logout: () => void;
@@ -24,23 +28,26 @@ interface AuthState {
 
 const isWeb = Platform.OS === "web";
 
+// Memory storage fallback for web to avoid persisting tokens in localStorage
+const memoryStorage: Record<string, string | null> = {};
+
 const SecureStorage = {
   getItem: async (name: string): Promise<string | null> => {
     if (isWeb) {
-      return localStorage.getItem(name);
+      return memoryStorage[name] || null;
     }
     return await SecureStore.getItemAsync(name);
   },
   setItem: async (name: string, value: string): Promise<void> => {
     if (isWeb) {
-      localStorage.setItem(name, value);
+      memoryStorage[name] = value;
       return;
     }
     await SecureStore.setItemAsync(name, value);
   },
   removeItem: async (name: string): Promise<void> => {
     if (isWeb) {
-      localStorage.removeItem(name);
+      delete memoryStorage[name];
       return;
     }
     await SecureStore.deleteItemAsync(name);
@@ -50,37 +57,38 @@ const SecureStorage = {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      accessToken: null,
-      refreshToken: null,
+      session: null,
       user: null,
-      setAuth: (accessToken, refreshToken, user) =>
-        set({ accessToken, refreshToken, user }),
-      setUser: (user) => set((state) => ({ 
-        user: state.user ? { ...state.user, ...user } : user 
-      })),
-      updateAccessToken: (accessToken) => set({ accessToken }),
-      updateFriendsCount: (delta) => set((state) => {
-        if (!state.user) return state;
-        return {
-          user: {
-            ...state.user,
-            friends_count: (state.user.friends_count || 0) + delta
-          }
-        };
-      }),
+      setAuth: (session, user) => set({ session, user }),
+      setUser: (user) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, ...user } : (user as User),
+        })),
+      updateAccessToken: (accessToken) =>
+        set((state) => ({
+          session: state.session ? { ...state.session, accessToken } : null,
+        })),
+      updateFriendsCount: (delta) =>
+        set((state) => {
+          if (!state.user) return state;
+          return {
+            user: {
+              ...state.user,
+              friends_count: (state.user.friends_count || 0) + delta,
+            },
+          };
+        }),
       logout: () => {
-        // Clear auth state
-        set({ accessToken: null, refreshToken: null, user: null });
-        // Execute registered cleanup callbacks (e.g., QueryClient.clear())
+        set({ session: null, user: null });
         logoutCallbacks.forEach((cb) => cb());
       },
     }),
     {
       name: "auth-storage",
       storage: createJSONStorage(() => SecureStorage),
-      partialize: (state) => ({ 
-        accessToken: state.accessToken, 
-        refreshToken: state.refreshToken 
+      partialize: (state) => ({
+        session: state.session,
+        user: state.user,
       }),
     },
   ),

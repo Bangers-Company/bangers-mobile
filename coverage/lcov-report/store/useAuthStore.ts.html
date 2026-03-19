@@ -25,28 +25,28 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/31</span>
+                <span class='fraction'>0/33</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/12</span>
+                <span class='fraction'>0/16</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/15</span>
+                <span class='fraction'>0/16</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/28</span>
+                <span class='fraction'>0/29</span>
             </div>
         
             
@@ -150,7 +150,15 @@
 <a name='L85'></a><a href='#L85'>85</a>
 <a name='L86'></a><a href='#L86'>86</a>
 <a name='L87'></a><a href='#L87'>87</a>
-<a name='L88'></a><a href='#L88'>88</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -174,6 +182,13 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -204,26 +219,27 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -250,12 +266,16 @@ export const registerLogoutCallback = <span class="cstat-no" title="statement no
 <span class="cstat-no" title="statement not covered" >  logoutCallbacks.push(callback);</span>
 };
 &nbsp;
+interface AuthSession {
+  accessToken: string;
+  refreshToken: string;
+}
+&nbsp;
 interface AuthState {
-  accessToken: string | null;
-  refreshToken: string | null;
+  session: AuthSession | null;
   user: User | null;
-  setAuth: (accessToken: string, refreshToken: string, user: User) =&gt; void;
-  setUser: (user: User) =&gt; void;
+  setAuth: (session: AuthSession, user: User) =&gt; void;
+  setUser: (user: Partial&lt;User&gt;) =&gt; void;
   updateAccessToken: (accessToken: string) =&gt; void;
   updateFriendsCount: (delta: number) =&gt; void;
   logout: () =&gt; void;
@@ -263,23 +283,26 @@ interface AuthState {
 &nbsp;
 const isWeb = <span class="cstat-no" title="statement not covered" >Platform.OS === "web";</span>
 &nbsp;
+// Memory storage fallback for web to avoid persisting tokens in localStorage
+const memoryStorage: Record&lt;string, string | null&gt; = <span class="cstat-no" title="statement not covered" >{};</span>
+&nbsp;
 const SecureStorage = <span class="cstat-no" title="statement not covered" >{</span>
   getItem: <span class="fstat-no" title="function not covered" >as</span>ync (name: string): Promise&lt;string | null&gt; =&gt; {
 <span class="cstat-no" title="statement not covered" >    if (isWeb) {</span>
-<span class="cstat-no" title="statement not covered" >      return localStorage.getItem(name);</span>
+<span class="cstat-no" title="statement not covered" >      return memoryStorage[name] || null;</span>
     }
 <span class="cstat-no" title="statement not covered" >    return await SecureStore.getItemAsync(name);</span>
   },
   setItem: <span class="fstat-no" title="function not covered" >as</span>ync (name: string, value: string): Promise&lt;void&gt; =&gt; {
 <span class="cstat-no" title="statement not covered" >    if (isWeb) {</span>
-<span class="cstat-no" title="statement not covered" >      localStorage.setItem(name, value);</span>
+<span class="cstat-no" title="statement not covered" >      memoryStorage[name] = value;</span>
 <span class="cstat-no" title="statement not covered" >      return;</span>
     }
 <span class="cstat-no" title="statement not covered" >    await SecureStore.setItemAsync(name, value);</span>
   },
   removeItem: <span class="fstat-no" title="function not covered" >as</span>ync (name: string): Promise&lt;void&gt; =&gt; {
 <span class="cstat-no" title="statement not covered" >    if (isWeb) {</span>
-<span class="cstat-no" title="statement not covered" >      localStorage.removeItem(name);</span>
+<span class="cstat-no" title="statement not covered" >      delete memoryStorage[name];</span>
 <span class="cstat-no" title="statement not covered" >      return;</span>
     }
 <span class="cstat-no" title="statement not covered" >    await SecureStore.deleteItemAsync(name);</span>
@@ -289,37 +312,38 @@ const SecureStorage = <span class="cstat-no" title="statement not covered" >{</s
 export const useAuthStore = <span class="cstat-no" title="statement not covered" >create&lt;AuthState&gt;()(</span>
   persist(
 <span class="fstat-no" title="function not covered" >    (s</span>et) =&gt; (<span class="cstat-no" title="statement not covered" >{</span>
-      accessToken: null,
-      refreshToken: null,
+      session: null,
       user: null,
-      setAuth: <span class="fstat-no" title="function not covered" >(a</span>ccessToken, refreshToken, user) =&gt;
-<span class="cstat-no" title="statement not covered" >        set({ accessToken, refreshToken, user }),</span>
-      setUser: <span class="fstat-no" title="function not covered" >(u</span>ser) =&gt; <span class="cstat-no" title="statement not covered" >set(<span class="fstat-no" title="function not covered" >(s</span>tate) =&gt; (<span class="cstat-no" title="statement not covered" >{ </span></span>
-        user: state.user ? { ...state.user, ...user } : user 
-      })),
-      updateAccessToken: <span class="fstat-no" title="function not covered" >(a</span>ccessToken) =&gt; <span class="cstat-no" title="statement not covered" >set({ accessToken }),</span>
-      updateFriendsCount: <span class="fstat-no" title="function not covered" >(d</span>elta) =&gt; <span class="cstat-no" title="statement not covered" >set(<span class="fstat-no" title="function not covered" >(s</span>tate) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        if (!state.user) <span class="cstat-no" title="statement not covered" >return state;</span></span>
-<span class="cstat-no" title="statement not covered" >        return {</span>
-          user: {
-            ...state.user,
-            friends_count: (state.user.friends_count || 0) + delta
-          }
-        };
-      }),
+      setAuth: <span class="fstat-no" title="function not covered" >(s</span>ession, user) =&gt; <span class="cstat-no" title="statement not covered" >set({ session, user }),</span>
+      setUser: <span class="fstat-no" title="function not covered" >(u</span>ser) =&gt;
+<span class="cstat-no" title="statement not covered" >        set(<span class="fstat-no" title="function not covered" >(s</span>tate) =&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
+          user: state.user ? { ...state.user, ...user } : (user as User),
+        })),
+      updateAccessToken: <span class="fstat-no" title="function not covered" >(a</span>ccessToken) =&gt;
+<span class="cstat-no" title="statement not covered" >        set(<span class="fstat-no" title="function not covered" >(s</span>tate) =&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
+          session: state.session ? { ...state.session, accessToken } : null,
+        })),
+      updateFriendsCount: <span class="fstat-no" title="function not covered" >(d</span>elta) =&gt;
+<span class="cstat-no" title="statement not covered" >        set(<span class="fstat-no" title="function not covered" >(s</span>tate) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >          if (!state.user) <span class="cstat-no" title="statement not covered" >return state;</span></span>
+<span class="cstat-no" title="statement not covered" >          return {</span>
+            user: {
+              ...state.user,
+              friends_count: (state.user.friends_count || 0) + delta,
+            },
+          };
+        }),
       logout: <span class="fstat-no" title="function not covered" >()</span> =&gt; {
-        // Clear auth state
-<span class="cstat-no" title="statement not covered" >        set({ accessToken: null, refreshToken: null, user: null });</span>
-        // Execute registered cleanup callbacks (e.g., QueryClient.clear())
+<span class="cstat-no" title="statement not covered" >        set({ session: null, user: null });</span>
 <span class="cstat-no" title="statement not covered" >        logoutCallbacks.forEach(<span class="fstat-no" title="function not covered" >(c</span>b) =&gt; <span class="cstat-no" title="statement not covered" >cb())</span>;</span>
       },
     }),
     {
       name: "auth-storage",
       storage: createJSONStorage(<span class="fstat-no" title="function not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >SecureStorage)</span>,
-      partialize: <span class="fstat-no" title="function not covered" >(s</span>tate) =&gt; (<span class="cstat-no" title="statement not covered" >{ </span>
-        accessToken: state.accessToken, 
-        refreshToken: state.refreshToken 
+      partialize: <span class="fstat-no" title="function not covered" >(s</span>tate) =&gt; (<span class="cstat-no" title="statement not covered" >{</span>
+        session: state.session,
+        user: state.user,
       }),
     },
   ),
@@ -331,7 +355,7 @@ export const useAuthStore = <span class="cstat-no" title="statement not covered"
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-03-19T13:23:48.375Z
+                at 2026-03-19T16:28:19.954Z
             </div>
         <script src="../prettify.js"></script>
         <script>
