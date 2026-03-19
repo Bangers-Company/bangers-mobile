@@ -119,9 +119,14 @@ export const TimetableVerticalGrid: React.FC<VerticalGridProps> = ({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container]}>
       {/* 1. Time Sidebar - Absolute and synced with vertical scroll, fades during movement */}
-      <Animated.View style={[styles.timeSidebarOverlay, timeAxisStyle]}>
+      <Animated.View
+        style={[
+          styles.timeSidebarOverlay,
+          timeAxisStyle,
+        ]}
+      >
         <Animated.View style={[timeSidebarScrollStyle, { paddingTop: 40 }]}>
           {hours.map((hour) => {
             const displayHour = hour >= 24 ? hour - 24 : hour;
@@ -149,7 +154,12 @@ export const TimetableVerticalGrid: React.FC<VerticalGridProps> = ({
       >
         <View>
           {/* Sticky Stage Headers - Outside vertical scroll, but inside horizontal scroll */}
-          <View style={[styles.stageHeaders, { zIndex: 10 }]}>
+          <View
+            style={[
+              styles.stageHeaders,
+              { zIndex: 10 },
+            ]}
+          >
             <View style={{ width: TIME_COLUMN_WIDTH }} />
             {stages.map((stage) => (
               <View
@@ -260,6 +270,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: "row",
+    overflow: "hidden",
   },
   timeSidebarOverlay: {
     position: "absolute",
@@ -268,9 +279,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: TIME_COLUMN_WIDTH,
     zIndex: 100,
-    backgroundColor: "transparent",
     borderRightWidth: 1,
     borderRightColor: "rgba(0,0,0,0.05)",
+    overflow: "hidden",
   },
   timeLabelContainer: {
     height: HOUR_HEIGHT,

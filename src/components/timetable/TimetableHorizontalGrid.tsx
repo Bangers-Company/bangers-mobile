@@ -109,7 +109,7 @@ export const TimetableHorizontalGrid: React.FC<HorizontalGridProps> = ({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container]}>
       <Animated.ScrollView 
         style={{ flex: 1 }}
         onScroll={verticalScrollHandler}
@@ -250,6 +250,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: "row",
+    overflow: "hidden",
   },
   stageSidebar: {
     width: STAGE_LABEL_WIDTH,
