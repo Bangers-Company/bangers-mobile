@@ -19,6 +19,7 @@ export interface User {
   username: string;
   first_name: string;
   last_name: string;
+  name?: string;
   dob: string;
   bio?: string;
   is_public: boolean;
@@ -29,10 +30,10 @@ export interface User {
   friends_count?: number;
   friend_requests?: import("../api/friends").Friendship[];
   stats?: UserStats;
-  past_events?: { data: import("./event").Event[] } | import("./event").Event[];
-  upcoming_events?:
-  | { data: import("./event").Event[] }
-  | import("./event").Event[];
+  past_events?: import("./event").Event[];
+  upcoming_events?: import("./event").Event[];
+  attendingEvents?: import("./event").Event[];
+  pastEvents?: import("./event").Event[];
   created_at: string;
   updated_at: string;
 }

@@ -2,13 +2,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { timetablesApi } from '../api/timetables';
 import { Timetable, TimetableEntry } from '../types/timetable';
 import { useAuthStore } from '../store/useAuthStore';
+import { Group } from '../types/group';
 
 export const useOfficialTimetable = (eventId: string) => {
   return useQuery({
     queryKey: ['timetable', 'official', eventId],
     queryFn: async () => {
       const res = await timetablesApi.getOfficial(eventId);
-      return (res.data as any).data || res.data;
+      return res.data;
     },
     enabled: !!eventId,
   });
@@ -20,7 +21,7 @@ export const useGroupTimetables = (groupId: string) => {
     queryKey: ['timetable', 'group', groupId],
     queryFn: async () => {
       const res = await timetablesApi.getGroupTimetables(groupId);
-      const list = Array.isArray(res.data) ? res.data : (res.data as any).data;
+      const list = res.data;
       return Array.isArray(list) ? list[0] : list;
     },
     enabled: !!groupId,
@@ -33,7 +34,7 @@ export const useGroupTimetable = (groupId: string | null, timetableId: string | 
     queryFn: async () => {
       if (!groupId || !timetableId) return null;
       const res = await timetablesApi.getGroupTimetable(groupId, timetableId);
-      return (res.data as any).data || res.data;
+      return res.data;
     },
     enabled: !!groupId && !!timetableId,
   });
@@ -44,7 +45,7 @@ export const useGroups = () => {
     queryKey: ['groups'],
     queryFn: async () => {
       const res = await timetablesApi.getGroups();
-      return (res.data as any).data || res.data;
+      return res.data;
     },
   });
 };
@@ -126,14 +127,14 @@ export const useToggleAttendance = () => {
       }
 
       // If it's a group toggle, also update the groups list
-      let previousGroups: any[] | undefined;
+      let previousGroups: Group[] | undefined;
       if (type === 'group') {
         const groupsKey = ['groups'];
         await queryClient.cancelQueries({ queryKey: groupsKey });
-        previousGroups = queryClient.getQueryData<any[]>(groupsKey);
+        previousGroups = queryClient.getQueryData<Group[]>(groupsKey);
 
         if (previousGroups) {
-          const newGroups = previousGroups.map(group => {
+          const newGroups = (previousGroups as Group[]).map(group => {
             if (String(group.id) === String(targetId) && group.timetables) {
               return {
                 ...group,
@@ -145,18 +146,18 @@ export const useToggleAttendance = () => {
                         if (String(entry.id) === String(entryId)) {
                           const wasAttending = entry.pivot?.is_attending ?? false;
                           const currentCount = entry.pivot?.attending_count ?? 0;
-
-                          let newAttendees = entry.attendees ? [...entry.attendees] : [];
+                          
+                          let newAttendees = entry.attendees || [];
                           const currentUser = useAuthStore.getState().user;
                           if (currentUser) {
                             if (wasAttending) {
-                              newAttendees = newAttendees.filter((u: any) => u.id !== currentUser.id);
+                              newAttendees = newAttendees.filter((u) => u.id !== currentUser.id);
                             } else {
-                              newAttendees.push({
+                              newAttendees = [...newAttendees, {
                                 id: currentUser.id,
-                                name: `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim(),
-                                profile_photo_path: null
-                              });
+                                name: `${currentUser.first_name} ${currentUser.last_name}`,
+                                profile_photo_path: currentUser.profile_media_url || null
+                              }];
                             }
                           }
 
@@ -198,11 +199,83 @@ export const useToggleAttendance = () => {
         queryClient.setQueryData(['groups'], context.previousGroups);
       }
     },
+    onSuccess: (data, variables) => {
+      const { id, entryId, type, targetId, isGroup } = variables;
+      const { is_attending, count } = data.serverData;
+      
+      const queryKey = type === 'group'
+        ? ['timetable', 'group', targetId, id]
+        : ['timetable', type, targetId];
+
+      // Update the timetable query with authoritative server data
+      queryClient.setQueryData<Timetable>(queryKey, (old) => {
+        if (!old || !old.entries) return old;
+        return {
+          ...old,
+          entries: old.entries.map(entry => {
+            if (String(entry.id) === String(entryId)) {
+              if (isGroup) {
+                return {
+                  ...entry,
+                  pivot: {
+                    ...entry.pivot,
+                    is_attending: is_attending,
+                    attending_count: count ?? entry.pivot?.attending_count ?? 0
+                  }
+                };
+              } else {
+                return {
+                  ...entry,
+                  is_attending: is_attending
+                };
+              }
+            }
+            return entry;
+          })
+        };
+      });
+
+      if (type === 'group') {
+        queryClient.setQueryData<Group[]>(['groups'], (old) => {
+          if (!old) return old;
+          return old.map(group => {
+            if (String(group.id) === String(targetId) && group.timetables) {
+              return {
+                ...group,
+                timetables: group.timetables.map((t: Timetable) => {
+                  if (String(t.id) === String(id) && t.entries) {
+                    return {
+                      ...t,
+                      entries: t.entries.map((entry: TimetableEntry) => {
+                        if (String(entry.id) === String(entryId)) {
+                          return {
+                            ...entry,
+                            pivot: {
+                              ...entry.pivot,
+                              is_attending: is_attending,
+                              attending_count: count ?? entry.pivot?.attending_count ?? 0
+                            }
+                          };
+                        }
+                        return entry;
+                      })
+                    };
+                  }
+                  return t;
+                })
+              };
+            }
+            return group;
+          });
+        });
+      }
+    },
     onSettled: (data, error, variables) => {
       const queryKey = variables.type === 'group'
         ? ['timetable', 'group', variables.targetId, variables.id]
         : ['timetable', variables.type, variables.targetId];
 
+      // We still invalidate to be safe, but onSuccess already updated the cache
       queryClient.invalidateQueries({ queryKey });
       if (variables.type === 'group') {
         queryClient.invalidateQueries({ queryKey: ['groups'] });

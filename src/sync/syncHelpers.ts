@@ -1,10 +1,15 @@
 import { actsRepository } from "../database/repositories/acts.repository";
 import { artistsRepository } from "../database/repositories/artists.repository";
 import { eventsRepository } from "../database/repositories/events.repository";
+import { Event } from "../types/event";
+import { Artist } from "../types/artist";
+import { Act } from "../types/act";
+
+type SyncItem = Event | Artist | Act;
 
 export const syncHelpers = {
-  processEntityUpdates: async (entityType: string, data: any[]) => {
-    const toUpsert: any[] = [];
+  processEntityUpdates: async (entityType: string, data: SyncItem[]) => {
+    const toUpsert: SyncItem[] = [];
     const toDelete: string[] = [];
 
     for (const item of data) {
@@ -23,16 +28,16 @@ export const syncHelpers = {
     }
   },
 
-  batchHandleUpsert: async (entityType: string, items: any[]) => {
+  batchHandleUpsert: async (entityType: string, items: SyncItem[]) => {
     switch (entityType) {
       case "events":
-        await eventsRepository.batchUpsert(items);
+        await eventsRepository.batchUpsert(items as Event[]);
         break;
       case "artists":
-        await artistsRepository.batchUpsert(items);
+        await artistsRepository.batchUpsert(items as Artist[]);
         break;
       case "acts":
-        await actsRepository.batchUpsert(items);
+        await actsRepository.batchUpsert(items as Act[]);
         break;
     }
   },

@@ -4,6 +4,13 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { User } from "../types/user";
 
+// Callbacks registered by the app layer for cleanup on logout
+const logoutCallbacks: (() => void)[] = [];
+
+export const registerLogoutCallback = (callback: () => void) => {
+  logoutCallbacks.push(callback);
+};
+
 interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
@@ -61,7 +68,12 @@ export const useAuthStore = create<AuthState>()(
           }
         };
       }),
-      logout: () => set({ accessToken: null, refreshToken: null, user: null }),
+      logout: () => {
+        // Clear auth state
+        set({ accessToken: null, refreshToken: null, user: null });
+        // Execute registered cleanup callbacks (e.g., QueryClient.clear())
+        logoutCallbacks.forEach((cb) => cb());
+      },
     }),
     {
       name: "auth-storage",

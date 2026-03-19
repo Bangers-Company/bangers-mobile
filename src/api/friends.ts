@@ -17,15 +17,15 @@ export interface Friendship {
 
 export const friendsApi = {
   getFriends: (config?: AxiosRequestConfig) => 
-    apiClient.get<{ data: User[] }>("/friends", config),
+    apiClient.get<User[]>("/friends", config),
   getUserFriends: (userId: string, config?: AxiosRequestConfig) => 
-    apiClient.get<{ data: User[] }>(`/friends/${userId}/friends`, config),
+    apiClient.get<User[]>(`/friends/${userId}/friends`, config),
   getRequests: (config?: AxiosRequestConfig) => 
-    apiClient.get<{ data: Friendship[] }>("/friends/requests", config),
+    apiClient.get<Friendship[]>("/friends/requests", config),
   sendRequest: (userId: string, config?: AxiosRequestConfig) => 
-    apiClient.post<{ data: Friendship }>(`/friends/${userId}`, config),
+    apiClient.post<Friendship>(`/friends/${userId}`, config),
   acceptRequest: (userId: string, config?: AxiosRequestConfig) => 
-    apiClient.put<{ data: Friendship }>(`/friends/${userId}/accept`, config),
+    apiClient.put<Friendship>(`/friends/${userId}/accept`, config),
   rejectRequest: (userId: string, config?: AxiosRequestConfig) => 
     apiClient.put(`/friends/${userId}/reject`, config),
   removeFriend: (userId: string, config?: AxiosRequestConfig) => 

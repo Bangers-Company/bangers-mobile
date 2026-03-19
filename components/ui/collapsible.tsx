@@ -1,52 +1,59 @@
 import { PropsWithChildren, useState } from "react";
-import { StyleSheet } from "react-native";
-import { TouchableRipple } from "react-native-paper";
-
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
-import { IconSymbol } from "@/components/ui/icon-symbol";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { Text } from "react-native-paper";
+import { ChevronRight } from "lucide-react-native";
+import Animated, {
+  useAnimatedStyle,
+  withTiming,
+} from "react-native-reanimated";
 
 export function Collapsible({
   children,
   title,
 }: PropsWithChildren & { title: string }) {
   const [isOpen, setIsOpen] = useState(false);
-  const theme = useColorScheme() ?? "light";
+
+  const rotateStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ rotate: withTiming(isOpen ? "90deg" : "0deg") }],
+    };
+  });
 
   return (
-    <ThemedView>
-      <TouchableRipple
+    <View style={styles.container}>
+      <TouchableOpacity
         style={styles.heading}
         onPress={() => setIsOpen((value) => !value)}
-        rippleColor="rgba(0, 0, 0, 0.1)"
+        activeOpacity={0.8}
       >
-        <>
-          <IconSymbol
-            name="chevron.right"
-            size={18}
-            weight="medium"
-            color={theme === "light" ? Colors.light.icon : Colors.dark.icon}
-            style={{ transform: [{ rotate: isOpen ? "90deg" : "0deg" }] }}
-          />
+        <Animated.View style={rotateStyle}>
+          <ChevronRight size={18} color="#a60df2" />
+        </Animated.View>
 
-          <ThemedText type="defaultSemiBold">{title}</ThemedText>
-        </>
-      </TouchableRipple>
-      {isOpen && <ThemedView style={styles.content}>{children}</ThemedView>}
-    </ThemedView>
+        <Text variant="titleMedium" style={styles.title}>
+          {title}
+        </Text>
+      </TouchableOpacity>
+      {isOpen && <View style={styles.content}>{children}</View>}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    marginBottom: 8,
+  },
   heading: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 12,
+    paddingVertical: 12,
+  },
+  title: {
+    fontWeight: "600",
   },
   content: {
     marginTop: 6,
-    marginLeft: 24,
+    marginLeft: 30,
   },
 });

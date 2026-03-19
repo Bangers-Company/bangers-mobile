@@ -13,7 +13,7 @@ export interface TimetableEntry {
     attending_count?: number;
   };
   is_attending?: boolean;
-  attendees?: any[];
+  attendees?: import("./user").User[];
 }
 
 export interface Timetable {

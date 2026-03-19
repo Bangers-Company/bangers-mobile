@@ -7,7 +7,7 @@ export const useUser = (id: string | undefined) => {
     queryFn: async () => {
       if (!id) return null;
       const res = await userApi.getUserById(id);
-      return (res as any).data.data || res.data;
+      return res.data;
     },
     enabled: !!id,
   });

@@ -32,7 +32,7 @@ export const MyEventsCarousel: React.FC<MyEventsCarouselProps> = ({
 
   const snapOffsets = events.map((_, index) => index * snapToInterval);
 
-  const scrollHandler = useAnimatedScrollHandler((event: any) => {
+  const scrollHandler = useAnimatedScrollHandler((event) => {
     scrollX.value = event.contentOffset.x;
   });
 

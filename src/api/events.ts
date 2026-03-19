@@ -14,16 +14,3 @@ export const eventsApi = {
   deleteAttendance: (id: string, config?: AxiosRequestConfig) =>
     apiClient.delete(`/events/${id}/attendance`, config),
 };
-
-export const searchApi = {
-  search: (query: string, config?: AxiosRequestConfig) => 
-    apiClient.get("/search", { ...config, params: { ...config?.params, query } }),
-};
-
-export const groupsApi = {
-  getAll: () => apiClient.get("/groups"),
-  getById: (id: string) => apiClient.get(`/groups/${id}`),
-  create: (data: any) => apiClient.post("/groups", data),
-  addMember: (groupId: string, data: any) =>
-    apiClient.post(`/groups/${groupId}/members`, data),
-};

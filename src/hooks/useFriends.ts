@@ -20,7 +20,7 @@ export const useFriendRequests = () => {
     queryKey: ['friend-requests'],
     queryFn: async () => {
       const res = await friendsApi.getRequests();
-      return (res as any).data.data || res.data || [];
+      return res.data || [];
     },
   });
 };

@@ -1,8 +1,9 @@
 import axios from "axios";
 import { useAuthStore } from "../store/useAuthStore";
 import { AuthResponse } from "../types/user";
+import ENV from "../config/env";
 
-const API_BASE_URL = "http://192.168.5.240:8080/api/mobile"; // Replace with actual API URL or env var
+const API_BASE_URL = ENV.API_BASE_URL;
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -28,9 +29,18 @@ apiClient.interceptors.request.use(
 // Shared promise for concurrent refresh requests
 let refreshPromise: Promise<string> | null = null;
 
-// Response interceptor to handle token refresh
+// Response interceptor to handle token refresh and data unwrapping
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Automatically unwrap Laravel's "data" wrapper if it exists
+    if (response.data && Object.prototype.hasOwnProperty.call(response.data, "data")) {
+      return {
+        ...response,
+        data: response.data.data,
+      };
+    }
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
 

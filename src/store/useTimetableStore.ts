@@ -1,8 +1,11 @@
 import { create } from "zustand";
+import { Group } from "../types/group";
 import { timetablesApi } from "../api/timetables";
+import { persist, createJSONStorage } from "zustand/middleware";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface TimetableState {
-  groups: any[]; // User's groups
+  groups: Group[]; // User's groups
   viewMode: "vertical" | "horizontal";
   groupsFetched: boolean;
   
@@ -17,7 +20,9 @@ interface TimetableState {
   createGroupTimetable: (groupId: string, event_id: string, name: string) => Promise<void>;
 }
 
-export const useTimetableStore = create<TimetableState>((set, get) => ({
+export const useTimetableStore = create<TimetableState>()(
+  persist(
+    (set, get) => ({
   groups: [],
   viewMode: "vertical",
   groupsFetched: false,
@@ -87,4 +92,13 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       groupsFetched: false,
     });
   },
-}));
+    }),
+    {
+      name: "timetable-storage",
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        viewMode: state.viewMode,
+      }),
+    }
+  )
+);
