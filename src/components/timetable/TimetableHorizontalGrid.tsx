@@ -1,6 +1,7 @@
 import React from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Text, useTheme } from "react-native-paper";
+import Animated, { useAnimatedScrollHandler, useSharedValue, useAnimatedStyle } from "react-native-reanimated";
 import { Timetable, TimetableEntry } from "../../types/timetable";
 import { addAlpha } from "../../utils/theme";
 import { TimetableActItem } from "./TimetableActItem";
@@ -27,6 +28,26 @@ export const TimetableHorizontalGrid: React.FC<HorizontalGridProps> = ({
   currentTime,
 }) => {
   const theme = useTheme();
+  const horizontalScrollOffset = useSharedValue(0);
+  const verticalScrollOffset = useSharedValue(0);
+ 
+  const horizontalScrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      horizontalScrollOffset.value = event.contentOffset.x;
+    },
+  });
+
+  const verticalScrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      verticalScrollOffset.value = event.contentOffset.y;
+    },
+  });
+
+  const timeHeaderStyle = useAnimatedStyle(() => {
+    return {
+      opacity: 1,
+    };
+  });
 
   // Group by stage and calculate time range
   const stageMap: Record<
@@ -49,7 +70,7 @@ export const TimetableHorizontalGrid: React.FC<HorizontalGridProps> = ({
     }
     stageMap[entry.stage.id].entries.push(entry);
   });
-  const stages = Object.values(stageMap);
+  const stages = Object.values(stageMap).filter((s) => s.entries.length > 0);
 
   const toFestivalHour = (date: Date) => {
     const h = date.getHours();
@@ -89,7 +110,11 @@ export const TimetableHorizontalGrid: React.FC<HorizontalGridProps> = ({
 
   return (
     <View style={styles.container}>
-      <ScrollView style={{ flex: 1 }}>
+      <Animated.ScrollView 
+        style={{ flex: 1 }}
+        onScroll={verticalScrollHandler}
+        scrollEventThrottle={16}
+      >
         <View style={{ flexDirection: "row" }}>
           {/* Stage Sidebar */}
           <View style={[styles.stageSidebar]}>
@@ -107,25 +132,32 @@ export const TimetableHorizontalGrid: React.FC<HorizontalGridProps> = ({
             ))}
           </View>
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <Animated.ScrollView
+            horizontal
+            onScroll={horizontalScrollHandler}
+            scrollEventThrottle={16}
+            showsHorizontalScrollIndicator={false}
+          >
             <View>
-            {/* Time Header */}
-            <View style={styles.timeHeader}>
-              {hours.map((hour) => {
-                const displayHour = hour >= 24 ? hour - 24 : hour;
-                const displayString = `${displayHour.toString().padStart(2, "0")}:00`;
-                return (
-                  <View
-                    key={hour}
-                    style={[styles.timeSlot, { width: HOUR_WIDTH }]}
-                  >
-                    <Text variant="labelSmall" style={styles.timeText}>
-                      {displayString}
-                    </Text>
-                  </View>
-                );
-              })}
-            </View>
+              {/* Time Header - Fades during movement */}
+              <Animated.View style={[styles.timeHeader, timeHeaderStyle]}>
+                {hours.map((hour) => {
+                  const displayHour = hour >= 24 ? hour - 24 : hour;
+                  const displayString = `${displayHour
+                    .toString()
+                    .padStart(2, "0")}:00`;
+                  return (
+                    <View
+                      key={hour}
+                      style={[styles.timeSlot, { width: HOUR_WIDTH }]}
+                    >
+                      <Text variant="labelSmall" style={styles.timeText}>
+                        {displayString}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </Animated.View>
 
             {/* Grid Body */}
             <View
@@ -206,12 +238,12 @@ export const TimetableHorizontalGrid: React.FC<HorizontalGridProps> = ({
                   />
                 )}
             </View>
-            </View>
-          </ScrollView>
-        </View>
-      </ScrollView>
-    </View>
-  );
+          </View>
+        </Animated.ScrollView>
+      </View>
+    </Animated.ScrollView>
+  </View>
+);
 };
 
 const styles = StyleSheet.create({
