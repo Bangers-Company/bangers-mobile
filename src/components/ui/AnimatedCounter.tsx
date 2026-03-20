@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, StyleProp, ViewStyle } from 'react-native';
 import { Text } from 'react-native-paper';
 import Animated, { 
   useAnimatedStyle, 
@@ -13,7 +13,7 @@ import Animated, {
 interface AnimatedCounterProps {
   value: string | number;
   variant?: 'displayLarge' | 'displayMedium' | 'displaySmall' | 'headlineLarge' | 'headlineMedium' | 'headlineSmall' | 'titleLarge' | 'titleMedium' | 'titleSmall' | 'bodyLarge' | 'bodyMedium' | 'bodySmall' | 'labelLarge' | 'labelMedium' | 'labelSmall';
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const AnimatedCounter: React.FC<AnimatedCounterProps> = ({ 
@@ -37,7 +37,11 @@ export const AnimatedCounter: React.FC<AnimatedCounterProps> = ({
   });
 
   return (
-    <View style={[styles.container, style]}>
+    <View 
+      style={[styles.container, style]}
+      accessibilityLabel={`Counter value: ${value}`}
+      accessibilityLiveRegion="polite"
+    >
       <Animated.View style={animatedStyle} key={value}>
         <Animated.View entering={FadeIn} exiting={FadeOut}>
           <Text variant={variant} style={styles.text}>

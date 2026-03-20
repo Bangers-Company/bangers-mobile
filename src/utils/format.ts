@@ -1,3 +1,5 @@
+import ENV from "../config/env";
+
 export const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("nl-NL", {
     style: "currency",
@@ -18,8 +20,7 @@ export const resolveMediaUrl = (url?: string | null) => {
   if (!url) return null;
   if (url.startsWith("http")) return url;
 
-  // For local development, we assume media is served from the root of the backend
-  const STORAGE_BASE = "http://localhost:8080";
+  const STORAGE_BASE = ENV.STORAGE_BASE_URL;
   return `${STORAGE_BASE}${url.startsWith("/") ? "" : "/"}${url}`;
 };
 

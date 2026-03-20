@@ -1,6 +1,6 @@
 import { Calendar, ChevronRight, MapPin } from "lucide-react-native";
 import React from "react";
-import { Image, StyleSheet, View } from "react-native";
+import { Image, StyleSheet, View, StyleProp, ViewStyle } from "react-native";
 import {
   Card,
   Surface,
@@ -23,12 +23,12 @@ interface EventCardProps {
   event: AppEvent;
   onPress?: (event: AppEvent) => void;
   variant?: "featured" | "compact" | "horizontal";
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const EventCardSkeleton: React.FC<{
   variant?: "featured" | "compact" | "horizontal";
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }> = ({ variant = "compact", style }) => {
   const theme = useTheme();
 

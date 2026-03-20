@@ -1,4 +1,6 @@
 import { Media, User } from "./user";
+import { Artist } from "./artist";
+import { Act as BaseAct } from "./act";
 
 export interface Stage {
   id: string;
@@ -10,22 +12,11 @@ export interface Stage {
   updated_at: string;
 }
 
-export interface Artist {
-  id: string;
-  name: string;
-  bio?: string;
-  genre?: string;
-  image?: Media | null;
-}
+export { Artist };
 
-export interface Act {
-  id: string;
-  name: string;
-  description?: string;
-  version: number;
+export interface Act extends BaseAct {
   stage_id?: string;
   date?: string;
-  artists?: Artist[];
   start_time?: string;
   end_time?: string;
 }

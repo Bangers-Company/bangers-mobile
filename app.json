@@ -50,6 +50,8 @@
     },
     "extra": {
       "router": {},
+      "apiBaseUrl": "http://localhost:8080/api/mobile",
+      "storageBaseUrl": "http://localhost:8080",
       "eas": {
         "projectId": "a51da2ca-12a7-44ee-8645-87bd864d297a"
       }

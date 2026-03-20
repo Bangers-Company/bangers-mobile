@@ -36,6 +36,8 @@ import { authApi } from "../../src/api/auth";
 import { useAuthStore } from "../../src/store/useAuthStore";
 import { PageContainer } from "../../src/components/PageContainer";
 
+import { registerSchema } from "../../src/validation/schemas";
+
 // Register English translation for the date picker
 registerTranslation("en", en);
 
@@ -72,8 +74,20 @@ export default function RegisterScreen() {
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const handleRegister = async () => {
-    if (!email || !username || !password || !firstName || !lastName || !dob) {
-      setError("Please fill in all fields");
+    // Format date to YYYY-MM-DD for validation
+    const formattedDob = dob ? dob.toISOString().split("T")[0] : "";
+
+    const result = registerSchema.safeParse({
+      email,
+      username,
+      password,
+      first_name: firstName,
+      last_name: lastName,
+      dob: formattedDob,
+    });
+
+    if (!result.success) {
+      setError(result.error.issues[0].message);
       return;
     }
 
@@ -81,9 +95,6 @@ export default function RegisterScreen() {
     setError(null);
 
     try {
-      // Format date to YYYY-MM-DD
-      const formattedDob = dob.toISOString().split("T")[0];
-
       const response = await authApi.register({
         email,
         username,
@@ -94,16 +105,15 @@ export default function RegisterScreen() {
       });
 
       setAuth(
-        response.data.accessToken,
-        response.data.refreshToken,
+        {
+          accessToken: response.data.accessToken,
+          refreshToken: response.data.refreshToken,
+        },
         response.data.user,
       );
-    } catch (err: any) {
-      console.error("Registration error:", err);
-      setError(
-        err.response?.data?.message ||
-          "Something went wrong. Please try again.",
-      );
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      setError(message);
     } finally {
       setLoading(false);
     }

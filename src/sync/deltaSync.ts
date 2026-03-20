@@ -8,14 +8,15 @@ export const runDeltaSync = async (signal?: AbortSignal) => {
 
   setSyncing(true);
   try {
-    // Run all fetches in parallel
+    // Run all fetches in parallel for speed
     const [eventsResponse, artistsResponse, actsResponse] = await Promise.all([
       syncApi.getEvents(lastSyncTimestamp.events || undefined, { signal }),
       syncApi.getArtists(lastSyncTimestamp.artists || undefined, { signal }),
       syncApi.getActs(lastSyncTimestamp.acts || undefined, { signal }),
     ]);
 
-    // Process results
+    // Process results SEQUENTIALLY to ensure referential integrity
+    // Order: Events -> Artists -> Acts
     if (eventsResponse.data?.data && eventsResponse.data.data.length > 0) {
       await syncHelpers.processEntityUpdates("events", eventsResponse.data.data);
     }

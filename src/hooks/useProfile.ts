@@ -16,15 +16,15 @@ export const useProfile = () => {
         friendsApi.getFriends()
       ]);
       
-      const userData = (response as any).data.data || (response as any).data;
-      const friendsResData = friendsRes?.data?.data || friendsRes?.data || [];
+      const userData = response.data;
+      const friendsResData = friendsRes?.data || [];
 
       if (!userData) {
         throw new Error("User data not found in response");
       }
 
-      const attending = userData.upcoming_events?.data || userData.upcoming_events || [];
-      const past = userData.past_events?.data || userData.past_events || [];
+      const attending = userData.upcoming_events || [];
+      const past = userData.past_events || [];
       
       const friendsCount = userData.friends_count ?? friendsResData.length;
       

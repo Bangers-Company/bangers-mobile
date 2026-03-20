@@ -1,6 +1,6 @@
 import { MapPin, Users } from "lucide-react-native";
 import React from "react";
-import { Image, StyleSheet, View } from "react-native";
+import { Image, StyleSheet, View, StyleProp, ViewStyle } from "react-native";
 import { Card, Surface, Text, TouchableRipple, useTheme } from "react-native-paper";
 import { Event } from "../../types/event";
 import { resolveMediaUrl } from "../../utils/format";
@@ -8,7 +8,7 @@ import { resolveMediaUrl } from "../../utils/format";
 interface EventHorizontalCardProps {
   event: Event;
   onPress?: (event: Event) => void;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const EventHorizontalCard: React.FC<EventHorizontalCardProps> = ({
@@ -41,6 +41,9 @@ export const EventHorizontalCard: React.FC<EventHorizontalCardProps> = ({
         onPress={() => onPress?.(event)}
         rippleColor="rgba(0,0,0,0.1)"
         style={styles.ripple}
+        accessibilityLabel={`${event.name}, ${event.location}, ${event.attendee_count ?? 0} attending`}
+        accessibilityRole="button"
+        accessibilityHint="Opens event details"
       >
         <View style={styles.horizontalContainer}>
           <View style={styles.imageContainer}>
@@ -62,7 +65,11 @@ export const EventHorizontalCard: React.FC<EventHorizontalCardProps> = ({
             </Surface>
           </View>
 
-          <View style={styles.content}>
+          <View
+            style={styles.content}
+            accessibilityLabel={`${event.name} event details`}
+            accessibilityLiveRegion="polite"
+          >
             <Text variant="titleMedium" style={styles.title} numberOfLines={1}>
               {event.name}
             </Text>

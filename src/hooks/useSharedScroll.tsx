@@ -7,7 +7,7 @@ interface ScrollContextType {
 
 const ScrollContext = createContext<ScrollContextType | null>(null);
 
-export const ScrollProvider = ({ children }: { children: ReactNode }): JSX.Element => {
+export const ScrollProvider = ({ children }: { children: ReactNode }): React.JSX.Element => {
   const scrollOffset = useSharedValue(0);
   
   return (
@@ -22,5 +22,6 @@ export function useSharedScroll() {
   if (!context) {
     throw new Error("useSharedScroll must be used within a ScrollProvider");
   }
+  // Return the SharedValue directly to match existing usage
   return context.scrollOffset;
 }

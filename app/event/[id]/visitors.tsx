@@ -3,6 +3,7 @@ import { ShieldAlert, ShieldCheck } from "lucide-react-native";
 import React, { useState } from "react";
 import ContentLoader, { Circle, Rect } from "react-content-loader/native";
 import { Dimensions, StyleSheet, View } from "react-native";
+import { FlashList } from "@shopify/flash-list";
 import {
   Avatar,
   Button,
@@ -19,6 +20,8 @@ import { User } from "../../../src/types/user";
 import { resolveMediaUrl } from "../../../src/utils/format";
 import { useSharedScroll } from "../../../src/hooks/useSharedScroll";
 import { useEvent, useAttendees } from "../../../src/hooks/useEvent";
+
+const AnimatedFlashList = Animated.createAnimatedComponent(FlashList);
 
 export default function VisitorsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -155,10 +158,11 @@ export default function VisitorsScreen() {
         </View>
       </View>
 
-      <Animated.FlatList
-        data={attendees}
-        keyExtractor={(item) => item.id}
+      <AnimatedFlashList
+        data={attendees as User[]}
+        keyExtractor={(item: any) => item.id}
         renderItem={renderVisitor}
+        estimatedItemSize={80}
         contentContainerStyle={[styles.listContent, { paddingBottom: bottom + 120 }]}
         onRefresh={onRefresh}
         refreshing={refreshing}

@@ -5,14 +5,14 @@ import {
     ShieldCheck,
     SlidersHorizontal,
 } from "lucide-react-native";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
-    Modal,
-    ScrollView,
-    StyleSheet,
-    TouchableOpacity,
-    View,
+  Modal,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import { FlashList } from "@shopify/flash-list";
 import {
     Avatar,
     Button,
@@ -44,6 +44,10 @@ export default function SearchScreen() {
 
   const { data: results, isLoading: loading } = useSearch(debouncedSearchQuery, entities);
 
+  useEffect(() => {
+    // Perform any side effects when results change if needed
+  }, [results]);
+
   const onToggleEntity = (entity: string) => {
     setEntities(prev => 
       prev.includes(entity) 
@@ -52,120 +56,6 @@ export default function SearchScreen() {
     );
   };
 
-  const renderSection = (
-    title: string,
-    data: any[],
-    type: "events" | "artists" | "acts" | "users",
-  ) => {
-    if (!data || data.length === 0) return null;
-
-    return (
-      <View style={styles.section} key={type}>
-        <Text variant="titleMedium" style={styles.sectionTitle}>
-          {title}
-        </Text>
-        {data.map((item) => (
-          <View key={item.id} style={styles.itemWrapper}>
-            {type === "events" ? (
-              <EventHorizontalCard
-                event={item}
-                onPress={(ev) => router.push(`/event/${ev.id}` as any)}
-              />
-            ) : type === "users" ? (
-              <Surface
-                style={[
-                  styles.artistCard,
-                  { backgroundColor: theme.colors.surface },
-                ]}
-                elevation={1}
-              >
-                <TouchableRipple
-                  onPress={() => router.push(`/user/${item.id}` as any)}
-                  style={styles.artistRipple}
-                  rippleColor="rgba(0,0,0,0.05)"
-                >
-                  <View
-                    style={[
-                      styles.artistContent,
-                      { flexDirection: "row", alignItems: "center", gap: 16 },
-                    ]}
-                  >
-                    <Avatar.Image
-                      size={40}
-                      source={{
-                        uri:
-                          resolveMediaUrl(item.profile_media_url) ||
-                          "https://via.placeholder.com/40",
-                      }}
-                    />
-                    <View>
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          gap: 6,
-                        }}
-                      >
-                        <Text variant="titleMedium">
-                          {item.first_name} {item.last_name}
-                        </Text>
-                        {item.roles?.some((r: any) =>
-                          typeof r === "string"
-                            ? r === "admin"
-                            : r?.name === "admin",
-                        ) && (
-                          <ShieldAlert size={16} color={theme.colors.error} />
-                        )}
-                        {!item.roles?.some((r: any) =>
-                          typeof r === "string"
-                            ? r === "admin"
-                            : r?.name === "admin",
-                        ) &&
-                          item.roles?.some((r: any) =>
-                            typeof r === "string"
-                              ? r === "moderator"
-                              : r?.name === "moderator",
-                          ) && (
-                            <ShieldCheck
-                              size={16}
-                              color={theme.colors.primary}
-                            />
-                          )}
-                      </View>
-                      <Text variant="bodySmall" style={{ opacity: 0.6 }}>
-                        @{item.username}
-                      </Text>
-                    </View>
-                  </View>
-                </TouchableRipple>
-              </Surface>
-            ) : (
-              <Surface
-                style={[
-                  styles.artistCard,
-                  { backgroundColor: theme.colors.surface },
-                ]}
-                elevation={1}
-              >
-                <TouchableRipple
-                  onPress={() => {}}
-                  style={styles.artistRipple}
-                  rippleColor="rgba(0,0,0,0.05)"
-                >
-                  <View style={styles.artistContent}>
-                    <Text variant="titleMedium">{item.name}</Text>
-                    <Text variant="bodySmall" style={{ opacity: 0.6 }}>
-                      {type === "artists" ? item.genre : "Festival Act"}
-                    </Text>
-                  </View>
-                </TouchableRipple>
-              </Surface>
-            )}
-          </View>
-        ))}
-      </View>
-    );
-  };
 
   return (
     <View style={styles.container}>
@@ -196,44 +86,169 @@ export default function SearchScreen() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {results ? (
-          <>
-            {renderSection("Events", results.events?.data, "events")}
-            {renderSection("Artists", results.artists?.data, "artists")}
-            {renderSection("Acts", results.acts?.data, "acts")}
-            {renderSection("Users", results.users?.data, "users")}
+      <FlashList
+        data={(() => {
+          if (!results) return [];
+          const items: any[] = [];
+          if (results.events?.data?.length) {
+            items.push({ type: 'header', title: 'Events' });
+            items.push(...results.events.data.map((e: any) => ({ ...e, itemType: 'event' })));
+          }
+          if (results.artists?.data?.length) {
+            items.push({ type: 'header', title: 'Artists' });
+            items.push(...results.artists.data.map((a: any) => ({ ...a, itemType: 'artist' })));
+          }
+          if (results.acts?.data?.length) {
+            items.push({ type: 'header', title: 'Acts' });
+            items.push(...results.acts.data.map((a: any) => ({ ...a, itemType: 'act' })));
+          }
+          if (results.users?.data?.length) {
+            items.push({ type: 'header', title: 'Users' });
+            items.push(...results.users.data.map((u: any) => ({ ...u, itemType: 'user' })));
+          }
+          return items;
+        })()}
+        keyExtractor={(item, index) => item.type === 'header' ? `header-${item.title}` : `item-${item.itemType}-${item.id || index}`}
+        renderItem={({ item }) => {
+          if (item.type === 'header') {
+            return (
+              <Text variant="titleMedium" style={styles.sectionTitle}>
+                {item.title}
+              </Text>
+            );
+          }
 
-            {!results.events?.data?.length &&
-              !results.artists?.data?.length &&
-              !results.acts?.data?.length &&
-              !results.users?.data?.length && searchQuery.length > 0 && (
-                <View style={styles.emptyContainer}>
-                  <Text variant="bodyLarge">
-                    No results found for &quot;{searchQuery}&quot;
-                  </Text>
-                </View>
+          const type = item.itemType;
+          return (
+            <View style={styles.itemWrapper}>
+              {type === "event" ? (
+                <EventHorizontalCard
+                  event={item}
+                  onPress={(ev) => router.push(`/event/${ev.id}` as any)}
+                />
+              ) : type === "user" ? (
+                <Surface
+                  style={[
+                    styles.artistCard,
+                    { backgroundColor: theme.colors.surface },
+                  ]}
+                  elevation={1}
+                >
+                  <TouchableRipple
+                    onPress={() => router.push(`/user/${item.id}` as any)}
+                    style={styles.artistRipple}
+                    rippleColor="rgba(0,0,0,0.05)"
+                  >
+                    <View
+                      style={[
+                        styles.artistContent,
+                        { flexDirection: "row", alignItems: "center", gap: 16 },
+                      ]}
+                    >
+                      <Avatar.Image
+                        size={40}
+                        source={{
+                          uri:
+                            resolveMediaUrl(item.profile_media_url) ||
+                            "https://via.placeholder.com/40",
+                        }}
+                      />
+                      <View>
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                        >
+                          <Text variant="titleMedium">
+                            {item.first_name} {item.last_name}
+                          </Text>
+                          {item.roles?.some((r: any) =>
+                            typeof r === "string"
+                              ? r === "admin"
+                              : r?.name === "admin",
+                          ) && (
+                            <ShieldAlert size={16} color={theme.colors.error} />
+                          )}
+                          {!item.roles?.some((r: any) =>
+                            typeof r === "string"
+                              ? r === "admin"
+                              : r?.name === "admin",
+                          ) &&
+                            item.roles?.some((r: any) =>
+                              typeof r === "string"
+                                ? r === "moderator"
+                                : r?.name === "moderator",
+                            ) && (
+                              <ShieldCheck
+                                size={16}
+                                color={theme.colors.primary}
+                              />
+                            )}
+                        </View>
+                        <Text variant="bodySmall" style={{ opacity: 0.6 }}>
+                          @{item.username}
+                        </Text>
+                      </View>
+                    </View>
+                  </TouchableRipple>
+                </Surface>
+              ) : (
+                <Surface
+                  style={[
+                    styles.artistCard,
+                    { backgroundColor: theme.colors.surface },
+                  ]}
+                  elevation={1}
+                >
+                  <TouchableRipple
+                    onPress={() => {}}
+                    style={styles.artistRipple}
+                    rippleColor="rgba(0,0,0,0.05)"
+                  >
+                    <View style={styles.artistContent}>
+                      <Text variant="titleMedium">{item.name}</Text>
+                      <Text variant="bodySmall" style={{ opacity: 0.6 }}>
+                        {type === "artist" ? item.genre : "Festival Act"}
+                      </Text>
+                    </View>
+                  </TouchableRipple>
+                </Surface>
               )}
-          </>
-        ) : (
-          <View style={styles.emptyContainer}>
-            <SearchIcon
-              size={64}
-              color={theme.colors.outlineVariant}
-              style={{ marginBottom: 16 }}
-            />
-            <Text
-              variant="headlineSmall"
-              style={{ color: theme.colors.outline }}
-            >
-              Search Bangers
-            </Text>
-            <Text variant="bodyMedium" style={styles.emptySubtext}>
-              Find events, artists, and acts
-            </Text>
-          </View>
-        )}
-      </ScrollView>
+            </View>
+          );
+        }}
+        estimatedItemSize={80}
+        getItemType={(item) => item.type === 'header' ? 'header' : item.itemType}
+        contentContainerStyle={styles.scrollContent}
+        ListEmptyComponent={
+          searchQuery.length > 0 && !loading ? (
+            <View style={styles.emptyContainer}>
+              <Text variant="bodyLarge">
+                No results found for &quot;{searchQuery}&quot;
+              </Text>
+            </View>
+          ) : !searchQuery.length ? (
+            <View style={styles.emptyContainer}>
+              <SearchIcon
+                size={64}
+                color={theme.colors.outlineVariant}
+                style={{ marginBottom: 16 }}
+              />
+              <Text
+                variant="headlineSmall"
+                style={{ color: theme.colors.outline }}
+              >
+                Search Bangers
+              </Text>
+              <Text variant="bodyMedium" style={styles.emptySubtext}>
+                Find events, artists, and acts
+              </Text>
+            </View>
+          ) : null
+        }
+      />
 
       {/* Filter Modal (Bottom Drawer) */}
       <Modal

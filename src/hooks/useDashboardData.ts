@@ -51,7 +51,7 @@ export const useDashboardData = () => {
     try {
       setError(null);
       const response = await dashboardApi.getDashboard({ signal });
-      const dashboardData = response.data?.data;
+      const dashboardData = response.data;
 
       if (dashboardData) {
         setData(dashboardData);
@@ -68,11 +68,10 @@ export const useDashboardData = () => {
           dashboardData.friends_events
         ];
 
-        const allEvents: any[] = [];
+        const allEvents: import("../types/event").Event[] = [];
         allEventLists.forEach(list => {
           if (!list) return;
-          const items = Array.isArray(list) ? list : (list as any).data || [];
-          allEvents.push(...items);
+          allEvents.push(...list);
         });
 
         if (allEvents.length > 0) {

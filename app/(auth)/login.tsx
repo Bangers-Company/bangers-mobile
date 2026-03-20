@@ -22,6 +22,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { authApi } from "../../src/api/auth";
 import { useAuthStore } from "../../src/store/useAuthStore";
+import { loginSchema } from "../../src/validation/schemas";
 import { PageContainer } from "../../src/components/PageContainer";
 
 function AnimatedInput({
@@ -54,8 +55,10 @@ export default function LoginScreen() {
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      setError("Please fill in all fields");
+    const result = loginSchema.safeParse({ email, password });
+    
+    if (!result.success) {
+      setError(result.error.issues[0].message);
       return;
     }
 
@@ -65,13 +68,15 @@ export default function LoginScreen() {
     try {
       const response = await authApi.login({ email, password });
       setAuth(
-        response.data.accessToken,
-        response.data.refreshToken,
+        {
+          accessToken: response.data.accessToken,
+          refreshToken: response.data.refreshToken,
+        },
         response.data.user,
       );
-    } catch (err: any) {
-      console.error("Login error:", err);
-      setError(err.response?.data?.message || "Invalid email or password");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Invalid email or password";
+      setError(message);
     } finally {
       setLoading(false);
     }

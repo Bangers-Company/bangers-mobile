@@ -97,7 +97,20 @@ export default function SettingsScreen() {
     setExpandedSection(expandedSection === section ? null : section);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Clear user-specific local data
+    try {
+      const { getDb, runExclusive } = await import("../src/database/sqlite");
+      await runExclusive(async () => {
+        const db = await getDb();
+        await db.execAsync(`
+          DELETE FROM user_event_attendance;
+          DELETE FROM favorites;
+        `);
+      });
+    } catch (e) {
+      console.error("Failed to clear local data on logout:", e);
+    }
     logout();
     router.replace("/(auth)/login");
   };

@@ -12,15 +12,15 @@ export const useAttendance = (eventId: string) => {
       await queryClient.cancelQueries({ queryKey: ["profile"] });
 
       // Snapshot previous values
-      const previousEvent = queryClient.getQueryData<any>(["event", eventId]);
-      const previousProfile = queryClient.getQueryData<any>(["profile"]);
+      const previousEvent = queryClient.getQueryData<import("../types/event").Event>(["event", eventId]);
+      const previousProfile = queryClient.getQueryData<import("../types/user").User>(["profile"]);
 
       // Optimistically update event
       if (previousEvent) {
         queryClient.setQueryData(["event", eventId], {
           ...previousEvent,
-          attendance_status: "going",
-          attending_count: (previousEvent.attending_count || 0) + 1,
+          user_status: "going",
+          attendee_count: (previousEvent.attendee_count || 0) + 1,
         });
       }
 
@@ -66,8 +66,8 @@ export const useAttendance = (eventId: string) => {
       if (previousEvent) {
         queryClient.setQueryData(["event", eventId], {
           ...previousEvent,
-          attendance_status: null,
-          attending_count: Math.max(0, (previousEvent.attending_count || 0) - 1),
+          user_status: null,
+          attendee_count: Math.max(0, (previousEvent.attendee_count || 0) - 1),
         });
       }
 
@@ -78,7 +78,7 @@ export const useAttendance = (eventId: string) => {
             ...previousProfile.stats,
             upcoming_count: Math.max(0, (previousProfile.stats?.upcoming_count || 0) - 1),
           },
-          attendingEvents: (previousProfile.attendingEvents || []).filter((e: any) => e.id !== eventId),
+          attendingEvents: (previousProfile.attendingEvents || []).filter((e: import("../types/event").Event) => e.id !== eventId),
         });
       }
 

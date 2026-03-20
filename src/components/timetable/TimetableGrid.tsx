@@ -19,7 +19,7 @@ interface TimetableGridProps {
   templateTimetable?: Timetable | null;
   isPersonal: boolean;
   onEntryPress: (entry: TimetableEntry) => void;
-  toggleMutation?: any;
+  toggleMutation?: import("@tanstack/react-query").UseMutationResult<any, any, any, any>;
   groupId?: string | null;
   timetableId?: string | null;
 }
@@ -55,7 +55,7 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
       ? templateTimetable.entries 
       : (timetable?.entries || []);
     const calendarDates = sourceEntries
-      .map((e: any) => e.start_time.split("T")[0])
+      .map((e: TimetableEntry) => e.start_time.split("T")[0])
       .sort();
     return calendarDates[0] || "";
   }, [timetable.entries, templateTimetable?.entries]);
@@ -83,7 +83,7 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
       ? templateTimetable.entries 
       : (timetable?.entries || []);
     const dayMap = new Set<string>();
-    sourceEntries.forEach((e: any) => {
+    sourceEntries.forEach((e: TimetableEntry) => {
       dayMap.add(getFestivalDate(e.start_time));
     });
     return Array.from(dayMap).sort();

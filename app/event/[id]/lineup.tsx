@@ -9,6 +9,7 @@ import {
   StyleSheet,
   View,
 } from "react-native";
+import { FlashList } from "@shopify/flash-list";
 import {
   Button,
   IconButton,
@@ -292,14 +293,12 @@ export default function LineupScreen() {
           getItemLayout={(data, index) => ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * index, index })}
           renderItem={({ item }) => (
             <View style={{ width: SCREEN_WIDTH, flex: 1 }}>
-              <FlatList
+              <FlashList
                 data={item.acts}
                 keyExtractor={(act) => act.id}
                 renderItem={renderAct}
+                estimatedItemSize={65}
                 contentContainerStyle={[styles.actsListContent, { paddingBottom: bottom + 60 }]}
-                initialNumToRender={10}
-                maxToRenderPerBatch={10}
-                windowSize={5}
                 ListEmptyComponent={
                   <View style={styles.emptyContainer}>
                     <Text variant="bodyMedium" style={{ opacity: 0.5 }}>No acts scheduled yet.</Text>

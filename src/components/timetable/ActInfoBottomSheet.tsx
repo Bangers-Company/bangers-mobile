@@ -178,7 +178,7 @@ export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
                         {isLoadingAttendees ? (
                            <Text variant="bodyMedium" style={styles.emptyFriends}>Loading attendees...</Text>
                         ) : attendees && attendees.length > 0 ? (
-                           attendees.map((a: any) => (
+                           attendees.map((a: import("../../types/user").User) => (
                              <Text key={a.id} variant="bodyMedium" style={{ marginBottom: 4 }}>• {a.name}</Text>
                            ))
                         ) : (

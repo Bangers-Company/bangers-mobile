@@ -3,19 +3,20 @@ import { StyleSheet, View, TouchableOpacity, ScrollView } from "react-native";
 import { Text, useTheme, ActivityIndicator, IconButton, Card, Button } from "react-native-paper";
 import { Calendar, Users, Globe } from "lucide-react-native";
 import { addAlpha } from "../../utils/theme";
+import { Group } from "../../types/group";
 import { Timetable } from "../../types/timetable";
 
 interface TimetableOverviewProps {
   official: Timetable | null;
-  groups: any[];
+  groups: Group[];
   loadingGroups: boolean;
   loadingOfficial: boolean;
   onSelect: (timetable: Timetable) => void;
   onAcceptInvitation: (groupId: string) => void;
   onRejectInvitation: (groupId: string) => void;
   onCreateGroup: () => void;
-  onDeleteGroup: (group: any) => void;
-  onSelectGroup: (group: any) => void;
+  onDeleteGroup: (group: Group) => void;
+  onSelectGroup: (group: Group) => void;
 }
 
 export const TimetableOverview: React.FC<TimetableOverviewProps> = ({
@@ -107,7 +108,7 @@ export const TimetableOverview: React.FC<TimetableOverviewProps> = ({
         >
           <Card.Title
             title={group.name}
-            subtitle={`${(group as any).members_count || 1} Members • Long press to delete`}
+            subtitle={`${group.members_count || 1} Members • Long press to delete`}
             left={(props) => <Users {...props} size={24} color={theme.colors.primary} />}
             right={(props) => <IconButton {...props} icon="chevron-right" />}
           />

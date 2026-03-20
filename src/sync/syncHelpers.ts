@@ -1,10 +1,24 @@
 import { actsRepository } from "../database/repositories/acts.repository";
 import { artistsRepository } from "../database/repositories/artists.repository";
 import { eventsRepository } from "../database/repositories/events.repository";
+import { Event } from "../types/event";
+import { Artist } from "../types/artist";
+import { Act } from "../types/act";
+
+type SyncItem = Event | Artist | Act;
+
+const syncRegistry = new Map<string, { 
+  batchUpsert: (items: any[]) => Promise<void>; 
+  batchHardDelete: (ids: string[]) => Promise<void>; 
+}>();
+
+syncRegistry.set("events", eventsRepository);
+syncRegistry.set("artists", artistsRepository);
+syncRegistry.set("acts", actsRepository);
 
 export const syncHelpers = {
-  processEntityUpdates: async (entityType: string, data: any[]) => {
-    const toUpsert: any[] = [];
+  processEntityUpdates: async (entityType: string, data: SyncItem[]) => {
+    const toUpsert: SyncItem[] = [];
     const toDelete: string[] = [];
 
     for (const item of data) {
@@ -23,35 +37,18 @@ export const syncHelpers = {
     }
   },
 
-  batchHandleUpsert: async (entityType: string, items: any[]) => {
-    switch (entityType) {
-      case "events":
-        await eventsRepository.batchUpsert(items);
-        break;
-      case "artists":
-        await artistsRepository.batchUpsert(items);
-        break;
-      case "acts":
-        await actsRepository.batchUpsert(items);
-        break;
-    }
+  batchHandleUpsert: async (entityType: string, items: SyncItem[]) => {
+    const repo = syncRegistry.get(entityType);
+    if (!repo) throw new Error(`Unknown entity type: ${entityType}`);
+    await repo.batchUpsert(items);
   },
 
   batchHandleDelete: async (entityType: string, ids: string[]) => {
-    switch (entityType) {
-      case "events":
-        await eventsRepository.batchHardDelete(ids);
-        break;
-      case "artists":
-        await artistsRepository.batchHardDelete(ids);
-        break;
-      case "acts":
-        await actsRepository.batchHardDelete(ids);
-        break;
-    }
+    const repo = syncRegistry.get(entityType);
+    if (!repo) throw new Error(`Unknown entity type: ${entityType}`);
+    await repo.batchHardDelete(ids);
   },
 
-  // Legacy individual handlers if needed, but discouraged for sync
   handleUpsert: async (entityType: string, item: any) => {
     await syncHelpers.batchHandleUpsert(entityType, [item]);
   },

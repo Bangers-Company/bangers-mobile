@@ -1,11 +1,15 @@
 import React from "react";
-import { StyleSheet, View, ScrollView } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Text, useTheme } from "react-native-paper";
-import Animated, { useAnimatedScrollHandler } from "react-native-reanimated";
+import Animated, {
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+} from "react-native-reanimated";
+import { useSharedScroll } from "../../hooks/useSharedScroll";
 import { Timetable, TimetableEntry } from "../../types/timetable";
 import { addAlpha } from "../../utils/theme";
 import { TimetableActItem } from "./TimetableActItem";
-import { useSharedScroll } from "../../hooks/useSharedScroll";
 
 interface VerticalGridProps {
   timetable: Timetable;
@@ -30,11 +34,31 @@ export const TimetableVerticalGrid: React.FC<VerticalGridProps> = ({
 }) => {
   const theme = useTheme();
   const scrollOffset = useSharedScroll();
+  const horizontalScrollOffset = useSharedValue(0);
 
-  const scrollHandler = useAnimatedScrollHandler({
+  const verticalScrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
       scrollOffset.value = event.contentOffset.y;
     },
+  });
+
+  const horizontalScrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      horizontalScrollOffset.value = event.contentOffset.x;
+    },
+  });
+
+  const timeAxisStyle = useAnimatedStyle(() => {
+    const isScrolledHorizontally = horizontalScrollOffset.value > 10;
+    return {
+      opacity: isScrolledHorizontally ? 0 : 1,
+    };
+  });
+
+  const timeSidebarScrollStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateY: -scrollOffset.value }],
+    };
   });
 
   // 1. Group by stage and calculate time range
@@ -42,7 +66,7 @@ export const TimetableVerticalGrid: React.FC<VerticalGridProps> = ({
     string,
     { id: string; name: string; entries: TimetableEntry[] }
   > = {};
-  
+
   if (templateTimetable) {
     (templateTimetable?.entries || []).forEach((entry) => {
       if (!stageMap[entry.stage.id]) {
@@ -57,7 +81,7 @@ export const TimetableVerticalGrid: React.FC<VerticalGridProps> = ({
     }
     stageMap[entry.stage.id].entries.push(entry);
   });
-  const stages = Object.values(stageMap);
+  const stages = Object.values(stageMap).filter((s) => s.entries.length > 0);
 
   const toFestivalHour = (date: Date) => {
     const h = date.getHours();
@@ -95,48 +119,72 @@ export const TimetableVerticalGrid: React.FC<VerticalGridProps> = ({
   };
 
   return (
-    <View style={styles.container}>
-      <Animated.ScrollView 
-        style={{ flex: 1 }}
-        onScroll={scrollHandler}
-        scrollEventThrottle={16}
+    <View style={[styles.container]}>
+      {/* 1. Time Sidebar - Absolute and synced with vertical scroll, fades during movement */}
+      <Animated.View
+        style={[
+          styles.timeSidebarOverlay,
+          timeAxisStyle,
+        ]}
       >
-        <View style={{ flexDirection: "row" }}>
-          <View style={[styles.timeSidebar]}>
-            {hours.map((hour) => {
-              const displayHour = hour >= 24 ? hour - 24 : hour;
-              const displayString = `${displayHour
-                .toString()
-                .padStart(2, "0")}:00`;
-              return (
-                <View key={hour} style={styles.timeLabelContainer}>
-                  <Text variant="labelSmall" style={styles.timeLabel}>
-                    {displayString}
-                  </Text>
-                </View>
-              );
-            })}
+        <Animated.View style={[timeSidebarScrollStyle, { paddingTop: 40 }]}>
+          {hours.map((hour) => {
+            const displayHour = hour >= 24 ? hour - 24 : hour;
+            const displayString = `${displayHour
+              .toString()
+              .padStart(2, "0")}:00`;
+            return (
+              <View key={hour} style={styles.timeLabelContainer}>
+                <Text variant="labelSmall" style={styles.timeLabel}>
+                  {displayString}
+                </Text>
+              </View>
+            );
+          })}
+        </Animated.View>
+      </Animated.View>
+
+      {/* 2. Main Grid - Uses horizontal and vertical scrolling with sticky headers */}
+      <Animated.ScrollView
+        horizontal
+        style={{ flex: 1 }}
+        onScroll={horizontalScrollHandler}
+        scrollEventThrottle={16}
+        showsHorizontalScrollIndicator={false}
+      >
+        <View>
+          {/* Sticky Stage Headers - Outside vertical scroll, but inside horizontal scroll */}
+          <View
+            style={[
+              styles.stageHeaders,
+              { zIndex: 10 },
+            ]}
+          >
+            <View style={{ width: TIME_COLUMN_WIDTH }} />
+            {stages.map((stage) => (
+              <View
+                key={stage.id}
+                style={[styles.stageHeader, { width: STAGE_WIDTH }]}
+              >
+                <Text
+                  variant="labelLarge"
+                  style={styles.stageName}
+                  numberOfLines={1}
+                >
+                  {stage.name}
+                </Text>
+              </View>
+            ))}
           </View>
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View>
-              <View style={styles.stageHeaders}>
-                {stages.map((stage) => (
-                  <View
-                    key={stage.id}
-                    style={[styles.stageHeader, { width: STAGE_WIDTH }]}
-                  >
-                    <Text
-                      variant="labelLarge"
-                      style={styles.stageName}
-                      numberOfLines={1}
-                    >
-                      {stage.name}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-
+          <Animated.ScrollView
+            onScroll={verticalScrollHandler}
+            scrollEventThrottle={16}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Grid Body */}
+            <View style={{ flexDirection: "row" }}>
+              <View style={{ width: TIME_COLUMN_WIDTH }} />
               <View
                 style={[
                   styles.gridBody,
@@ -202,6 +250,7 @@ export const TimetableVerticalGrid: React.FC<VerticalGridProps> = ({
                         styles.currentTimeLine,
                         {
                           top: getPosition(currentTime.toISOString()),
+                          left: 0,
                           width: stages.length * STAGE_WIDTH,
                           backgroundColor: theme.colors.error,
                         },
@@ -210,7 +259,7 @@ export const TimetableVerticalGrid: React.FC<VerticalGridProps> = ({
                   )}
               </View>
             </View>
-          </ScrollView>
+          </Animated.ScrollView>
         </View>
       </Animated.ScrollView>
     </View>
@@ -221,13 +270,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: "row",
+    overflow: "hidden",
   },
-  timeSidebar: {
+  timeSidebarOverlay: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
     width: TIME_COLUMN_WIDTH,
-    zIndex: 5,
+    zIndex: 100,
     borderRightWidth: 1,
     borderRightColor: "rgba(0,0,0,0.05)",
-    paddingTop: 40, 
+    overflow: "hidden",
   },
   timeLabelContainer: {
     height: HOUR_HEIGHT,

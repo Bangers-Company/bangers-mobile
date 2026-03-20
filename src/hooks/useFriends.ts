@@ -9,7 +9,7 @@ export const useFriends = (userId: string | undefined) => {
       const res = userId === 'me' 
         ? await friendsApi.getFriends() 
         : await friendsApi.getUserFriends(userId);
-      return (res as any).data.data || res.data || [];
+      return res.data || [];
     },
     enabled: !!userId,
   });
@@ -20,7 +20,7 @@ export const useFriendRequests = () => {
     queryKey: ['friend-requests'],
     queryFn: async () => {
       const res = await friendsApi.getRequests();
-      return (res as any).data.data || res.data || [];
+      return res.data || [];
     },
   });
 };

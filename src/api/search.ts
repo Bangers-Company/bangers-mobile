@@ -37,7 +37,7 @@ export const searchApi = {
     entities: string[] = ["events", "artists", "acts", "users"],
     perPage: number = 20,
   ) =>
-    apiClient.get<SearchResponse>("/search", {
+    apiClient.get<SearchData>("/search", {
       params: {
         query,
         entities,

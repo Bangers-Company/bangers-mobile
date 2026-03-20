@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { groupsApi } from "../api/groups";
+import { groupSchema } from "../validation/schemas";
 
 export const useGroups = () => {
   const queryClient = useQueryClient();
@@ -10,8 +11,10 @@ export const useGroups = () => {
   });
 
   const createGroup = useMutation({
-    mutationFn: (data: { name: string; description?: string }) =>
-      groupsApi.create(data),
+    mutationFn: (data: { name: string; description?: string }) => {
+      groupSchema.parse(data);
+      return groupsApi.create(data);
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["groups"] }),
   });
 
