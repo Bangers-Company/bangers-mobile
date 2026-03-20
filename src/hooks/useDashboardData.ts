@@ -37,6 +37,7 @@ export const useDashboardData = () => {
       setData({
         attending_events: sortedAttending,
         upcoming_events: upcomingEvents,
+        suggested_events: allEvents.slice(0, 10), // Fallback: show any 10 events
         sync_timestamp: new Date().toISOString(),
       });
     } catch (err) {
@@ -84,6 +85,9 @@ export const useDashboardData = () => {
       }
     } catch (err: any) {
       if (err.name === 'CanceledError' || err.name === 'AbortError') return;
+      
+      // Only set error if we don't have any data at all (including local)
+      // or if it's a critical error. For offline, we prefer silent fallback.
       setError(err);
       console.error("Failed to fetch remote dashboard data:", err);
     } finally {

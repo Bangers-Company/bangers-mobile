@@ -4,11 +4,13 @@ import { StyleSheet, View } from "react-native";
 import { Text, TouchableRipple, useTheme } from "react-native-paper";
 import { Event } from "../../types/event";
 import { EventHorizontalCard } from "../event/EventHorizontalCard";
+import { EventHorizontalCardSkeleton } from "./EventHorizontalCardSkeleton";
 
 interface SuggestedEventsProps {
   events: Event[];
   onRefresh?: () => void;
   refreshing?: boolean;
+  loading?: boolean;
   onEventPress?: (event: Event) => void;
 }
 
@@ -16,11 +18,12 @@ export const SuggestedEvents: React.FC<SuggestedEventsProps> = ({
   events,
   onRefresh,
   refreshing,
+  loading = false,
   onEventPress,
 }) => {
   const theme = useTheme();
 
-  if (events.length === 0 && !refreshing) return null;
+  if (!loading && events.length === 0 && !refreshing) return null;
 
   return (
     <View style={styles.container}>
@@ -39,13 +42,21 @@ export const SuggestedEvents: React.FC<SuggestedEventsProps> = ({
       </View>
 
       <View style={styles.list}>
-        {events.map((event) => (
-          <EventHorizontalCard
-            key={event.id}
-            event={event}
-            onPress={onEventPress}
-          />
-        ))}
+        {loading ? (
+          <>
+            <EventHorizontalCardSkeleton />
+            <EventHorizontalCardSkeleton />
+            <EventHorizontalCardSkeleton />
+          </>
+        ) : (
+          events.map((event) => (
+            <EventHorizontalCard
+              key={event.id}
+              event={event}
+              onPress={onEventPress}
+            />
+          ))
+        )}
       </View>
     </View>
   );

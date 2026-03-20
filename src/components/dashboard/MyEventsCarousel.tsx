@@ -7,10 +7,12 @@ import Animated, {
 } from "react-native-reanimated";
 import { Event } from "../../types/event";
 import { EventCarouselCard } from "../event/EventCarouselCard";
+import { EventCarouselCardSkeleton } from "./EventCarouselCardSkeleton";
 
 interface MyEventsCarouselProps {
   events: Event[];
   title?: string;
+  loading?: boolean;
   onPress?: (event: Event) => void;
 }
 
@@ -21,6 +23,7 @@ const CARD_WIDTH_RATIO = 0.9;
 export const MyEventsCarousel: React.FC<MyEventsCarouselProps> = ({
   events,
   title = "Your Events",
+  loading = false,
   onPress,
 }) => {
   const { width: windowWidth } = useWindowDimensions();
@@ -30,13 +33,13 @@ export const MyEventsCarousel: React.FC<MyEventsCarouselProps> = ({
   const cardMargin = 12;
   const snapToInterval = cardWidth + cardMargin * 2;
 
-  const snapOffsets = events.map((_, index) => index * snapToInterval);
+  const snapOffsets = (loading ? [0, 1] : events).map((_, index) => index * snapToInterval);
 
   const scrollHandler = useAnimatedScrollHandler((event) => {
     scrollX.value = event.contentOffset.x;
   });
 
-  if (events.length === 0) return null;
+  if (!loading && events.length === 0) return null;
 
   return (
     <View style={styles.container}>
@@ -61,18 +64,25 @@ export const MyEventsCarousel: React.FC<MyEventsCarouselProps> = ({
           scrollSnapType: "x mandatory",
         }}
       >
-        {events.map((event, index) => (
-          <EventCarouselCard
-            key={event.id}
-            event={event}
-            index={index}
-            scrollX={scrollX}
-            snapToInterval={snapToInterval}
-            cardWidth={cardWidth}
-            cardMargin={cardMargin}
-            onPress={onPress}
-          />
-        ))}
+        {loading ? (
+          <>
+            <EventCarouselCardSkeleton cardWidth={cardWidth} cardMargin={cardMargin} />
+            <EventCarouselCardSkeleton cardWidth={cardWidth} cardMargin={cardMargin} />
+          </>
+        ) : (
+          events.map((event, index) => (
+            <EventCarouselCard
+              key={event.id}
+              event={event}
+              index={index}
+              scrollX={scrollX}
+              snapToInterval={snapToInterval}
+              cardWidth={cardWidth}
+              cardMargin={cardMargin}
+              onPress={onPress}
+            />
+          ))
+        )}
       </Animated.ScrollView>
     </View>
   );

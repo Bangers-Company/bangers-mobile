@@ -55,18 +55,7 @@ export default function HomeScreen() {
     );
   }
 
-  if (loading && !data) {
-    return (
-      <View style={styles.center}>
-        <View style={styles.loadingWrapper}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text variant="bodyMedium" style={styles.loadingText}>
-            Loading your events...
-          </Text>
-        </View>
-      </View>
-    );
-  }
+  // Full-screen loading removed in favor of inline skeletons
 
   const rawAttending = data?.attending_events;
   const attendingEvents = Array.isArray(rawAttending)
@@ -107,18 +96,20 @@ export default function HomeScreen() {
           { paddingBottom: insets.bottom + 100 },
         ]}
       >
-        {attendingEvents.length > 0 && (
+        {(loading || attendingEvents.length > 0) && (
           <MyEventsCarousel
             title="My Events"
             events={attendingEvents}
+            loading={loading && !data}
             onPress={(ev) => router.push(`/event/${ev.id}` as any)}
           />
         )}
 
-        {upcomingEvents.length > 0 && (
+        {(loading || upcomingEvents.length > 0) && (
           <MyEventsCarousel
             title="Maybe interested in"
             events={upcomingEvents}
+            loading={loading && !data}
             onPress={(ev) => router.push(`/event/${ev.id}` as any)}
           />
         )}
@@ -127,6 +118,7 @@ export default function HomeScreen() {
           events={suggestedEvents}
           onRefresh={refresh}
           refreshing={refreshing}
+          loading={loading && !data}
           onEventPress={(ev) => router.push(`/event/${ev.id}` as any)}
         />
       </Animated.ScrollView>

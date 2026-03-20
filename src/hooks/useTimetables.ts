@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { timetablesApi } from '../api/timetables';
+import { timetablesRepository } from '../database/repositories/timetables.repository';
 import { Timetable } from '../types/timetable';
 import { useAuthStore } from '../store/useAuthStore';
 import { Group } from '../types/group';
@@ -20,8 +21,19 @@ export const useOfficialTimetable = (eventId: string) => {
   return useQuery({
     queryKey: ['timetable', 'official', eventId],
     queryFn: async () => {
-      const res = await timetablesApi.getOfficial(eventId);
-      return res.data;
+      try {
+        const res = await timetablesApi.getOfficial(eventId);
+        if (res.data) {
+          await timetablesRepository.upsert(res.data);
+        }
+        return res.data;
+      } catch (err) {
+        console.warn(`Failed to fetch official timetable for ${eventId}, trying local DB:`, err);
+        const localTimetables = await timetablesRepository.getByEventId(eventId);
+        const official = localTimetables.find(t => t.is_official);
+        if (official) return official;
+        throw err;
+      }
     },
     enabled: !!eventId,
   });
@@ -44,8 +56,18 @@ export const useGroupTimetable = (groupId: string | null, timetableId: string | 
     queryKey: ['timetable', 'group', groupId, timetableId],
     queryFn: async () => {
       if (!groupId || !timetableId) return null;
-      const res = await timetablesApi.getGroupTimetable(groupId, timetableId);
-      return res.data;
+      try {
+        const res = await timetablesApi.getGroupTimetable(groupId, timetableId);
+        if (res.data) {
+          await timetablesRepository.upsert(res.data);
+        }
+        return res.data;
+      } catch (err) {
+        console.warn(`Failed to fetch group timetable ${timetableId}, trying local DB:`, err);
+        const localTimetable = await timetablesRepository.getById(timetableId);
+        if (localTimetable) return localTimetable;
+        throw err;
+      }
     },
     enabled: !!groupId && !!timetableId,
   });
