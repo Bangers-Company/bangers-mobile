@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import { Text, useTheme } from "react-native-paper";
 import Animated, {
@@ -33,6 +33,7 @@ export const TimetableVerticalGrid: React.FC<VerticalGridProps> = ({
   currentTime,
 }) => {
   const theme = useTheme();
+  const scrollRef = useRef<Animated.ScrollView>(null);
   const scrollOffset = useSharedScroll();
   const horizontalScrollOffset = useSharedValue(0);
 
@@ -83,22 +84,61 @@ export const TimetableVerticalGrid: React.FC<VerticalGridProps> = ({
   });
   const stages = Object.values(stageMap).filter((s) => s.entries.length > 0);
 
+  // 2. Festival hour calculation (6 AM is the start of a "new day")
   const toFestivalHour = (date: Date) => {
     const h = date.getHours();
     return h < 6 ? h + 24 : h;
   };
 
-  let min = 9;
-  let max = 26;
+  // 3. Dynamic Time Range Calculation
+  // DEFAULT: 09:00 to 02:00 (26)
+  let min = 48; // Start with max value
+  let max = 0;  // Start with min value
 
-  (timetable?.entries || []).forEach((entry) => {
-    const start = toFestivalHour(new Date(entry.start_time));
-    const end = toFestivalHour(new Date(entry.end_time));
-    if (start < min) min = Math.floor(start);
-    if (end + 1 > max) max = Math.ceil(end + 1);
-  });
+  const entries = timetable?.entries || [];
+  if (entries.length === 0) {
+    min = 9;
+    max = 26;
+  } else {
+    entries.forEach((entry) => {
+      const start = toFestivalHour(new Date(entry.start_time));
+      const end = toFestivalHour(new Date(entry.end_time));
+      if (start < min) min = start;
+      if (end > max) max = end;
+    });
+
+    // 1 hour before first act, 1 hour after last act
+    min = Math.floor(min - 1);
+    max = Math.ceil(max + 1);
+
+    // Safety bounds
+    if (min < 0) min = 0;
+    if (max > 48) max = 48;
+    if (max <= min) max = min + 1;
+  }
 
   const timeRange = { start: min, end: max };
+
+  // 4. Auto-scroll to current time
+  useEffect(() => {
+    if (currentTime && scrollRef.current) {
+      const currentPos = getPosition(currentTime.toISOString());
+      const isVisible = toFestivalHour(currentTime) >= timeRange.start && 
+                        toFestivalHour(currentTime) <= timeRange.end;
+
+      if (isVisible) {
+        // Use a small timeout to ensure the layout is ready
+        const timer = setTimeout(() => {
+          scrollRef.current?.scrollTo({
+            y: Math.max(0, currentPos - 100), // Center it a bit better
+            animated: true,
+          });
+        }, 100);
+        return () => clearTimeout(timer);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timetable?.id, timeRange.start]); // Re-run if timetable changes or range shifts
 
   const hours = Array.from(
     { length: Math.min(48, Math.max(0, timeRange.end - timeRange.start + 1)) },
@@ -178,6 +218,7 @@ export const TimetableVerticalGrid: React.FC<VerticalGridProps> = ({
           </View>
 
           <Animated.ScrollView
+            ref={scrollRef}
             onScroll={verticalScrollHandler}
             scrollEventThrottle={16}
             showsVerticalScrollIndicator={false}
