@@ -30,6 +30,7 @@ export interface Event {
   end_date: string;
   version: number;
   banner?: Media | null;
+  genres?: import("./user").Genre[];
   stages?: Stage[];
   acts?: Act[];
   attendees?: User[];

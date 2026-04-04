@@ -1,0 +1,179 @@
+{
+  "common": {
+    "next": "Volgende",
+    "back": "Terug",
+    "save": "Wijzigingen opslaan",
+    "cancel": "Annuleren",
+    "loading": "Laden...",
+    "error": "Fout",
+    "success": "Succes",
+    "logout": "Uitloggen",
+    "confirm": "Bevestigen",
+    "delete": "Verwijderen",
+    "edit": "Bewerken",
+    "viewAll": "Bekijk alles",
+    "search": "Zoeken",
+    "noResults": "Geen resultaten gevonden",
+    "attending": "Aanwezig",
+    "attend": "Deelnemen",
+    "going": "Ik ga",
+    "remove": "Verwijderen",
+    "join": "Deelnemen",
+    "accept": "Accepteren",
+    "reject": "Weigeren"
+  },
+  "auth": {
+    "login": {
+      "title": "Welkom terug",
+      "subtitle": "Log in met je gegevens om verder te gaan",
+      "email": "E-mailadres",
+      "password": "Wachtwoord",
+      "signIn": "Inloggen",
+      "newHere": "Nieuw hier?",
+      "createAccount": "Account aanmaken",
+      "invalidCredentials": "Ongeldig e-mailadres of wachtwoord"
+    },
+    "register": {
+      "steps": {
+        "email": {
+          "title": "Voer je e-mailadres in",
+          "subtitle": "We sturen je updates en verificatie."
+        },
+        "username": {
+          "title": "Kies een gebruikersnaam",
+          "subtitle": "Dit is hoe anderen je zullen zien."
+        },
+        "password": {
+          "title": "Beveilig je account",
+          "subtitle": "Kies een sterk wachtwoord."
+        },
+        "birthday": {
+          "title": "Wanneer ben je jarig?",
+          "subtitle": "Je moet 18+ zijn om deel te nemen aan de rave."
+        },
+        "policies": {
+          "title": "Bijna klaar",
+          "subtitle": "Ga akkoord met onze voorwaarden."
+        }
+      },
+      "usernamePlaceholder": "UniekeRaver123",
+      "register": "Registreren",
+      "emailTaken": "E-mailadres al in gebruik",
+      "usernameTaken": "Gebruikersnaam al bezet",
+      "ageRestriction": "Je moet 18 jaar of ouder zijn om mee te doen.",
+      "policyAgreement": "Ik ga akkoord met de Algemene voorwaarden en het Privacybeleid."
+    }
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "Welkom bij de Rave!",
+      "description": "We zijn blij dat je er bent. Laten we je ervaring personaliseren."
+    },
+    "identity": {
+      "title": "Wie ben je?",
+      "subtitle": "Hoe moeten je vrienden je vinden?",
+      "firstName": "Voornaam",
+      "lastName": "Achternaam"
+    },
+    "genres": {
+      "title": "Jouw vibe",
+      "subtitle": "Selecteer de genres waar je voor leeft."
+    },
+    "bio": {
+      "title": "Vertel iets over jezelf",
+      "subtitle": "Een korte introductie (optioneel).",
+      "placeholder": "Hardstyle liefhebber, festival hopper..."
+    },
+    "finish": {
+      "title": "Je bent er helemaal klaar voor!",
+      "feature1": "Stel je perfecte festivalrooster samen",
+      "feature2": "Blijf op de hoogte van de locaties van je vrienden",
+      "feature3": "Ontvang persoonlijke act-aanbevelingen",
+      "ready": "Laten we beginnen!"
+    }
+  },
+  "profile": {
+    "edit": {
+      "title": "Profiel bewerken",
+      "firstName": "Voornaam",
+      "lastName": "Achternaam",
+      "bio": "Bio",
+      "dob": "Geboortedatum",
+      "publicProfile": "Openbaar profiel",
+      "publicProfileSub": "Laat anderen zien welke evenementen je bezoekt"
+    },
+    "stats": {
+      "events": "Evenementen",
+      "past": "Verleden",
+      "friends": "Vrienden"
+    },
+    "sections": {
+      "upcoming": "Aankomende evenementen",
+      "past": "Eerdere evenementen",
+      "noEvents": "Geen evenementen gevonden",
+      "noUpcoming": "Geen aankomende evenementen",
+      "noPast": "Geen eerdere evenementen gevonden",
+      "about": "Over",
+      "lineup": "Line-up",
+      "viewLineup": "Bekijk volledige line-up",
+      "location": "Locatie",
+      "dates": "Datums"
+    }
+  },
+  "dashboard": {
+    "myEvents": "Mijn evenementen",
+    "maybeInterested": "Misschien interessant",
+    "suggested": "Suggesties voor jou"
+  },
+  "notifications": {
+    "title": "Meldingen",
+    "friends": "Vriendschapsverzoeken",
+    "groups": "Groepsuitnodigingen",
+    "emptyFriends": "Geen openstaande vriendschapsverzoeken",
+    "emptyGroups": "Geen openstaande groepsuitnodigingen",
+    "friendRequestSub": "wil je vriend worden",
+    "groupInviteSub": "heeft je uitgenodigd voor hun groep"
+  },
+  "navigation": {
+    "home": "Home",
+    "events": "Evenementen",
+    "profile": "Profiel",
+    "map": "Kaart",
+    "timetable": "Rooster",
+    "settings": "Instellingen",
+    "notifications": "Meldingen"
+  },
+  "settings": {
+    "title": "Instellingen",
+    "general": {
+      "title": "Algemeen",
+      "language": "Taal",
+      "english": "Engels",
+      "dutch": "Nederlands"
+    },
+    "appearance": {
+      "title": "Uiterlijk",
+      "themeTitle": "Thema modus",
+      "themeSubtitle": "Kies je gewenste look",
+      "system": "Systeem",
+      "light": "Licht",
+      "dark": "Donker",
+      "amoledTitle": "AMOLED-modus",
+      "amoledSubtitle": "Puur zwart voor OLED-schermen",
+      "accentTitle": "Accentkleur"
+    },
+    "notifications": {
+      "title": "Meldingen",
+      "description": "Beheer je waarschuwingen, pushmeldingen en e-mailvoorkeuren.",
+      "joinSuccess": "Succesvol lid geworden van de groep!"
+    },
+    "account": {
+      "title": "Account",
+      "description": "Werk je e-mail, wachtwoord en abonnementsgegevens bij."
+    },
+    "privacy": {
+      "title": "Privacy",
+      "description": "Beheer je zichtbaarheid en beveiligingsinstellingen."
+    }
+  }
+}

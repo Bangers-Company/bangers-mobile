@@ -1,11 +1,12 @@
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, View, Text, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
 import "react-native-reanimated";
 import { ThemeProvider } from "../src/context/ThemeProvider";
 import { initDatabase } from "../src/database/sqlite";
 import "../src/global.css";
+import "../src/i18n";
 import { registerLogoutCallback, useAuthStore } from "../src/store/useAuthStore";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ScrollProvider } from "../src/hooks/useSharedScroll";
@@ -13,7 +14,19 @@ import * as SQLite from "expo-sqlite";
 import { LoadingProvider } from "../src/providers/LoadingProvider";
 import { GlobalErrorBoundary } from "../src/components/GlobalErrorBoundary";
 import { logger } from "../src/utils/logger";
-import { SQLiteDatabase } from "expo-sqlite";
+import * as SplashScreen from "expo-splash-screen";
+import {
+  useFonts,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+  Inter_800ExtraBold,
+  Inter_900Black,
+} from "@expo-google-fonts/inter";
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,6 +51,22 @@ export default function RootLayout() {
   const [isHydrated, setIsHydrated] = useState(false);
   const [isDbReady, setIsDbReady] = useState(false);
   const [dbError, setDbError] = useState<Error | null>(null);
+
+  const [fontsLoaded, fontError] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    Inter_800ExtraBold,
+    Inter_900Black,
+  });
+
+  useEffect(() => {
+    // Hide Expo's splash screen as soon as we are ready to show our custom one
+    if (isHydrated && isDbReady && (fontsLoaded || fontError)) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [fontsLoaded, fontError, isHydrated, isDbReady]);
 
   // Register QueryClient cleanup on logout — runs once on mount
   useEffect(() => {
@@ -193,23 +222,19 @@ export default function RootLayout() {
     );
   }
 
-  if (!isHydrated || !isDbReady) {
+  if (!isHydrated || !isDbReady || !fontsLoaded) {
     return (
       <View
         style={{
           flex: 1,
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "#040405",
+          backgroundColor: "#000",
         }}
-      >
-        <ActivityIndicator size="large" color="#a60df2" />
-        <View style={{ marginTop: 20 }}>
-          <ActivityIndicator size="small" color="#ffffff" />
-        </View>
-      </View>
+      />
     );
   }
+
 
   return (
     <GlobalErrorBoundary>
@@ -231,10 +256,20 @@ export default function RootLayout() {
                 />
                 <Stack.Screen
                   name="settings"
-                  options={{ animation: "slide_from_bottom" }}
+                  options={{ animation: "slide_from_right" }}
                 />
-                <Stack.Screen name="user/[id]" />
-                <Stack.Screen name="friends/[id]" />
+                <Stack.Screen
+                  name="notifications"
+                  options={{ animation: "slide_from_right" }}
+                />
+                <Stack.Screen 
+                  name="user/[id]" 
+                  options={{ animation: "slide_from_right" }}
+                />
+                <Stack.Screen 
+                  name="friends/[id]" 
+                  options={{ animation: "slide_from_right" }}
+                />
               </Stack>
               <StatusBar style="auto" />
             </ScrollProvider>

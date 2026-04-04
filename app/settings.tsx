@@ -4,7 +4,8 @@ import {
   Bell as Notifications,
   Palette,
   Shield,
-  User
+  User,
+  Globe,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, useColorScheme, View } from "react-native";
@@ -22,10 +23,12 @@ import {
   TouchableRipple,
   useTheme,
 } from "react-native-paper";
+import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PageContainer } from "../src/components/PageContainer";
 import { useAuthStore } from "../src/store/useAuthStore";
 import { useUIStore } from "../src/store/useUIStore";
+import { useSettingsStore } from "../src/store/useSettingsStore";
 import { addAlpha, COLORS } from "../src/utils/theme";
 
 const ACCENT_COLORS = [
@@ -50,12 +53,12 @@ const AnimatedSection = ({
 }) => {
   const height = useSharedValue(0);
   const opacity = useSharedValue(0);
-  const MAX_HEIGHT = 400; 
+  const [measuredHeight, setMeasuredHeight] = useState(0);
 
   React.useEffect(() => {
-    height.value = withTiming(isExpanded ? MAX_HEIGHT : 0, { duration: 300 });
+    height.value = withTiming(isExpanded ? measuredHeight : 0, { duration: 300 });
     opacity.value = withTiming(isExpanded ? 1 : 0, { duration: 300 });
-  }, [isExpanded, height, opacity]);
+  }, [isExpanded, measuredHeight, height, opacity]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     height: height.value,
@@ -65,7 +68,10 @@ const AnimatedSection = ({
 
   return (
     <Animated.View style={animatedStyle}>
-      <View style={{ position: "absolute", top: 0, left: 0, right: 0 }}>
+      <View
+        onLayout={(e) => setMeasuredHeight(e.nativeEvent.layout.height)}
+        style={{ position: "absolute", top: 0, left: 0, right: 0 }}
+      >
         {children}
       </View>
     </Animated.View>
@@ -78,6 +84,7 @@ export default function SettingsScreen() {
   const router = useRouter();
   const systemColorScheme = useColorScheme();
   
+  const { t } = useTranslation();
   const {
     themeMode,
     isAmoled,
@@ -87,11 +94,11 @@ export default function SettingsScreen() {
     setAccentColor
   } = useUIStore();
 
+  const { language, setLanguage } = useSettingsStore();
+
   const logout = useAuthStore((state) => state.logout);
 
-  const [expandedSection, setExpandedSection] = useState<string | null>(
-    "appearance",
-  );
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
   const toggleSection = (section: string) => {
     setExpandedSection(expandedSection === section ? null : section);
@@ -175,7 +182,7 @@ export default function SettingsScreen() {
         </TouchableOpacity>
 
         <Text variant="titleLarge" style={styles.headerTitle}>
-          Settings
+          {t("settings.title")}
         </Text>
 
         <View style={{ width: 44 }} />
@@ -187,6 +194,36 @@ export default function SettingsScreen() {
           { paddingBottom: bottom + 100 },
         ]}
       >
+        {/* General */}
+        {renderSection(
+          "general",
+          t("settings.general.title"),
+          <Globe size={24} color={theme.colors.primary} />,
+          <View style={styles.appearanceContent}>
+            <View
+              style={[
+                styles.settingRow,
+                { flexDirection: "column", alignItems: "flex-start", gap: 12 },
+              ]}
+            >
+              <View>
+                <Text variant="bodyLarge" style={styles.settingLabel}>
+                  {t("settings.general.language")}
+                </Text>
+              </View>
+              <SegmentedButtons
+                value={language}
+                onValueChange={(val) => setLanguage(val)}
+                buttons={[
+                  { value: "en", label: t("settings.general.english") },
+                  { value: "nl", label: t("settings.general.dutch") },
+                ]}
+                style={styles.segmentedButtons}
+              />
+            </View>
+          </View>,
+        )}
+
         {/* Appearance */}
         {renderSection(
           "appearance",
@@ -201,19 +238,19 @@ export default function SettingsScreen() {
             >
               <View>
                 <Text variant="bodyLarge" style={styles.settingLabel}>
-                  Theme Mode
+                  {t("settings.appearance.themeTitle") || "Theme Mode"}
                 </Text>
                 <Text variant="bodySmall" style={styles.settingSubtext}>
-                  Choose your preferred look
+                  {t("settings.appearance.themeSubtitle") || "Choose your preferred look"}
                 </Text>
               </View>
               <SegmentedButtons
                 value={themeMode}
-                onValueChange={(val) => setThemeMode(val as any)}
+                onValueChange={(val) => setThemeMode(val as "system" | "light" | "dark")}
                 buttons={[
-                  { value: "system", label: "System" },
-                  { value: "light", label: "Light" },
-                  { value: "dark", label: "Dark" },
+                  { value: "system", label: t("settings.appearance.system") || "System" },
+                  { value: "light", label: t("settings.appearance.light") || "Light" },
+                  { value: "dark", label: t("settings.appearance.dark") || "Dark" },
                 ]}
                 style={styles.segmentedButtons}
               />
@@ -222,10 +259,10 @@ export default function SettingsScreen() {
             <View style={styles.settingRow}>
               <View>
                 <Text variant="bodyLarge" style={styles.settingLabel}>
-                  AMOLED Mode
+                  {t("settings.appearance.amoledTitle") || "AMOLED Mode"}
                 </Text>
                 <Text variant="bodySmall" style={styles.settingSubtext}>
-                  Pure black for OLED screens
+                  {t("settings.appearance.amoledSubtitle") || "Pure black for OLED screens"}
                 </Text>
               </View>
               <Switch
@@ -240,7 +277,7 @@ export default function SettingsScreen() {
 
             <View style={styles.accentSection}>
               <Text variant="bodyLarge" style={styles.settingLabel}>
-                Accent Color
+                {t("settings.appearance.accentTitle") || "Accent Color"}
               </Text>
               <View style={styles.colorGrid}>
                 {ACCENT_COLORS.map((color) => {
@@ -274,30 +311,30 @@ export default function SettingsScreen() {
         {/* Notifications */}
         {renderSection(
           "notifications",
-          "Notifications",
+          t("settings.notifications.title") || "Notifications",
           <Notifications size={24} color={theme.colors.primary} />,
           <Text variant="bodyMedium" style={styles.placeholderText}>
-            Manage your alerts, push notifications, and email preferences.
+            {t("settings.notifications.description") || "Manage your alerts, push notifications, and email preferences."}
           </Text>,
         )}
 
         {/* Account */}
         {renderSection(
           "account",
-          "Account",
+          t("settings.account.title") || "Account",
           <User size={24} color={theme.colors.primary} />,
           <Text variant="bodyMedium" style={styles.placeholderText}>
-            Update your email, password, and subscription details.
+            {t("settings.account.description") || "Update your email, password, and subscription details."}
           </Text>,
         )}
 
         {/* Privacy */}
         {renderSection(
           "privacy",
-          "Privacy",
+          t("settings.privacy.title") || "Privacy",
           <Shield size={24} color={theme.colors.primary} />,
           <Text variant="bodyMedium" style={styles.placeholderText}>
-            Control your visibility and security settings.
+            {t("settings.privacy.description") || "Control your visibility and security settings."}
           </Text>,
         )}
 
@@ -315,7 +352,7 @@ export default function SettingsScreen() {
           <View style={styles.logoutContent}>
             <LogOut size={20} color={theme.colors.error} />
             <Text style={[styles.logoutText, { color: theme.colors.error }]}>
-              Logout
+              {t("common.logout") || "Logout"}
             </Text>
           </View>
         </TouchableRipple>

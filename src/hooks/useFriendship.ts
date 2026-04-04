@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { friendsApi } from "../api/friends";
+import { useAuthStore } from "../store/useAuthStore";
 
 export type FriendshipStatus =
   | "none"
@@ -8,10 +9,11 @@ export type FriendshipStatus =
   | "pending_sent";
 
 export const useFriendshipStatus = (userId: string | undefined) => {
+  const user = useAuthStore((state) => state.user);
   return useQuery({
     queryKey: ["friendship", userId],
     queryFn: async (): Promise<FriendshipStatus> => {
-      if (!userId) return "none";
+      if (!userId || !user) return "none";
       const [friendsRes, requestsRes] = await Promise.all([
         friendsApi.getFriends(),
         friendsApi.getRequests(),
@@ -38,7 +40,7 @@ export const useFriendshipStatus = (userId: string | undefined) => {
       // Let's just allow the type for now to fix the compilation error.
       return "none";
     },
-    enabled: !!userId,
+    enabled: !!userId && !!user,
   });
 };
 
@@ -71,4 +73,36 @@ export const useFriendshipActions = (userId: string | undefined) => {
   });
 
   return { sendRequest, acceptRequest, removeFriend };
+};
+
+export const useFriendRequests = () => {
+  const user = useAuthStore((state) => state.user);
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
+    queryKey: ["friend-requests"],
+    queryFn: async () => {
+      const res = await friendsApi.getRequests();
+      return res.data || [];
+    },
+    enabled: !!user,
+  });
+
+  const accept = useMutation({
+    mutationFn: (userId: string) => friendsApi.acceptRequest(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["friend-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["friends"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+    },
+  });
+
+  const reject = useMutation({
+    mutationFn: (userId: string) => friendsApi.rejectRequest(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["friend-requests"] });
+    },
+  });
+
+  return { ...query, accept, reject };
 };

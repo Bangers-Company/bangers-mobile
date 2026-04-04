@@ -24,6 +24,24 @@ import {
   getDynamicSurface,
 } from "../utils/theme";
 
+const fontConfig = {
+  displayLarge: { fontFamily: "Inter_800ExtraBold", fontSize: 57, lineHeight: 64, letterSpacing: -0.25 },
+  displayMedium: { fontFamily: "Inter_800ExtraBold", fontSize: 45, lineHeight: 52, letterSpacing: 0 },
+  displaySmall: { fontFamily: "Inter_800ExtraBold", fontSize: 36, lineHeight: 44, letterSpacing: 0 },
+  headlineLarge: { fontFamily: "Inter_700Bold", fontSize: 32, lineHeight: 40, letterSpacing: 0 },
+  headlineMedium: { fontFamily: "Inter_700Bold", fontSize: 28, lineHeight: 36, letterSpacing: 0 },
+  headlineSmall: { fontFamily: "Inter_700Bold", fontSize: 24, lineHeight: 32, letterSpacing: 0 },
+  titleLarge: { fontFamily: "Inter_600SemiBold", fontSize: 22, lineHeight: 28, letterSpacing: 0 },
+  titleMedium: { fontFamily: "Inter_600SemiBold", fontSize: 16, lineHeight: 24, letterSpacing: 0.15 },
+  titleSmall: { fontFamily: "Inter_600SemiBold", fontSize: 14, lineHeight: 20, letterSpacing: 0.1 },
+  labelLarge: { fontFamily: "Inter_500Medium", fontSize: 14, lineHeight: 20, letterSpacing: 0.1 },
+  labelMedium: { fontFamily: "Inter_500Medium", fontSize: 12, lineHeight: 16, letterSpacing: 0.5 },
+  labelSmall: { fontFamily: "Inter_500Medium", fontSize: 11, lineHeight: 16, letterSpacing: 0.5 },
+  bodyLarge: { fontFamily: "Inter_400Regular", fontSize: 16, lineHeight: 24, letterSpacing: 0.5 },
+  bodyMedium: { fontFamily: "Inter_400Regular", fontSize: 14, lineHeight: 20, letterSpacing: 0.25 },
+  bodySmall: { fontFamily: "Inter_400Regular", fontSize: 12, lineHeight: 16, letterSpacing: 0.4 },
+};
+
 const { LightTheme: AdaptedLight, DarkTheme: AdaptedDark } =
   adaptNavigationTheme({
     reactNavigationLight: NavDefaultTheme,
@@ -81,6 +99,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   const theme = useMemo(() => {
     return {
       ...baseTheme,
+      fonts: {
+        ...baseTheme.fonts,
+        ...fontConfig,
+      },
       colors: {
         ...baseTheme.colors,
         primary: accentColor,

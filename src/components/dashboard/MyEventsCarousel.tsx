@@ -18,8 +18,6 @@ interface MyEventsCarouselProps {
 
 const CARD_WIDTH_RATIO = 0.9;
 
-// Removed local CarouselItem in favor of src/components/event/EventCarouselCard.tsx
-
 export const MyEventsCarousel: React.FC<MyEventsCarouselProps> = ({
   events,
   title = "Your Events",
@@ -143,6 +141,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 16,
     alignItems: "center",
+  },
+  genreContainer: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 12,
   },
   locationRow: {
     flexDirection: "row",

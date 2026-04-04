@@ -122,6 +122,22 @@ export const EventCarouselCard: React.FC<EventCarouselCardProps> = ({
               </Text>
             </View>
           </View>
+
+          {event.genres && event.genres.length > 0 && (
+            <View style={styles.genreContainer}>
+              {event.genres.slice(0, 2).map((genre) => (
+                <Surface
+                  key={genre.id}
+                  style={[styles.genreBadge, { backgroundColor: theme.colors.primaryContainer }]}
+                  elevation={0}
+                >
+                  <Text variant="labelSmall" style={[styles.genreText, { color: theme.colors.onPrimaryContainer }]}>
+                    {genre.name}
+                  </Text>
+                </Surface>
+              ))}
+            </View>
+          )}
         </View>
       </Card>
     </Animated.View>
@@ -183,5 +199,21 @@ const styles = StyleSheet.create({
   location: {
     opacity: 0.7,
     fontWeight: "600",
+  },
+  genreContainer: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 12,
+  },
+  genreBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  genreText: {
+    fontWeight: "bold",
+    fontSize: 10,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
 });

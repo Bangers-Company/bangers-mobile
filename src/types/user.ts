@@ -13,16 +13,24 @@ export interface UserStats {
   past_count: number;
 }
 
+export interface Genre {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export interface User {
   id: string;
   email: string;
   username: string;
-  first_name: string;
-  last_name: string;
+  first_name?: string | null;
+  last_name?: string | null;
   name?: string;
   dob: string;
   bio?: string;
+  last_login_at?: string | null;
   is_public: boolean;
+  genres?: Genre[];
   roles: string[];
   permissions: string[];
   profile_media?: Media | null;

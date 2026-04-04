@@ -14,12 +14,14 @@ interface AnimatedCounterProps {
   value: string | number;
   variant?: 'displayLarge' | 'displayMedium' | 'displaySmall' | 'headlineLarge' | 'headlineMedium' | 'headlineSmall' | 'titleLarge' | 'titleMedium' | 'titleSmall' | 'bodyLarge' | 'bodyMedium' | 'bodySmall' | 'labelLarge' | 'labelMedium' | 'labelSmall';
   style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<import('react-native').TextStyle>;
 }
 
 export const AnimatedCounter: React.FC<AnimatedCounterProps> = ({ 
   value, 
   variant = 'titleMedium',
-  style 
+  style,
+  textStyle
 }) => {
   const scale = useSharedValue(1);
 
@@ -44,7 +46,7 @@ export const AnimatedCounter: React.FC<AnimatedCounterProps> = ({
     >
       <Animated.View style={animatedStyle} key={value}>
         <Animated.View entering={FadeIn} exiting={FadeOut}>
-          <Text variant={variant} style={styles.text}>
+          <Text variant={variant} style={[styles.text, textStyle]}>
             {value}
           </Text>
         </Animated.View>

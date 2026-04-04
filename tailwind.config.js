@@ -11,6 +11,15 @@ module.exports = {
       colors: {
         primary: "#a60df2",
       },
+      fontFamily: {
+        sans: ["Inter_400Regular"],
+        inter: ["Inter_400Regular"],
+        "inter-medium": ["Inter_500Medium"],
+        "inter-semibold": ["Inter_600SemiBold"],
+        "inter-bold": ["Inter_700Bold"],
+        "inter-extrabold": ["Inter_800ExtraBold"],
+        "inter-black": ["Inter_900Black"],
+      },
     },
   },
   plugins: [],

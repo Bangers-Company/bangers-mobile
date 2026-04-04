@@ -106,7 +106,8 @@ class EventsRepository extends BaseRepository<Event, JoinedEventRow> {
     const now = new Date().toISOString();
     const rows = await db.getAllAsync<JoinedEventRow>(
       `SELECT e.* FROM events e 
-         WHERE e.end_date >= ? AND e.deleted_at IS NULL
+         JOIN user_event_attendance uea ON e.id = uea.event_id
+         WHERE uea.status = 'going' AND e.end_date >= ? AND e.deleted_at IS NULL
          ORDER BY e.start_date ASC`,
       [now],
     );

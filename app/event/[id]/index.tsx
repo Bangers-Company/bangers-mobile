@@ -3,13 +3,8 @@ import { Calendar, Heart, MapPin, Users } from "lucide-react-native";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import ContentLoader, { Rect } from "react-content-loader/native";
 import { Dimensions, Image, RefreshControl, StyleSheet, View, ScrollView } from "react-native";
-import {
-  Button,
-  IconButton,
-  Surface,
-  Text,
-  useTheme,
-} from "react-native-paper";
+import { Button, IconButton, Surface, Text, useTheme } from "react-native-paper";
+import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { eventsApi } from "../../../src/api/events";
 import { Droplet } from "../../../src/components/ui/Droplet";
@@ -27,6 +22,7 @@ import { Act } from "../../../src/types/act";
 
 export default function EventDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { t } = useTranslation();
   const theme = useTheme();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -252,7 +248,7 @@ export default function EventDetailsScreen() {
                   {startEndMerged}
                 </Text>
                 <Text variant="bodyMedium" style={styles.metaSubtitle}>
-                  Dates
+                  {t("profile.sections.dates")}
                 </Text>
               </View>
             </View>
@@ -271,7 +267,7 @@ export default function EventDetailsScreen() {
                   {event.location}
                 </Text>
                 <Text variant="bodyMedium" style={styles.metaSubtitle}>
-                  Location
+                  {t("profile.sections.location")}
                 </Text>
               </View>
             </View>
@@ -289,28 +285,57 @@ export default function EventDetailsScreen() {
                 <AnimatedCounter
                   value={event.attendee_count ?? attendees.length}
                   variant="bodyLarge"
-                  style={styles.metaTitle}
+                  textStyle={styles.metaTitle}
                 />
                 <Text variant="bodyMedium" style={styles.metaSubtitle}>
-                  Going
+                  {t("common.going")}
                 </Text>
               </View>
 
               <Button
                 mode={isGoing ? "outlined" : "contained"}
-                onPress={() => toggleAttendance("going")}
                 loading={actionLoading}
+                onPress={() => toggleAttendance("going")}
+                labelStyle={{ fontWeight: "800" }}
                 style={styles.attendButton}
               >
-                {isGoing ? "Attending" : "Attend"}
+                {isGoing ? t("common.going") : t("common.attend")}
               </Button>
             </View>
           </View>
 
+          {event.genres && event.genres.length > 0 && (
+            <View style={styles.genresSection}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.genresScroll}
+              >
+                {event.genres.map((genre) => (
+                  <Surface
+                    key={genre.id}
+                    style={[
+                      styles.genreBadgeDetail,
+                      { backgroundColor: addAlpha(theme.colors.primary, 0.1) },
+                    ]}
+                    elevation={0}
+                  >
+                    <Text
+                      variant="labelLarge"
+                      style={{ color: theme.colors.primary, fontWeight: "bold" }}
+                    >
+                      {genre.name}
+                    </Text>
+                  </Surface>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
           {event.description && (
             <View style={styles.descriptionSection}>
               <Text variant="titleMedium" style={styles.sectionTitle}>
-                About
+                {t("profile.sections.about")}
               </Text>
               <Text variant="bodyMedium" style={styles.descriptionText}>
                 {event.description}
@@ -320,7 +345,7 @@ export default function EventDetailsScreen() {
 
           <View style={styles.lineupSection}>
             <Text variant="titleMedium" style={styles.sectionTitle}>
-              Line-up
+              {t("profile.sections.lineup")}
             </Text>
             {acts.length > 0 ? (
               <>
@@ -344,7 +369,7 @@ export default function EventDetailsScreen() {
                   onPress={() => router.push(`/event/${id}/lineup` as any)}
                   style={styles.viewFullButton}
                 >
-                  View full line-up
+                  {t("profile.sections.viewLineup")}
                 </Button>
               </>
             ) : (
@@ -486,6 +511,17 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     backgroundColor: "rgba(0,0,0,0.1)",
+  },
+  genresSection: {
+    marginBottom: 24,
+  },
+  genresScroll: {
+    gap: 8,
+  },
+  genreBadgeDetail: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
   },
   scrollContent: {
     paddingTop: 16,

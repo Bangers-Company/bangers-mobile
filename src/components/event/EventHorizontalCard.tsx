@@ -75,6 +75,14 @@ export const EventHorizontalCard: React.FC<EventHorizontalCardProps> = ({
               {event.name}
             </Text>
 
+            {event.genres && event.genres.length > 0 && (
+              <View style={[styles.genreBadgeCard, { backgroundColor: theme.colors.primaryContainer }]}>
+                <Text variant="labelSmall" style={[styles.genreTextCard, { color: theme.colors.onPrimaryContainer }]}>
+                  {event.genres[0].name}
+                </Text>
+              </View>
+            )}
+
             <View style={styles.metaRow}>
               <View style={styles.metaItem}>
                 <MapPin size={14} color={theme.colors.primary} />
@@ -163,5 +171,17 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     fontWeight: "600",
     fontSize: 12,
+  },
+  genreBadgeCard: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    alignSelf: "flex-start",
+    marginBottom: 4,
+  },
+  genreTextCard: {
+    fontSize: 10,
+    fontWeight: "bold",
+    textTransform: "uppercase",
   },
 });

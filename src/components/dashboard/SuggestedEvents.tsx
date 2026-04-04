@@ -2,6 +2,7 @@ import { Sparkles } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { Text, TouchableRipple, useTheme } from "react-native-paper";
+import { useTranslation } from "react-i18next";
 import { Event } from "../../types/event";
 import { EventHorizontalCard } from "../event/EventHorizontalCard";
 import { EventHorizontalCardSkeleton } from "./EventHorizontalCardSkeleton";
@@ -21,6 +22,7 @@ export const SuggestedEvents: React.FC<SuggestedEventsProps> = ({
   loading = false,
   onEventPress,
 }) => {
+  const { t } = useTranslation();
   const theme = useTheme();
 
   if (!loading && events.length === 0 && !refreshing) return null;
@@ -31,12 +33,12 @@ export const SuggestedEvents: React.FC<SuggestedEventsProps> = ({
         <View style={styles.titleRow}>
           <Sparkles size={20} color={theme.colors.primary} />
           <Text variant="headlineSmall" style={styles.title}>
-            Suggested for You
+            {t("dashboard.suggested")}
           </Text>
         </View>
         <TouchableRipple onPress={onRefresh} style={styles.refreshButton}>
           <Text variant="labelLarge" style={{ color: theme.colors.primary }}>
-            Refresh
+            {t("common.next")}
           </Text>
         </TouchableRipple>
       </View>

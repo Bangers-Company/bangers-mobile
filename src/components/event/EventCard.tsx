@@ -1,4 +1,4 @@
-import { Calendar, ChevronRight, MapPin } from "lucide-react-native";
+import { Calendar, ChevronRight, MapPin, Music } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, View, StyleProp, ViewStyle } from "react-native";
 import { Image } from "expo-image";
@@ -12,7 +12,6 @@ import {
 import { Event as AppEvent } from "../../types/event";
 import { resolveMediaUrl } from "../../utils/format";
 import Animated, {
-  SharedValue,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -94,7 +93,7 @@ const useRepeatTiming = (from: number, to: number, duration: number) => {
       -1,
       true,
     );
-  }, []);
+  }, [duration, from, to, value]);
 
   return value;
 };
@@ -199,6 +198,22 @@ export const EventCard: React.FC<EventCardProps> = ({
                   {event.location}
                 </Text>
               </View>
+
+              {event.genres && event.genres.length > 0 && (
+                <View style={styles.genreContainer}>
+                  {event.genres.slice(0, 2).map((genre) => (
+                    <Surface
+                      key={genre.id}
+                      style={styles.featuredGenreBadge}
+                      elevation={0}
+                    >
+                      <Text variant="labelSmall" style={styles.genreText}>
+                        {genre.name}
+                      </Text>
+                    </Surface>
+                  ))}
+                </View>
+              )}
             </View>
           </View>
         </Card>
@@ -247,16 +262,29 @@ export const EventCard: React.FC<EventCardProps> = ({
                   {formatDate(event.start_date)}
                 </Text>
               </View>
-              <View style={styles.metaItem}>
-                <MapPin size={12} color={theme.colors.outline} />
-                <Text
-                  variant="bodySmall"
-                  style={{ color: theme.colors.outline }}
-                  numberOfLines={1}
-                >
-                  {event.location}
-                </Text>
-              </View>
+              {event.genres && event.genres.length > 0 ? (
+                <View style={styles.metaItem}>
+                  <Music size={12} color={theme.colors.primary} />
+                  <Text
+                    variant="bodySmall"
+                    style={{ color: theme.colors.primary, fontWeight: 'bold' }}
+                    numberOfLines={1}
+                  >
+                    {event.genres[0].name}
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.metaItem}>
+                  <MapPin size={12} color={theme.colors.outline} />
+                  <Text
+                    variant="bodySmall"
+                    style={{ color: theme.colors.outline }}
+                    numberOfLines={1}
+                  >
+                    {event.location}
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
           <ChevronRight size={18} color={theme.colors.outline} />
@@ -417,5 +445,21 @@ const styles = StyleSheet.create({
     height: 84,
     borderRadius: 16,
     marginVertical: 6,
+  },
+  genreContainer: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 8,
+  },
+  featuredGenreBadge: {
+    backgroundColor: "rgba(255,255,255,0.2)",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  genreText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 10,
   },
 });
