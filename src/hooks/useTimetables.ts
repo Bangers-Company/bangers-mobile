@@ -6,6 +6,7 @@ import { Timetable } from '../types/timetable';
 import { useAuthStore } from '../store/useAuthStore';
 import { Group } from '../types/group';
 import { isUserAttendingEntry, updateTimetableEntryAttendance, updateGroupsCacheAttendance } from '../utils/cacheUpdates';
+import { getDb } from '../database/sqlite';
 
 interface MutationContext {
   previousTimetable?: Timetable | null;
@@ -174,6 +175,15 @@ export const useToggleAttendance = () => {
       const queryKey = getTimetableQueryKey(type, targetId, id);
 
       const currentUser = useAuthStore.getState().user;
+
+      if (typeof is_attending !== 'undefined') {
+        getDb().then(db => {
+          db.runAsync(
+            `INSERT OR REPLACE INTO timetable_entry_attendance (entry_id, is_attending) VALUES (?, ?)`,
+            [entryId, is_attending ? 1 : 0]
+          ).catch(e => console.error("Failed to update sqlite attendance", e));
+        });
+      }
 
       queryClient.setQueryData<Timetable>(queryKey, (old) => {
         if (!old) return old;

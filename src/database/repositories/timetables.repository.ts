@@ -110,6 +110,12 @@ class TimetablesRepository extends BaseRepository<Timetable> {
                 entry.end_time,
               ]),
             );
+            if (typeof entry.is_attending !== 'undefined') {
+              await db.runAsync(
+                `INSERT OR REPLACE INTO timetable_entry_attendance (entry_id, is_attending) VALUES (?, ?)`,
+                sanitizeParams([entry.id, entry.is_attending ? 1 : 0])
+              );
+            }
           }
         }
       });
@@ -124,11 +130,12 @@ class TimetablesRepository extends BaseRepository<Timetable> {
     );
     if (!row) return null;
 
-    const entries = await db.getAllAsync<JoinedTimetableEntryRow>(
-      `SELECT te.*, a.name as act_name, s.name as stage_name 
+    const entries = await db.getAllAsync<JoinedTimetableEntryRow & { is_attending: number }>(
+      `SELECT te.*, a.name as act_name, s.name as stage_name, tea.is_attending 
          FROM timetable_entries te
          LEFT JOIN acts a ON te.act_id = a.id
          LEFT JOIN stages s ON te.stage_id = s.id
+         LEFT JOIN timetable_entry_attendance tea ON te.id = tea.entry_id
          WHERE te.timetable_id = ?`,
       [id],
     );
@@ -141,6 +148,7 @@ class TimetablesRepository extends BaseRepository<Timetable> {
         id: e.id,
         start_time: e.start_time,
         end_time: e.end_time,
+        is_attending: !!e.is_attending,
         act: { id: e.act_id, name: e.act_name },
         stage: { id: e.stage_id, name: e.stage_name },
       })),
@@ -149,15 +157,17 @@ class TimetablesRepository extends BaseRepository<Timetable> {
 
   async getByEventId(eventId: string): Promise<Timetable[]> {
     const db = await this.getDb();
-    const rows = await db.getAllAsync<JoinedTimetableRow>(
+    const rows = await db.getAllAsync<JoinedTimetableRow & { is_attending: number }>(
       `SELECT t.*, 
               te.id as entry_id, te.start_time, te.end_time,
               a.id as act_id, a.name as act_name,
-              s.id as stage_id, s.name as stage_name
+              s.id as stage_id, s.name as stage_name,
+              tea.is_attending
        FROM timetables t
        LEFT JOIN timetable_entries te ON t.id = te.timetable_id
        LEFT JOIN acts a ON te.act_id = a.id
        LEFT JOIN stages s ON te.stage_id = s.id
+       LEFT JOIN timetable_entry_attendance tea ON te.id = tea.entry_id
        WHERE t.event_id = ?`,
       [eventId],
     );
@@ -181,6 +191,7 @@ class TimetablesRepository extends BaseRepository<Timetable> {
           id: row.entry_id,
           start_time: row.start_time!,
           end_time: row.end_time!,
+          is_attending: !!row.is_attending,
           act: { 
             id: row.act_id!, 
             name: row.act_name!,

@@ -154,13 +154,21 @@ class GroupTimetablesRepository extends BaseRepository<Timetable> {
           );
 
           for (const entry of timetable.entries) {
-            const pivotEntry = entry as TimetableEntry & { pivot?: { added_by?: string } };
+            const pivotEntry = entry as TimetableEntry & { pivot?: { added_by?: string, is_attending?: boolean } };
             const addedBy = pivotEntry.pivot?.added_by ?? null;
             await db.runAsync(
               `INSERT OR IGNORE INTO group_timetable_entries (group_timetable_id, timetable_entry_id, added_by)
                  VALUES (?, ?, ?)`,
               sanitizeParams([timetable.id, entry.id, addedBy]),
             );
+
+            const isAttending = pivotEntry.is_attending ?? pivotEntry.pivot?.is_attending;
+            if (typeof isAttending !== 'undefined') {
+              await db.runAsync(
+                `INSERT OR REPLACE INTO timetable_entry_attendance (entry_id, is_attending) VALUES (?, ?)`,
+                sanitizeParams([entry.id, isAttending ? 1 : 0])
+              );
+            }
           }
         }
       });
@@ -188,14 +196,16 @@ class GroupTimetablesRepository extends BaseRepository<Timetable> {
   }
 
   private async buildTimetable(db: SQLiteDatabase, row: GroupTimetableRow): Promise<Timetable> {
-    const entries = await db.getAllAsync<JoinedGroupTimetableEntryRow>(
+    const entries = await db.getAllAsync<JoinedGroupTimetableEntryRow & { is_attending: number }>(
       `SELECT gte.timetable_entry_id, te.start_time, te.end_time,
               te.act_id, a.name as act_name,
-              te.stage_id, s.name as stage_name
+              te.stage_id, s.name as stage_name,
+              tea.is_attending
          FROM group_timetable_entries gte
          JOIN timetable_entries te ON gte.timetable_entry_id = te.id
          LEFT JOIN acts a ON te.act_id = a.id
          LEFT JOIN stages s ON te.stage_id = s.id
+         LEFT JOIN timetable_entry_attendance tea ON te.id = tea.entry_id
          WHERE gte.group_timetable_id = ?
          ORDER BY te.start_time`,
       [row.id],
@@ -211,6 +221,8 @@ class GroupTimetablesRepository extends BaseRepository<Timetable> {
         id: e.timetable_entry_id,
         start_time: e.start_time,
         end_time: e.end_time,
+        is_attending: !!e.is_attending,
+        pivot: { is_attending: !!e.is_attending },
         act: { id: e.act_id, name: e.act_name, version: 1, created_at: "", updated_at: "" },
         stage: { id: e.stage_id, name: e.stage_name, version: 1, created_at: "", updated_at: "" },
       })),
