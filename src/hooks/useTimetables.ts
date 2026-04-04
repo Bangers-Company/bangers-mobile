@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { timetablesApi } from '../api/timetables';
 import { timetablesRepository } from '../database/repositories/timetables.repository';
+import { groupTimetablesRepository } from '../database/repositories/groupTimetables.repository';
 import { Timetable } from '../types/timetable';
 import { useAuthStore } from '../store/useAuthStore';
 import { Group } from '../types/group';
@@ -59,12 +60,13 @@ export const useGroupTimetable = (groupId: string | null, timetableId: string | 
       try {
         const res = await timetablesApi.getGroupTimetable(groupId, timetableId);
         if (res.data) {
-          await timetablesRepository.upsert(res.data);
+          // Cache locally for offline fallback (passes group_id through the API response)
+          await groupTimetablesRepository.upsert({ ...res.data, group_id: groupId });
         }
         return res.data;
       } catch (err) {
         console.warn(`Failed to fetch group timetable ${timetableId}, trying local DB:`, err);
-        const localTimetable = await timetablesRepository.getById(timetableId);
+        const localTimetable = await groupTimetablesRepository.getById(timetableId);
         if (localTimetable) return localTimetable;
         throw err;
       }
@@ -155,7 +157,7 @@ export const useToggleAttendance = () => {
 
       return { previousTimetable, previousGroups } as MutationContext;
     },
-    onError: (err, variables, context: any) => {
+    onError: (err, variables, context: MutationContext | undefined) => {
       const queryKey = getTimetableQueryKey(variables.type, variables.targetId, variables.id);
 
       if (context?.previousTimetable) {

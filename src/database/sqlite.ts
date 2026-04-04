@@ -136,6 +136,60 @@ export const initDatabase = async () => {
         CREATE INDEX IF NOT EXISTS idx_act_artists_artist ON act_artists(artist_id);
       `);
     },
+    // Migration 3: Stages table + group timetable tables + attendance cache
+    async (tx: SQLite.SQLiteDatabase) => {
+      await tx.execAsync(`
+        -- Stages (reusable across events, matches backend)
+        CREATE TABLE IF NOT EXISTS stages (
+          id TEXT PRIMARY KEY NOT NULL,
+          name TEXT NOT NULL,
+          description TEXT,
+          version INTEGER DEFAULT 1,
+          created_at TEXT,
+          updated_at TEXT,
+          deleted_at TEXT
+        );
+
+        -- Group timetables (local cache of group schedules)
+        CREATE TABLE IF NOT EXISTS group_timetables (
+          id TEXT PRIMARY KEY NOT NULL,
+          group_id TEXT NOT NULL,
+          event_id TEXT NOT NULL,
+          name TEXT NOT NULL,
+          version INTEGER DEFAULT 1,
+          created_at TEXT,
+          updated_at TEXT,
+          FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE
+        );
+
+        -- Group timetable entries (pivot: which official entries belong to a group timetable)
+        CREATE TABLE IF NOT EXISTS group_timetable_entries (
+          group_timetable_id TEXT NOT NULL,
+          timetable_entry_id TEXT NOT NULL,
+          added_by TEXT,
+          PRIMARY KEY (group_timetable_id, timetable_entry_id),
+          FOREIGN KEY (group_timetable_id) REFERENCES group_timetables (id) ON DELETE CASCADE,
+          FOREIGN KEY (timetable_entry_id) REFERENCES timetable_entries (id) ON DELETE CASCADE
+        );
+
+        -- Personal timetable entry attendance cache (mirrors user_timetable_favorites)
+        CREATE TABLE IF NOT EXISTS timetable_entry_attendance (
+          entry_id TEXT PRIMARY KEY NOT NULL,
+          is_attending INTEGER NOT NULL DEFAULT 0,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+    },
+    // Migration 4: Indexes for new tables
+    async (tx: SQLite.SQLiteDatabase) => {
+      await tx.execAsync(`
+        CREATE INDEX IF NOT EXISTS idx_stages_deleted_at ON stages(deleted_at);
+        CREATE INDEX IF NOT EXISTS idx_group_timetables_event ON group_timetables(event_id);
+        CREATE INDEX IF NOT EXISTS idx_group_timetables_group ON group_timetables(group_id);
+        CREATE INDEX IF NOT EXISTS idx_group_timetable_entries_tt ON group_timetable_entries(group_timetable_id);
+        CREATE INDEX IF NOT EXISTS idx_group_timetable_entries_entry ON group_timetable_entries(timetable_entry_id);
+      `);
+    },
   ];
 
   // Get current version

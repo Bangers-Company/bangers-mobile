@@ -31,6 +31,11 @@ const isWeb = Platform.OS === "web";
 // Memory storage fallback for web to avoid persisting tokens in localStorage
 const memoryStorage: Record<string, string | null> = {};
 
+/**
+ * SecureStorage: used ONLY for the session (access + refresh tokens).
+ * The expo-secure-store limit is 2048 bytes per key — tokens easily fit, but
+ * a full User object often exceeds that limit, hence the split.
+ */
 const SecureStorage = {
   getItem: async (name: string): Promise<string | null> => {
     if (isWeb) {
@@ -53,6 +58,8 @@ const SecureStorage = {
     await SecureStore.deleteItemAsync(name);
   },
 };
+
+
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -85,11 +92,17 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "auth-storage",
+      // Session tokens → SecureStore (small, safe to encrypt).
+      // The user object is intentionally NOT persisted here to avoid the
+      // expo-secure-store 2048-byte limit. It is re-populated on every
+      // dashboard fetch via setUser() shortly after the app starts.
       storage: createJSONStorage(() => SecureStorage),
       partialize: (state) => ({
         session: state.session,
-        user: state.user,
       }),
+      // Version 2: migrates away from storing user in the same SecureStore key.
+      version: 2,
     },
   ),
 );
+

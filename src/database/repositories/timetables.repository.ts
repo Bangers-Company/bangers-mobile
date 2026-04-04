@@ -1,4 +1,7 @@
 import { Timetable } from "../../types/timetable";
+import { Act } from "../../types/act";
+import { Stage } from "../../types/event";
+import { Artist } from "../../types/artist";
 import { sanitizeParams } from "../sqlite";
 import { BaseRepository } from "./base.repository";
 import { TimetableRow, JoinedTimetableRow, JoinedTimetableEntryRow } from "../types";
@@ -9,6 +12,7 @@ class TimetablesRepository extends BaseRepository<Timetable> {
   async upsert(timetable: Timetable) {
     return this.transaction(async (db) => {
       await db.withTransactionAsync(async () => {
+        // 1. Upsert the timetable itself
         await db.runAsync(
           "INSERT OR REPLACE INTO timetables (id, event_id, name, is_official, is_public) VALUES (?, ?, ?, ?, ?)",
           sanitizeParams([
@@ -20,7 +24,74 @@ class TimetablesRepository extends BaseRepository<Timetable> {
           ]),
         );
 
-        if (timetable.entries) {
+        if (timetable.entries && timetable.entries.length > 0) {
+          // 2. Pre-save embedded stages so the JOIN queries and FK constraints work
+          for (const entry of timetable.entries) {
+            if (entry.stage?.id) {
+              await db.runAsync(
+                `INSERT OR IGNORE INTO stages (id, name, description, version, created_at, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?)`,
+                sanitizeParams([
+                  entry.stage.id,
+                  entry.stage.name ?? "Unknown Stage",
+                  entry.stage.description ?? null,
+                  entry.stage.version ?? 1,
+                  entry.stage.created_at ?? null,
+                  entry.stage.updated_at ?? null,
+                ]),
+              );
+            }
+          }
+
+          // 3. Pre-save embedded acts (and their artists) so act_id FK is satisfied
+          for (const entry of timetable.entries) {
+            if (entry.act?.id) {
+              await db.runAsync(
+                `INSERT OR IGNORE INTO acts (id, name, description, version, stage_id, date, created_at, updated_at, deleted_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                sanitizeParams([
+                  entry.act.id,
+                  entry.act.name ?? "Unknown Act",
+                  entry.act.description ?? null,
+                  entry.act.version ?? 1,
+                  entry.act.stage_id ?? null,
+                  entry.act.date ?? null,
+                  entry.act.created_at ?? null,
+                  entry.act.updated_at ?? null,
+                  null,
+                ]),
+              );
+
+              // Pre-save act artists if embedded
+              const artists: Artist[] | undefined = entry.act.artists;
+              if (Array.isArray(artists) && artists.length > 0) {
+                for (const artist of artists) {
+                  if (!artist?.id) continue;
+                  await db.runAsync(
+                    `INSERT OR IGNORE INTO artists (id, name, bio, genre, version, image_url, created_at, updated_at, deleted_at)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    sanitizeParams([
+                      artist.id,
+                      artist.name ?? "Unknown Artist",
+                      artist.bio ?? null,
+                      artist.genre ?? null,
+                      artist.version ?? 1,
+                      artist.image?.url ?? null,
+                      artist.created_at ?? null,
+                      artist.updated_at ?? null,
+                      null,
+                    ]),
+                  );
+                  await db.runAsync(
+                    `INSERT OR IGNORE INTO act_artists (act_id, artist_id) VALUES (?, ?)`,
+                    sanitizeParams([entry.act.id, artist.id]),
+                  );
+                }
+              }
+            }
+          }
+
+          // 4. Delete stale entries then insert fresh ones (FK deps now satisfied)
           await db.runAsync(
             "DELETE FROM timetable_entries WHERE timetable_id = ?",
             sanitizeParams([timetable.id]),
@@ -28,7 +99,7 @@ class TimetablesRepository extends BaseRepository<Timetable> {
 
           for (const entry of timetable.entries) {
             await db.runAsync(
-              `INSERT INTO timetable_entries (id, timetable_id, act_id, stage_id, start_time, end_time) 
+              `INSERT OR REPLACE INTO timetable_entries (id, timetable_id, act_id, stage_id, start_time, end_time)
                  VALUES (?, ?, ?, ?, ?, ?)`,
               sanitizeParams([
                 entry.id,
@@ -116,14 +187,14 @@ class TimetablesRepository extends BaseRepository<Timetable> {
             version: 0,
             created_at: "",
             updated_at: "",
-          } as any, // Temporary cast until full model mapping is standardized
+          } as Act,
           stage: { 
             id: row.stage_id!, 
             name: row.stage_name!,
             version: 0,
             created_at: "",
             updated_at: "",
-          } as any,
+          } as Stage,
         });
       }
     }
