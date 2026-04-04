@@ -1,6 +1,7 @@
 import { MapPin, Users } from "lucide-react-native";
 import React from "react";
-import { Image, StyleSheet, View, StyleProp, ViewStyle } from "react-native";
+import { StyleSheet, View, StyleProp, ViewStyle } from "react-native";
+import { Image } from "expo-image";
 import { Card, Surface, Text, TouchableRipple, useTheme } from "react-native-paper";
 import { Event } from "../../types/event";
 import { resolveMediaUrl } from "../../utils/format";

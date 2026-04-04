@@ -1,6 +1,7 @@
 import { MapPin, Users } from "lucide-react-native";
 import React from "react";
-import { Image, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import { Image } from "expo-image";
 import { Card, Surface, Text, useTheme } from "react-native-paper";
 import Animated, {
   Extrapolate,
