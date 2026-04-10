@@ -1,34 +1,35 @@
 import { useRouter } from "expo-router";
 import {
+  Globe,
   LogOut,
   Bell as Notifications,
   Palette,
   Shield,
   User,
-  Globe,
 } from "lucide-react-native";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet, TouchableOpacity, useColorScheme, View } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
 import {
   Divider,
   IconButton,
+  Menu,
   SegmentedButtons,
   Switch,
   Text,
   TouchableRipple,
   useTheme,
 } from "react-native-paper";
-import { useTranslation } from "react-i18next";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PageContainer } from "../src/components/PageContainer";
 import { useAuthStore } from "../src/store/useAuthStore";
-import { useUIStore } from "../src/store/useUIStore";
 import { useSettingsStore } from "../src/store/useSettingsStore";
+import { useUIStore } from "../src/store/useUIStore";
 import { addAlpha, COLORS } from "../src/utils/theme";
 
 const ACCENT_COLORS = [
@@ -83,7 +84,7 @@ export default function SettingsScreen() {
   const theme = useTheme();
   const router = useRouter();
   const systemColorScheme = useColorScheme();
-  
+
   const { t } = useTranslation();
   const {
     themeMode,
