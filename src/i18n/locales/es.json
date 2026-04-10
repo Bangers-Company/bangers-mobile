@@ -1,0 +1,182 @@
+{
+  "common": {
+    "next": "Siguiente",
+    "back": "Atrás",
+    "save": "Guardar cambios",
+    "cancel": "Cancelar",
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "logout": "Cerrar sesión",
+    "confirm": "Confirmar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "viewAll": "Ver todo",
+    "search": "Buscar",
+    "noResults": "No se encontraron resultados",
+    "attending": "Asistiendo",
+    "attend": "Asistir",
+    "going": "Voy a ir",
+    "remove": "Eliminar",
+    "join": "Unirse",
+    "accept": "Aceptar",
+    "reject": "Rechazar"
+  },
+  "auth": {
+    "login": {
+      "title": "Bienvenido de nuevo",
+      "subtitle": "Ingrese sus credenciales para continuar",
+      "email": "Correo electrónico",
+      "password": "Contraseña",
+      "signIn": "Iniciar sesión",
+      "newHere": "¿Eres nuevo aquí?",
+      "createAccount": "Crear cuenta",
+      "invalidCredentials": "Correo electrónico o contraseña incorrectos"
+    },
+    "register": {
+      "steps": {
+        "email": {
+          "title": "Ingrese su correo",
+          "subtitle": "Le enviaremos actualizaciones y la verificación."
+        },
+        "username": {
+          "title": "Elija un usuario",
+          "subtitle": "Así es como los demás le verán."
+        },
+        "password": {
+          "title": "Asegure su cuenta",
+          "subtitle": "Elija una contraseña fuerte."
+        },
+        "birthday": {
+          "title": "¿Cuándo es su cumpleaños?",
+          "subtitle": "Debe tener 18+ para unirse a la rave."
+        },
+        "policies": {
+          "title": "Toques finales",
+          "subtitle": "Acepte nuestros términos y condiciones."
+        }
+      },
+      "usernamePlaceholder": "RaverUnico123",
+      "register": "Registrarse",
+      "emailTaken": "El correo ya está en uso",
+      "usernameTaken": "El nombre de usuario ya está ocupado",
+      "ageRestriction": "Debe tener 18 años o más para unirse.",
+      "policyAgreement": "Acepto los Términos de Servicio y la Política de Privacidad."
+    }
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "¡Bienvenido a la Rave!",
+      "description": "Estamos encantados de que formes parte de la comunidad Bangers. Vamos a personalizar tu experiencia."
+    },
+    "identity": {
+      "title": "¿Quién eres?",
+      "subtitle": "¿Cómo deberían encontrarte tus amigos?",
+      "firstName": "Nombre",
+      "lastName": "Apellido"
+    },
+    "genres": {
+      "title": "Tu Vibe",
+      "subtitle": "Selecciona los géneros musicales por los que vives."
+    },
+    "bio": {
+      "title": "Cuenta tu historia",
+      "subtitle": "Un poco sobre ti (opcional).",
+      "placeholder": "Entusiasta del Hardstyle, amante de los festivales..."
+    },
+    "finish": {
+      "title": "¡Todo listo!",
+      "feature1": "Crea tu horario de festival perfecto",
+      "feature2": "Mantente sincronizado con la ubicación de tus amigos",
+      "feature3": "Recibe recomendaciones personalizadas de artistas",
+      "ready": "¡Listo para empezar!"
+    }
+  },
+  "profile": {
+    "edit": {
+      "title": "Editar perfil",
+      "firstName": "Nombre",
+      "lastName": "Apellido",
+      "bio": "Biografía",
+      "dob": "Fecha de nacimiento",
+      "publicProfile": "Perfil público",
+      "publicProfileSub": "Permitir que otros vean a qué eventos asistes"
+    },
+    "stats": {
+      "events": "Eventos",
+      "past": "Pasados",
+      "friends": "Amigos"
+    },
+    "sections": {
+      "past": "Eventos pasados",
+      "noEvents": "No se encontraron eventos",
+      "noUpcoming": "No hay eventos próximos",
+      "noPast": "No hay eventos pasados registrados",
+      "about": "Acerca de",
+      "lineup": "Line-up",
+      "viewLineup": "Ver line-up completo",
+      "location": "Ubicación",
+      "dates": "Fechas"
+    }
+  },
+  "dashboard": {
+    "myEvents": "Mis eventos",
+    "maybeInterested": "Tal vez te interese",
+    "suggested": "Sugerido para ti"
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "friends": "Solicitudes de amistad",
+    "groups": "Invitaciones de grupo",
+    "emptyFriends": "No hay solicitudes de amistad pendientes",
+    "emptyGroups": "No hay invitaciones de grupo pendientes",
+    "friendRequestSub": "quiere ser tu amigo",
+    "groupInviteSub": "te invitó a unirte a su grupo"
+  },
+  "navigation": {
+    "home": "Inicio",
+    "events": "Eventos",
+    "profile": "Perfil",
+    "map": "Mapa",
+    "timetable": "Horario",
+    "settings": "Ajustes",
+    "notifications": "Notificaciones"
+  },
+  "settings": {
+    "title": "Ajustes",
+    "general": {
+      "title": "General",
+      "language": "Idioma",
+      "english": "Inglés",
+      "dutch": "Holandés",
+      "french": "Francés",
+      "german": "Alemán",
+      "spanish": "Español",
+      "italian": "Italiano"
+    },
+    "appearance": {
+      "title": "Apariencia",
+      "themeTitle": "Modo de tema",
+      "themeSubtitle": "Elige tu aspecto preferido",
+      "system": "Sistema",
+      "light": "Claro",
+      "dark": "Oscuro",
+      "amoledTitle": "Modo AMOLED",
+      "amoledSubtitle": "Negro puro para pantallas OLED",
+      "accentTitle": "Color de acento"
+    },
+    "notifications": {
+      "title": "Notificaciones",
+      "description": "Administra tus alertas, notificaciones push y preferencias de correo.",
+      "joinSuccess": "¡Se ha unido al grupo con éxito!"
+    },
+    "account": {
+      "title": "Cuenta",
+      "description": "Actualiza tu correo, contraseña y detalles de suscripción."
+    },
+    "privacy": {
+      "title": "Privacidad",
+      "description": "Controla tu visibilidad y ajustes de seguridad."
+    }
+  }
+}

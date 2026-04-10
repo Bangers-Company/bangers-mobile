@@ -5,6 +5,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import en from "./locales/en.json";
 import nl from "./locales/nl.json";
+import fr from "./locales/fr.json";
+import de from "./locales/de.json";
+import es from "./locales/es.json";
+import it from "./locales/it.json";
 
 const LANGUAGE_KEY = "user-language";
 
@@ -44,6 +48,10 @@ i18n
     resources: {
       en: { translation: en },
       nl: { translation: nl },
+      fr: { translation: fr },
+      de: { translation: de },
+      es: { translation: es },
+      it: { translation: it },
     },
     fallbackLng: "en",
     interpolation: {

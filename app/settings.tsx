@@ -99,6 +99,18 @@ export default function SettingsScreen() {
   const logout = useAuthStore((state) => state.logout);
 
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [langMenuVisible, setLangMenuVisible] = useState(false);
+
+  const languages = [
+    { code: "en", label: t("settings.general.english") },
+    { code: "nl", label: t("settings.general.dutch") },
+    { code: "fr", label: t("settings.general.french") },
+    { code: "de", label: t("settings.general.german") },
+    { code: "es", label: t("settings.general.spanish") },
+    { code: "it", label: t("settings.general.italian") },
+  ];
+
+  const currentLanguageLabel = languages.find(l => l.code === language)?.label || language;
 
   const toggleSection = (section: string) => {
     setExpandedSection(expandedSection === section ? null : section);
@@ -211,15 +223,47 @@ export default function SettingsScreen() {
                   {t("settings.general.language")}
                 </Text>
               </View>
-              <SegmentedButtons
-                value={language}
-                onValueChange={(val) => setLanguage(val)}
-                buttons={[
-                  { value: "en", label: t("settings.general.english") },
-                  { value: "nl", label: t("settings.general.dutch") },
-                ]}
-                style={styles.segmentedButtons}
-              />
+              <Menu
+                visible={langMenuVisible}
+                onDismiss={() => setLangMenuVisible(false)}
+                anchor={
+                  <TouchableRipple
+                    onPress={() => setLangMenuVisible(true)}
+                    style={[
+                      styles.dropdownTrigger,
+                      {
+                        backgroundColor: addAlpha(theme.colors.onSurface, 0.05),
+                        borderColor: addAlpha(theme.colors.onSurface, 0.1),
+                      },
+                    ]}
+                  >
+                    <View style={styles.dropdownInner}>
+                      <Text variant="bodyLarge">{currentLanguageLabel}</Text>
+                      <IconButton
+                        icon={langMenuVisible ? "chevron-up" : "chevron-down"}
+                        size={20}
+                        style={{ margin: 0 }}
+                      />
+                    </View>
+                  </TouchableRipple>
+                }
+                contentStyle={{
+                  backgroundColor: theme.colors.elevation.level3,
+                  borderRadius: 12,
+                }}
+              >
+                {languages.map((lang) => (
+                  <Menu.Item
+                    key={lang.code}
+                    onPress={() => {
+                      setLanguage(lang.code);
+                      setLangMenuVisible(false);
+                    }}
+                    title={lang.label}
+                    leadingIcon={language === lang.code ? "check" : undefined}
+                  />
+                ))}
+              </Menu>
             </View>
           </View>,
         )}
@@ -436,4 +480,18 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   logoutText: { fontWeight: "700", fontSize: 16 },
+  dropdownTrigger: {
+    width: "100%",
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  dropdownInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingLeft: 16,
+    paddingRight: 8,
+    height: 48,
+  },
 });

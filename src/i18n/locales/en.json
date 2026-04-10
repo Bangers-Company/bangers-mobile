@@ -148,7 +148,11 @@
       "title": "General",
       "language": "Language",
       "english": "English",
-      "dutch": "Dutch"
+      "dutch": "Dutch",
+      "french": "French",
+      "german": "German",
+      "spanish": "Spanish",
+      "italian": "Italian"
     },
     "appearance": {
       "title": "Appearance",
