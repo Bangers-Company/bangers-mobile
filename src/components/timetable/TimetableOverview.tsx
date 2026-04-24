@@ -44,7 +44,7 @@ export const TimetableOverview: React.FC<TimetableOverviewProps> = ({
     );
   }
 
-  if (!official) {
+  if (!official && activeGroups.length === 0 && invitations.length === 0) {
     return (
       <View style={styles.emptyContainer}>
         <View style={[styles.iconBox, { backgroundColor: addAlpha(theme.colors.error, 0.1) }]}>
@@ -52,26 +52,38 @@ export const TimetableOverview: React.FC<TimetableOverviewProps> = ({
         </View>
         <Text variant="headlineSmall" style={styles.emptyTitle}>Not Published Yet</Text>
         <Text variant="bodyMedium" style={styles.emptyText}>
-          Sorry, please wait for the official timetable to be published for this event.
+          Sorry, please wait for the official timetable to be published for this event, or create a group to start planning.
         </Text>
+        <Button 
+          mode="contained" 
+          onPress={onCreateGroup} 
+          style={{ marginTop: 24 }}
+          icon="plus"
+        >
+          Create Group
+        </Button>
       </View>
     );
   }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text variant="titleMedium" style={styles.sectionTitle}>Official Schedule</Text>
-      <Card
-        style={styles.card}
-        onPress={() => onSelect(official)}
-      >
-        <Card.Title
-          title={official.name}
-          subtitle="Official Event Timetable"
-          left={(props) => <Globe {...props} size={24} color={theme.colors.primary} />}
-          right={(props) => <IconButton {...props} icon="chevron-right" />}
-        />
-      </Card>
+      {official && (
+        <>
+          <Text variant="titleMedium" style={styles.sectionTitle}>Official Schedule</Text>
+          <Card
+            style={styles.card}
+            onPress={() => onSelect(official)}
+          >
+            <Card.Title
+              title={official.name}
+              subtitle="Official Event Timetable"
+              left={(props) => <Globe {...props} size={24} color={theme.colors.primary} />}
+              right={(props) => <IconButton {...props} icon="chevron-right" />}
+            />
+          </Card>
+        </>
+      )}
 
       {invitations.length > 0 && (
         <>

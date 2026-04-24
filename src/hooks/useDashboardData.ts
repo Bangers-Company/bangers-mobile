@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect } from "react";
 import { dashboardApi, DashboardData } from "../api/dashboard";
 import { eventsRepository } from "../database/repositories/events.repository";
 import { useSyncStore } from "../store/useSyncStore";
@@ -6,59 +7,27 @@ import { runDeltaSync } from "../sync/deltaSync";
 import { useAuthStore } from "../store/useAuthStore";
 
 export const useDashboardData = () => {
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
+  const queryClient = useQueryClient();
   const isSyncing = useSyncStore((state) => state.isSyncing);
-  const fetchingRef = useRef(false);
-  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const loadLocalData = useCallback(async () => {
+  const fetchDashboard = async ({ signal }: { signal?: AbortSignal }) => {
     try {
-      const [attendingEvents, allEvents] = await Promise.all([
-        eventsRepository.getAttendingEvents(),
-        eventsRepository.getAll(),
-      ]);
-
-      const sortedAttending = [...attendingEvents].sort(
-        (a, b) =>
-          new Date(a.start_date).getTime() - new Date(b.start_date).getTime(),
-      );
-
-      const upcomingEvents = allEvents
-        .filter((e) => new Date(e.start_date) > new Date())
-        .sort(
-          (a, b) =>
-            new Date(a.start_date).getTime() - new Date(b.start_date).getTime(),
-        );
-
-      setData({
-        attending_events: sortedAttending,
-        upcoming_events: upcomingEvents,
-        suggested_events: allEvents.slice(0, 10), // Fallback: show any 10 events
-        sync_timestamp: new Date().toISOString(),
-      });
-    } catch (err) {
-      console.error("Failed to load local dashboard data:", err);
-    }
-  }, []);
-
-  const fetchRemoteData = useCallback(async (signal?: AbortSignal) => {
-    if (fetchingRef.current) return;
-    fetchingRef.current = true;
-
-    try {
-      setError(null);
       const response = await dashboardApi.getDashboard({ signal });
       const dashboardData = response.data;
 
       if (dashboardData) {
-        setData(dashboardData);
-
         if (dashboardData.user) {
           useAuthStore.getState().setUser(dashboardData.user);
+        }
+
+        const sortEvents = (events: any[]) => 
+          [...events].sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
+
+        if (dashboardData.attending_events) {
+          dashboardData.attending_events = sortEvents(dashboardData.attending_events);
+        }
+        if (dashboardData.upcoming_events) {
+          dashboardData.upcoming_events = sortEvents(dashboardData.upcoming_events);
         }
 
         const allEventLists = [
@@ -78,67 +47,63 @@ export const useDashboardData = () => {
         if (allEvents.length > 0) {
           if (!isSyncing) {
             await eventsRepository.batchUpsert(allEvents.filter(e => e && e.id));
-          } else {
-            console.log("Skipping dashboard DB update: background sync in progress");
           }
         }
+        return dashboardData;
       }
+      return null;
     } catch (err: any) {
-      if (err.name === 'CanceledError' || err.name === 'AbortError') return;
-      
-      // Only set error if we don't have any data at all (including local)
-      // or if it's a critical error. For offline, we prefer silent fallback.
-      setError(err);
+      if (err.name === 'CanceledError' || err.name === 'AbortError') throw err;
       console.error("Failed to fetch remote dashboard data:", err);
-    } finally {
-      setLoading(false);
-      fetchingRef.current = false;
+      
+      // Fallback to local data on error
+      const [attendingEvents, allEvents] = await Promise.all([
+        eventsRepository.getAttendingEvents(),
+        eventsRepository.getAll(),
+      ]);
+
+      const sortEvents = (events: any[]) => 
+          [...events].sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
+
+      const upcomingEvents = allEvents.filter(e => new Date(e.start_date) > new Date());
+
+      return {
+        attending_events: sortEvents(attendingEvents),
+        upcoming_events: sortEvents(upcomingEvents),
+        suggested_events: allEvents.slice(0, 10),
+        sync_timestamp: new Date().toISOString(),
+      } as DashboardData;
     }
-  }, [isSyncing]);
+  };
+
+  const { data, isLoading, isRefetching, error, refetch } = useQuery({
+    queryKey: ["dashboard"],
+    queryFn: ({ signal }) => fetchDashboard({ signal }),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
   const refresh = useCallback(async () => {
-    if (refreshing) return;
-    
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-    
-    setRefreshing(true);
     try {
-      await runDeltaSync(controller.signal);
-      await fetchRemoteData(controller.signal);
-    } catch (err: any) {
-      if (err.name === 'CanceledError' || err.name === 'AbortError') return;
+      await runDeltaSync();
+      await refetch();
+    } catch (err) {
       console.error("Manual refresh failed:", err);
-    } finally {
-      setRefreshing(false);
-      if (abortControllerRef.current === controller) {
-        abortControllerRef.current = null;
-      }
     }
-  }, [refreshing, fetchRemoteData]);
+  }, [refetch]);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-    
-    loadLocalData().then(() => {
-      fetchRemoteData(controller.signal);
-    });
-
-    return () => {
-      controller.abort();
-    };
-  }, [loadLocalData, fetchRemoteData]);
-
+  // If we are not syncing and we just finished a background sync, refetch
   useEffect(() => {
     if (!isSyncing) {
-      loadLocalData();
+      refetch();
     }
-  }, [isSyncing, loadLocalData]);
+  }, [isSyncing, refetch]);
 
-  return { data, loading, refreshing, error, refresh };
+  return { 
+    data, 
+    loading: isLoading, 
+    refreshing: isRefetching, 
+    error, 
+    refresh 
+  };
 };
+

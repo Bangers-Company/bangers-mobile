@@ -1,5 +1,6 @@
 import { Timetable, TimetableEntry } from "../../types/timetable";
 import { Artist } from "../../types/artist";
+import { User } from "../../types/user";
 import { sanitizeParams } from "../sqlite";
 import { BaseRepository } from "./base.repository";
 import { SQLiteDatabase } from "expo-sqlite";
@@ -22,6 +23,13 @@ interface JoinedGroupTimetableEntryRow {
   act_name: string;
   stage_id: string;
   stage_name: string;
+}
+
+interface AttendeeRow {
+  entry_id: string;
+  user_id: string;
+  name: string;
+  profile_photo_url: string | null;
 }
 
 type GroupTimetable = Timetable & {
@@ -154,31 +162,96 @@ class GroupTimetablesRepository extends BaseRepository<Timetable> {
           );
 
           for (const entry of timetable.entries) {
-            const pivotEntry = entry as TimetableEntry & { pivot?: { added_by?: string, is_attending?: boolean } };
+            const pivotEntry = entry as TimetableEntry & { pivot?: { added_by?: string, is_attending?: boolean, attending_count?: number } };
             const addedBy = pivotEntry.pivot?.added_by ?? null;
+            const attendingCount = pivotEntry.pivot?.attending_count ?? (entry.attendees?.length || 0);
             await db.runAsync(
-              `INSERT OR IGNORE INTO group_timetable_entries (group_timetable_id, timetable_entry_id, added_by)
-                 VALUES (?, ?, ?)`,
-              sanitizeParams([timetable.id, entry.id, addedBy]),
+              `INSERT OR REPLACE INTO group_timetable_entries (group_timetable_id, timetable_entry_id, added_by, attending_count)
+                 VALUES (?, ?, ?, ?)`,
+              sanitizeParams([timetable.id, entry.id, addedBy, attendingCount]),
             );
 
             const isAttending = pivotEntry.is_attending ?? pivotEntry.pivot?.is_attending;
             if (typeof isAttending !== 'undefined') {
               await db.runAsync(
                 `INSERT OR REPLACE INTO timetable_entry_attendance (entry_id, is_attending) VALUES (?, ?)`,
-                sanitizeParams([entry.id, isAttending ? 1 : 0])
+                [entry.id, isAttending ? 1 : 0]
               );
+            }
+
+            // 7. Save attendees for this entry (scoped to this group timetable)
+            if (entry.attendees && Array.isArray(entry.attendees)) {
+              // Delete existing attendees for this entry IN THIS GROUP to sync fresh
+              await db.runAsync(
+                "DELETE FROM timetable_entry_attendees WHERE group_timetable_id = ? AND entry_id = ?",
+                [timetable.id, entry.id]
+              );
+ 
+              for (const attendee of entry.attendees) {
+                if (!attendee.id) continue;
+                
+                // Ensure user exists
+                await db.runAsync(
+                  `INSERT OR REPLACE INTO users (id, name, profile_photo_url) VALUES (?, ?, ?)`,
+                  [attendee.id, attendee.name ?? attendee.username, attendee.profile_media_url ?? null]
+                );
+ 
+                // Link attendee to entry in this group
+                await db.runAsync(
+                  `INSERT OR REPLACE INTO timetable_entry_attendees (group_timetable_id, entry_id, user_id) VALUES (?, ?, ?)`,
+                  [timetable.id, entry.id, attendee.id]
+                );
+              }
             }
           }
         }
       });
     });
   }
+  async getEntryAttendees(timetableId: string, entryId: string): Promise<User[]> {
+    const db = await this.getDb();
+    const rows = await db.getAllAsync<AttendeeRow>(
+      `SELECT tea.entry_id, tea.user_id, u.name, u.profile_photo_url
+       FROM timetable_entry_attendees tea
+       JOIN users u ON tea.user_id = u.id
+       WHERE tea.group_timetable_id = ? AND tea.entry_id = ?`,
+      [timetableId, entryId]
+    );
+    return rows.map(a => ({
+      id: a.user_id,
+      name: a.name,
+      profile_media_url: a.profile_photo_url
+    } as User));
+  }
+
+  async updateAttendee(timetableId: string, entryId: string, user: User, isAttending: boolean) {
+    const db = await this.getDb();
+    await db.withTransactionAsync(async () => {
+      if (isAttending) {
+        // Ensure user exists
+        await db.runAsync(
+          `INSERT OR REPLACE INTO users (id, name, profile_photo_url) VALUES (?, ?, ?)`,
+          [user.id, user.name || user.username, user.profile_media_url ?? null]
+        );
+        // Add to attendees
+        await db.runAsync(
+          `INSERT OR REPLACE INTO timetable_entry_attendees (group_timetable_id, entry_id, user_id) VALUES (?, ?, ?)`,
+          [timetableId, entryId, user.id]
+        );
+      } else {
+        // Remove from attendees
+        await db.runAsync(
+          `DELETE FROM timetable_entry_attendees WHERE group_timetable_id = ? AND entry_id = ? AND user_id = ?`,
+          [timetableId, entryId, user.id]
+        );
+      }
+    });
+  }
 
   async getByGroupAndEvent(groupId: string, eventId: string): Promise<Timetable | null> {
     const db = await this.getDb();
     const row = await db.getFirstAsync<GroupTimetableRow>(
-      "SELECT * FROM group_timetables WHERE group_id = ? AND event_id = ?",
+      "SELECT * FROM group_timetables WHERE LOWER(group_id) = LOWER(?) AND LOWER(event_id) = LOWER(?)",
       [groupId, eventId],
     );
     if (!row) return null;
@@ -196,8 +269,8 @@ class GroupTimetablesRepository extends BaseRepository<Timetable> {
   }
 
   private async buildTimetable(db: SQLiteDatabase, row: GroupTimetableRow): Promise<Timetable> {
-    const entries = await db.getAllAsync<JoinedGroupTimetableEntryRow & { is_attending: number }>(
-      `SELECT gte.timetable_entry_id, te.start_time, te.end_time,
+    const entries = await db.getAllAsync<JoinedGroupTimetableEntryRow & { is_attending: number, attending_count: number }>(
+      `SELECT gte.timetable_entry_id, gte.attending_count, te.start_time, te.end_time,
               te.act_id, a.name as act_name,
               te.stage_id, s.name as stage_name,
               tea.is_attending
@@ -211,23 +284,47 @@ class GroupTimetablesRepository extends BaseRepository<Timetable> {
       [row.id],
     );
 
+    const timetableEntries: TimetableEntry[] = [];
+
+    for (const e of entries) {
+      // Fetch attendees for this entry (scoped to this group)
+      const attendees = await db.getAllAsync<AttendeeRow>(
+        `SELECT tea.entry_id, tea.user_id, u.name, u.profile_photo_url
+         FROM timetable_entry_attendees tea
+         JOIN users u ON tea.user_id = u.id
+         WHERE tea.group_timetable_id = ? AND tea.entry_id = ?`,
+        [row.id, e.timetable_entry_id]
+      );
+
+      timetableEntries.push({
+        id: e.timetable_entry_id,
+        start_time: e.start_time,
+        end_time: e.end_time,
+        is_attending: !!e.is_attending,
+        pivot: { 
+          is_attending: !!e.is_attending,
+          attending_count: e.attending_count || attendees.length
+        },
+        attendees: attendees.map(a => ({
+          id: a.user_id,
+          name: a.name,
+          profile_media_url: a.profile_photo_url
+        } as User)),
+        act: { id: e.act_id, name: e.act_name, version: 1, created_at: "", updated_at: "" },
+        stage: { id: e.stage_id, name: e.stage_name, version: 1, created_at: "", updated_at: "" },
+      });
+    }
+
     return {
       id: row.id,
       event_id: row.event_id,
       name: row.name,
       is_official: false,
       is_public: false,
-      entries: entries.map((e) => ({
-        id: e.timetable_entry_id,
-        start_time: e.start_time,
-        end_time: e.end_time,
-        is_attending: !!e.is_attending,
-        pivot: { is_attending: !!e.is_attending },
-        act: { id: e.act_id, name: e.act_name, version: 1, created_at: "", updated_at: "" },
-        stage: { id: e.stage_id, name: e.stage_name, version: 1, created_at: "", updated_at: "" },
-      })),
+      entries: timetableEntries,
     };
   }
 }
 
 export const groupTimetablesRepository = new GroupTimetablesRepository();
+

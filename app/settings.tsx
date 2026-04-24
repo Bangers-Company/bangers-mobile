@@ -95,12 +95,20 @@ export default function SettingsScreen() {
     setAccentColor
   } = useUIStore();
 
-  const { language, setLanguage } = useSettingsStore();
+  const { 
+    language, 
+    setLanguage, 
+    notificationsEnabled, 
+    setNotificationsEnabled,
+    notificationMinutesBefore,
+    setNotificationMinutesBefore
+  } = useSettingsStore();
 
   const logout = useAuthStore((state) => state.logout);
 
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [langMenuVisible, setLangMenuVisible] = useState(false);
+  const [notifMinutesMenuVisible, setNotifMinutesMenuVisible] = useState(false);
 
   const languages = [
     { code: "en", label: t("settings.general.english") },
@@ -358,9 +366,85 @@ export default function SettingsScreen() {
           "notifications",
           t("settings.notifications.title") || "Notifications",
           <Notifications size={24} color={theme.colors.primary} />,
-          <Text variant="bodyMedium" style={styles.placeholderText}>
-            {t("settings.notifications.description") || "Manage your alerts, push notifications, and email preferences."}
-          </Text>,
+          <View style={styles.appearanceContent}>
+            <View style={styles.settingRow}>
+              <View style={{ flex: 1, marginRight: 16 }}>
+                <Text variant="bodyLarge" style={styles.settingLabel}>
+                  {t("settings.notifications.enabled")}
+                </Text>
+                <Text variant="bodySmall" style={styles.settingSubtext}>
+                  {t("settings.notifications.enabledSubtitle")}
+                </Text>
+              </View>
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={setNotificationsEnabled}
+                color={theme.colors.primary}
+              />
+            </View>
+
+            <View
+              style={[
+                styles.settingRow,
+                { flexDirection: "column", alignItems: "flex-start", gap: 12 },
+              ]}
+            >
+              <View>
+                <Text variant="bodyLarge" style={styles.settingLabel}>
+                  {t("settings.notifications.minutesBefore")}
+                </Text>
+                <Text variant="bodySmall" style={styles.settingSubtext}>
+                  {t("settings.notifications.minutesBeforeSubtitle")}
+                </Text>
+              </View>
+              
+              <Menu
+                visible={notifMinutesMenuVisible}
+                onDismiss={() => setNotifMinutesMenuVisible(false)}
+                anchor={
+                  <TouchableRipple
+                    onPress={() => setNotifMinutesMenuVisible(true)}
+                    disabled={!notificationsEnabled}
+                    style={[
+                      styles.dropdownTrigger,
+                      {
+                        backgroundColor: addAlpha(theme.colors.onSurface, 0.05),
+                        borderColor: addAlpha(theme.colors.onSurface, 0.1),
+                        opacity: notificationsEnabled ? 1 : 0.5,
+                      },
+                    ]}
+                  >
+                    <View style={styles.dropdownInner}>
+                      <Text variant="bodyLarge">
+                        {t("settings.notifications.minutes", { count: notificationMinutesBefore })}
+                      </Text>
+                      <IconButton
+                        icon={notifMinutesMenuVisible ? "chevron-up" : "chevron-down"}
+                        size={20}
+                        style={{ margin: 0 }}
+                      />
+                    </View>
+                  </TouchableRipple>
+                }
+                contentStyle={{
+                  backgroundColor: theme.colors.elevation.level3,
+                  borderRadius: 12,
+                }}
+              >
+                {[5, 10, 15, 20, 25, 30].map((mins) => (
+                  <Menu.Item
+                    key={mins}
+                    onPress={() => {
+                      setNotificationMinutesBefore(mins);
+                      setNotifMinutesMenuVisible(false);
+                    }}
+                    title={t("settings.notifications.minutes", { count: mins })}
+                    leadingIcon={notificationMinutesBefore === mins ? "check" : undefined}
+                  />
+                ))}
+              </Menu>
+            </View>
+          </View>,
         )}
 
         {/* Account */}

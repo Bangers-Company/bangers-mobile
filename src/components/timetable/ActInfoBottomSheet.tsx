@@ -3,6 +3,7 @@ import { Calendar, Clock, MapPin, Users } from "lucide-react-native";
 import React, { useEffect } from "react";
 import { StyleSheet, View, Pressable, Dimensions } from "react-native";
 import {
+  Avatar,
   Button,
   Divider,
   IconButton,
@@ -10,6 +11,8 @@ import {
   Text,
   useTheme,
 } from "react-native-paper";
+import { useEntryAttendance } from "../../hooks/useTimetables";
+import { resolveMediaUrl } from "../../utils/format";
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -44,8 +47,12 @@ export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
   const translateY = useSharedValue(SCREEN_HEIGHT);
   const opacity = useSharedValue(0);
 
-  const attendees = entry?.attendees || [];
-  const isLoadingAttendees = false;
+  const { data: attendees = [], isLoading: isLoadingAttendees } = useEntryAttendance(
+    groupId || null,
+    timetableId || null,
+    entry?.id || null,
+    visible && isGroup
+  );
 
   useEffect(() => {
     if (visible) {
@@ -178,9 +185,20 @@ export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
                         {isLoadingAttendees ? (
                            <Text variant="bodyMedium" style={styles.emptyFriends}>Loading attendees...</Text>
                         ) : attendees && attendees.length > 0 ? (
-                           attendees.map((a: import("../../types/user").User) => (
-                             <Text key={a.id} variant="bodyMedium" style={{ marginBottom: 4 }}>• {a.name}</Text>
-                           ))
+                           <View style={styles.avatarRow}>
+                             {attendees.map((a: import("../../types/user").User) => (
+                               <View key={a.id} style={styles.attendeeItem}>
+                                 {a.profile_media_url ? (
+                                   <Avatar.Image size={32} source={{ uri: resolveMediaUrl(a.profile_media_url) || undefined }} style={styles.avatar} />
+                                 ) : (
+                                   <Avatar.Text size={32} label={(a.name || a.username || "?").substring(0, 2).toUpperCase()} style={styles.avatar} />
+                                 )}
+                                 <Text variant="labelSmall" style={styles.attendeeName} numberOfLines={1}>
+                                   {a.name || a.username}
+                                 </Text>
+                               </View>
+                             ))}
+                           </View>
                         ) : (
                            <Text variant="bodyMedium" style={styles.emptyFriends}>
                               No one from your group is attending yet.
@@ -290,11 +308,28 @@ const styles = StyleSheet.create({
   },
   friendList: {
     marginTop: 12,
-    paddingLeft: 60,
+  },
+  avatarRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  attendeeItem: {
+    alignItems: 'center',
+    width: 60,
+  },
+  avatar: {
+    marginBottom: 4,
+  },
+  attendeeName: {
+    fontSize: 10,
+    textAlign: 'center',
+    opacity: 0.8,
   },
   emptyFriends: {
     opacity: 0.5,
     fontStyle: "italic",
+    paddingLeft: 60,
   },
   descriptionSection: {
     marginTop: 8,

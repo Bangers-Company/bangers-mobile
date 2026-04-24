@@ -168,7 +168,7 @@ class TimetablesRepository extends BaseRepository<Timetable> {
        LEFT JOIN acts a ON te.act_id = a.id
        LEFT JOIN stages s ON te.stage_id = s.id
        LEFT JOIN timetable_entry_attendance tea ON te.id = tea.entry_id
-       WHERE t.event_id = ?`,
+       WHERE LOWER(t.event_id) = LOWER(?)`,
       [eventId],
     );
 

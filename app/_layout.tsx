@@ -15,6 +15,7 @@ import { LoadingProvider } from "../src/providers/LoadingProvider";
 import { GlobalErrorBoundary } from "../src/components/GlobalErrorBoundary";
 import { logger } from "../src/utils/logger";
 import * as SplashScreen from "expo-splash-screen";
+import { NotificationService } from "../src/services/notifications/NotificationService";
 import {
   useFonts,
   Inter_400Regular,
@@ -138,6 +139,12 @@ export default function RootLayout() {
       };
     }
   }, []);
+  
+  useEffect(() => {
+    if (isDbReady && isHydrated) {
+      NotificationService.initialize();
+    }
+  }, [isDbReady, isHydrated]);
 
   useEffect(() => {
     if (!isHydrated) return;

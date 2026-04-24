@@ -2,11 +2,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { timetablesApi } from '../api/timetables';
 import { timetablesRepository } from '../database/repositories/timetables.repository';
 import { groupTimetablesRepository } from '../database/repositories/groupTimetables.repository';
+import { groupsRepository } from '../database/repositories/groups.repository';
 import { Timetable } from '../types/timetable';
 import { useAuthStore } from '../store/useAuthStore';
 import { Group } from '../types/group';
 import { isUserAttendingEntry, updateTimetableEntryAttendance, updateGroupsCacheAttendance } from '../utils/cacheUpdates';
 import { getDb } from '../database/sqlite';
+import { NotificationService } from '../services/notifications/NotificationService';
 
 interface MutationContext {
   previousTimetable?: Timetable | null;
@@ -80,8 +82,20 @@ export const useGroups = () => {
   return useQuery({
     queryKey: ['groups'],
     queryFn: async () => {
-      const res = await timetablesApi.getGroups();
-      return res.data;
+      try {
+        const res = await timetablesApi.getGroups();
+        if (Array.isArray(res.data)) {
+          for (const group of res.data) {
+            await groupsRepository.upsert(group);
+          }
+        }
+        return res.data;
+      } catch (err) {
+        console.warn('Failed to fetch groups, trying local DB:', err);
+        const localGroups = await groupsRepository.getAll();
+        if (localGroups.length > 0) return localGroups;
+        throw err;
+      }
     },
   });
 };
@@ -181,7 +195,20 @@ export const useToggleAttendance = () => {
           db.runAsync(
             `INSERT OR REPLACE INTO timetable_entry_attendance (entry_id, is_attending) VALUES (?, ?)`,
             [entryId, is_attending ? 1 : 0]
-          ).catch(e => console.error("Failed to update sqlite attendance", e));
+          ).then(() => {
+            // Schedule or cancel notification
+            if (is_attending) {
+              NotificationService.scheduleForEntry(entryId);
+            } else {
+              NotificationService.cancelForEntry(entryId);
+            }
+          }).catch(e => console.error("Failed to update sqlite attendance", e));
+
+          // If it's a group timetable, also update the attendees list for offline visibility
+          if (isGroup && currentUser) {
+            groupTimetablesRepository.updateAttendee(id, entryId, currentUser, is_attending)
+              .catch(e => console.error("Failed to update sqlite group attendees", e));
+          }
         });
       }
 
@@ -221,5 +248,21 @@ export const useToggleAttendance = () => {
         queryClient.invalidateQueries({ queryKey: ['attendance', variables.targetId, variables.id, variables.entryId] });
       }
     },
+  });
+};
+export const useEntryAttendance = (groupId: string | null, timetableId: string | null, entryId: string | null, enabled: boolean) => {
+  return useQuery({
+    queryKey: ['attendance', groupId, timetableId, entryId],
+    queryFn: async () => {
+      if (!groupId || !timetableId || !entryId) return [];
+      try {
+        const res = await timetablesApi.getAttendance(groupId, timetableId, entryId);
+        return res.data;
+      } catch (err) {
+        console.warn(`Failed to fetch attendance for entry ${entryId}, trying local DB:`, err);
+        return await groupTimetablesRepository.getEntryAttendees(timetableId, entryId);
+      }
+    },
+    enabled: enabled && !!groupId && !!timetableId && !!entryId,
   });
 };

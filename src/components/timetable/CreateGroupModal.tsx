@@ -37,9 +37,10 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
     setLoadingFriends(true);
     try {
       const res = await friendsApi.getFriends();
-      setFriends(res.data.data);
+      setFriends(res.data || []);
     } catch (e) {
       console.error(e);
+      setFriends([]);
     } finally {
       setLoadingFriends(false);
     }

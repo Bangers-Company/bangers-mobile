@@ -116,7 +116,8 @@
       "lineup": "Line-up",
       "viewLineup": "View full line-up",
       "location": "Location",
-      "dates": "Dates"
+      "dates": "Dates",
+      "upcoming": "Upcoming Events"
     }
   },
   "dashboard": {
@@ -167,7 +168,12 @@
     },
     "notifications": {
       "title": "Notifications",
-      "description": "Manage your alerts, push notifications, and email preferences.",
+      "description": "Manage your alerts and timetable reminders.",
+      "enabled": "Timetable Reminders",
+      "enabledSubtitle": "Get notified before an act starts",
+      "minutesBefore": "Reminder Time",
+      "minutesBeforeSubtitle": "How long before the act starts",
+      "minutes": "{{count}} minutes",
       "joinSuccess": "Successfully joined group!"
     },
     "account": {

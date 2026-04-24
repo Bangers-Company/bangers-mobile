@@ -190,6 +190,68 @@ export const initDatabase = async () => {
         CREATE INDEX IF NOT EXISTS idx_group_timetable_entries_entry ON group_timetable_entries(timetable_entry_id);
       `);
     },
+    // Migration 5: Users, Attendees and Groups for offline visibility
+    async (tx: SQLite.SQLiteDatabase) => {
+      await tx.execAsync(`
+        CREATE TABLE IF NOT EXISTS users (
+          id TEXT PRIMARY KEY NOT NULL,
+          name TEXT NOT NULL,
+          profile_photo_url TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS timetable_entry_attendees (
+          entry_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          PRIMARY KEY (entry_id, user_id),
+          FOREIGN KEY (entry_id) REFERENCES timetable_entries (id) ON DELETE CASCADE,
+          FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS groups (
+          id TEXT PRIMARY KEY NOT NULL,
+          name TEXT NOT NULL,
+          description TEXT,
+          owner_id TEXT,
+          members_count INTEGER DEFAULT 0,
+          invitation_status TEXT,
+          created_at TEXT,
+          updated_at TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS group_members (
+          group_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          PRIMARY KEY (group_id, user_id),
+          FOREIGN KEY (group_id) REFERENCES groups (id) ON DELETE CASCADE,
+          FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_timetable_entry_attendees_entry ON timetable_entry_attendees(entry_id);
+        CREATE INDEX IF NOT EXISTS idx_group_members_group ON group_members(group_id);
+      `);
+    },
+    // Migration 6: Add group_timetable_id to attendees to support multiple groups
+    async (tx: SQLite.SQLiteDatabase) => {
+      await tx.execAsync(`
+        DROP TABLE IF EXISTS timetable_entry_attendees;
+        CREATE TABLE IF NOT EXISTS timetable_entry_attendees (
+          group_timetable_id TEXT NOT NULL,
+          entry_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          PRIMARY KEY (group_timetable_id, entry_id, user_id),
+          FOREIGN KEY (group_timetable_id) REFERENCES group_timetables (id) ON DELETE CASCADE,
+          FOREIGN KEY (entry_id) REFERENCES timetable_entries (id) ON DELETE CASCADE,
+          FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_timetable_entry_attendees_group_entry ON timetable_entry_attendees(group_timetable_id, entry_id);
+      `);
+    },
+    // Migration 7: Add attending_count to group_timetable_entries for offline visibility
+    async (tx: SQLite.SQLiteDatabase) => {
+      await tx.execAsync(`
+        ALTER TABLE group_timetable_entries ADD COLUMN attending_count INTEGER DEFAULT 0;
+      `);
+    },
   ];
 
   // Get current version

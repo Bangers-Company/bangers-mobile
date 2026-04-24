@@ -168,7 +168,12 @@
     },
     "notifications": {
       "title": "Meldingen",
-      "description": "Beheer je waarschuwingen, pushmeldingen en e-mailvoorkeuren.",
+      "description": "Beheer je waarschuwingen en timetable herinneringen.",
+      "enabled": "Timetable Herinneringen",
+      "enabledSubtitle": "Ontvang een melding voordat een act begint",
+      "minutesBefore": "Herinneringstijd",
+      "minutesBeforeSubtitle": "Hoe lang voor de act begint",
+      "minutes": "{{count}} minuten",
       "joinSuccess": "Succesvol lid geworden van de groep!"
     },
     "account": {
