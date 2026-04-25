@@ -249,17 +249,21 @@ export default function ScheduleScreen() {
 
       <ConfirmDeleteModal
         visible={deleteModalVisible}
-        title={groupToDelete?.owner_id === useAuthStore.getState().user?.id ? "Delete Group" : "Leave Group"}
+        title={groupToDelete?.owner_id === useAuthStore.getState().user?.id 
+          ? t("timetable.groups.deleteModal.titleDelete") 
+          : t("timetable.groups.deleteModal.titleLeave")}
         message={groupToDelete?.owner_id === useAuthStore.getState().user?.id 
-          ? `Are you sure you want to delete ${groupToDelete?.name}? This will remove all members and schedules.`
-          : `Are you sure you want to leave ${groupToDelete?.name}?`}
+          ? t("timetable.groups.deleteModal.messageDelete", { name: groupToDelete?.name })
+          : t("timetable.groups.deleteModal.messageLeave", { name: groupToDelete?.name })}
         onConfirm={confirmDeleteGroup}
         onDismiss={() => {
           setDeleteModalVisible(false);
           setGroupToDelete(null);
         }}
         loading={loadingGroupsOp}
-        confirmLabel={groupToDelete?.owner_id === useAuthStore.getState().user?.id ? "Delete" : "Leave"}
+        confirmLabel={groupToDelete?.owner_id === useAuthStore.getState().user?.id 
+          ? t("timetable.groups.deleteModal.confirmDelete") 
+          : t("timetable.groups.deleteModal.confirmLeave")}
       />
     </PageContainer>
   );

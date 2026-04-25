@@ -3,6 +3,7 @@ import { StyleSheet, View, Animated } from 'react-native';
 import { Modal, Portal, Text, Button, useTheme, Surface } from 'react-native-paper';
 import { AlertTriangle, Trash2 } from 'lucide-react-native';
 import { addAlpha } from '../../utils/theme';
+import { useTranslation } from 'react-i18next';
 
 interface ConfirmDeleteModalProps {
   visible: boolean;
@@ -24,6 +25,7 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
   confirmLabel = "Delete",
 }) => {
   const theme = useTheme();
+  const { t } = useTranslation();
   const scale = React.useRef(new Animated.Value(0.9)).current;
 
   React.useEffect(() => {
@@ -67,7 +69,7 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
                 style={styles.button}
                 disabled={loading}
               >
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button 
                 mode="contained" 

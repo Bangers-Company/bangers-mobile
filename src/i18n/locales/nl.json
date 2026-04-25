@@ -21,6 +21,8 @@
     "join": "Deelnemen",
     "accept": "Accepteren",
     "reject": "Weigeren",
+    "decline": "Afwijzen",
+    "someone": "iemand",
     "offline": "Offline",
     "offline_warning": "Alleen beschikbaar met internet"
   },
@@ -102,7 +104,11 @@
       "bio": "Bio",
       "dob": "Geboortedatum",
       "publicProfile": "Openbaar profiel",
-      "publicProfileSub": "Laat anderen zien welke evenementen je bezoekt"
+      "publicProfileSub": "Laat anderen zien welke evenementen je bezoekt",
+      "permissionRequired": "Toestemming vereist",
+      "cameraPermissionMsg": "Je moet toegang tot de camera geven om je profielfoto te wijzigen.",
+      "libraryPermissionMsg": "Je moet toegang tot je bibliotheek geven om je profielfoto te wijzigen.",
+      "updateError": "Het bijwerken van je profiel is mislukt. Probeer het opnieuw."
     },
     "stats": {
       "events": "Evenementen",
@@ -143,7 +149,11 @@
     "map": "Kaart",
     "timetable": "Rooster",
     "settings": "Instellingen",
-    "notifications": "Meldingen"
+    "notifications": "Meldingen",
+    "lineup": "Line-up",
+    "schedule": "Rooster",
+    "visitors": "Bezoekers",
+    "info": "Info"
   },
   "settings": {
     "title": "Instellingen",
@@ -195,15 +205,46 @@
       "groups": "Groepen"
     },
     "groups": {
-      "create": "Groep Aanmaken",
+      "create": "Groep aanmaken",
       "createFirst": "Maak je eerste groep aan",
       "createAnother": "Maak nog een groep aan",
       "memberCount": "{{count}} Leden • Ingedrukt houden om te verwijderen",
-      "invitedBy": "Uitgenodigd door {{name}}"
+      "invitedBy": "Uitgenodigd door {{name}}",
+      "createModal": {
+        "titleStep1": "Groep Aanmaken",
+        "titleStep2": "Leden Uitnodigen",
+        "stepIndicator": "Stap {{current}} van {{total}}",
+        "nameSubtitle": "Hoe moet je nieuwe squad heten?",
+        "nameLabel": "Groepsnaam",
+        "namePlaceholder": "bijv. Festival Squad",
+        "inviteSubtitle": "Selecteer vrienden voor {{name}}.",
+        "searchPlaceholder": "Vrienden zoeken...",
+        "noFriends": "Geen vrienden gevonden.",
+        "createWithCount": "Aanmaken ({{count}})"
+      },
+      "deleteModal": {
+        "titleDelete": "Groep Verwijderen",
+        "titleLeave": "Groep Verlaten",
+        "messageDelete": "Weet je zeker dat je {{name}} wilt verwijderen? Dit verwijdert alle leden en schema's.",
+        "messageLeave": "Weet je zeker dat je {{name}} wilt verlaten?",
+        "confirmDelete": "Verwijderen",
+        "confirmLeave": "Verlaten"
+      }
     },
     "empty": {
       "title": "Nog niet gepubliceerd",
       "description": "Sorry, wacht tot het officiële rooster voor dit evenement is gepubliceerd, of maak een groep aan om te beginnen met plannen."
+    },
+    "actInfo": {
+      "stage": "Podium",
+      "time": "Tijd",
+      "date": "Datum",
+      "whosGoing": "Wie gaan er?",
+      "fromGroup": "Van jouw groep",
+      "loadingAttendees": "Deelnemers laden...",
+      "noAttendees": "Niemand van je groep gaat nog naar deze act.",
+      "about": "Over",
+      "gotIt": "Begrepen"
     }
   }
 }

@@ -5,6 +5,7 @@ import { Search, ChevronRight } from "lucide-react-native";
 import { friendsApi } from "../../api/friends";
 import { User } from "../../types/user";
 import { addAlpha } from "../../utils/theme";
+import { useTranslation } from "react-i18next";
 
 interface CreateGroupModalProps {
   visible: boolean;
@@ -26,6 +27,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
   const [search, setSearch] = useState("");
   const [loadingFriends, setLoadingFriends] = useState(false);
   const theme = useTheme();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (visible && step === 2) {
@@ -93,29 +95,29 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
       >
         <View style={styles.header}>
           <Text variant="headlineSmall" style={styles.title}>
-            {step === 1 ? "Create Group" : "Invite Members"}
+            {step === 1 ? t("timetable.groups.createModal.titleStep1") : t("timetable.groups.createModal.titleStep2")}
           </Text>
           <Text variant="bodySmall" style={styles.stepIndicator}>
-            Step {step} of 2
+            {t("timetable.groups.createModal.stepIndicator", { current: step, total: 2 })}
           </Text>
         </View>
 
         {step === 1 ? (
           <View>
             <Text variant="bodyMedium" style={styles.subtitle}>
-              What should we call your new squad?
+              {t("timetable.groups.createModal.nameSubtitle")}
             </Text>
             <TextInput
-              label="Group Name"
+              label={t("timetable.groups.createModal.nameLabel")}
               value={name}
               onChangeText={setName}
               mode="outlined"
               style={styles.input}
-              placeholder="e.g. Festival Squad"
+              placeholder={t("timetable.groups.createModal.namePlaceholder")}
               autoFocus
             />
             <View style={styles.actions}>
-              <Button onPress={onDismiss}>Cancel</Button>
+              <Button onPress={onDismiss}>{t("common.cancel")}</Button>
               <Button 
                 mode="contained" 
                 onPress={handleNext} 
@@ -123,18 +125,18 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
                 icon={() => <ChevronRight size={18} color="white" />}
                 contentStyle={{ flexDirection: 'row-reverse' }}
               >
-                Next
+                {t("common.next")}
               </Button>
             </View>
           </View>
         ) : (
           <View style={{ maxHeight: 400 }}>
              <Text variant="bodyMedium" style={styles.subtitle}>
-              Select friends to join <Text style={{ fontWeight: 'bold' }}>{name}</Text>.
+              {t("timetable.groups.createModal.inviteSubtitle", { name })}
             </Text>
             
             <TextInput
-              placeholder="Search friends..."
+              placeholder={t("timetable.groups.createModal.searchPlaceholder")}
               value={search}
               onChangeText={setSearch}
               mode="outlined"
@@ -173,21 +175,23 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
                   ))
                 ) : (
                   <View style={styles.emptyContainer}>
-                    <Text variant="bodyMedium" style={{ opacity: 0.5 }}>No friends found.</Text>
+                    <Text variant="bodyMedium" style={{ opacity: 0.5 }}>{t("timetable.groups.createModal.noFriends")}</Text>
                   </View>
                 )}
               </ScrollView>
             )}
 
             <View style={[styles.actions, { marginTop: 16 }]}>
-              <Button onPress={handleBack} disabled={loading}>Back</Button>
+              <Button onPress={handleBack} disabled={loading}>{t("common.back")}</Button>
               <Button 
                 mode="contained" 
                 onPress={handleConfirm} 
                 loading={loading}
                 disabled={loading}
               >
-                {selectedFriends.length > 0 ? `Create (${selectedFriends.length})` : "Create Group"}
+                {selectedFriends.length > 0 
+                  ? t("timetable.groups.createModal.createWithCount", { count: selectedFriends.length }) 
+                  : t("timetable.groups.createModal.titleStep1")}
               </Button>
             </View>
           </View>

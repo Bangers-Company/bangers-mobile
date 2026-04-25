@@ -60,7 +60,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       : await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (permissionResult.granted === false) {
-      Alert.alert("Permission Required", `You need to allow ${useCamera ? 'camera' : 'library'} access to change your profile picture.`);
+      Alert.alert(t("profile.edit.permissionRequired"), useCamera ? t("profile.edit.cameraPermissionMsg") : t("profile.edit.libraryPermissionMsg"));
       return;
     }
 
@@ -119,7 +119,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       onClose();
     } catch (err) {
       console.error("Failed to update profile", err);
-      Alert.alert("Error", "Failed to update profile. Please try again.");
+      Alert.alert(t("common.error"), t("profile.edit.updateError"));
     } finally {
       setLoading(false);
     }

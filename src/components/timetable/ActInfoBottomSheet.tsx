@@ -11,6 +11,7 @@ import {
   Text,
   useTheme,
 } from "react-native-paper";
+import { useTranslation } from "react-i18next";
 import { useEntryAttendance } from "../../hooks/useTimetables";
 import { resolveMediaUrl } from "../../utils/format";
 import Animated, { 
@@ -44,6 +45,7 @@ export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
 }) => {
   const theme = useTheme();
   const { bottom } = useSafeAreaInsets();
+  const { t } = useTranslation();
   const translateY = useSharedValue(SCREEN_HEIGHT);
   const opacity = useSharedValue(0);
 
@@ -133,7 +135,7 @@ export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
                     </View>
                     <View>
                       <Text variant="labelLarge" style={styles.infoLabel}>
-                        Stage
+                        {t("timetable.actInfo.stage")}
                       </Text>
                       <Text variant="bodyLarge">{entry.stage.name}</Text>
                     </View>
@@ -145,7 +147,7 @@ export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
                     </View>
                     <View>
                       <Text variant="labelLarge" style={styles.infoLabel}>
-                        Time
+                        {t("timetable.actInfo.time")}
                       </Text>
                       <Text variant="bodyLarge">
                         {format(startTime, "HH:mm")} - {format(endTime, "HH:mm")}
@@ -159,7 +161,7 @@ export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
                     </View>
                     <View>
                       <Text variant="labelLarge" style={styles.infoLabel}>
-                        Date
+                        {t("timetable.actInfo.date")}
                       </Text>
                       <Text variant="bodyLarge">{format(startTime, "EEEE, MMMM do")}</Text>
                     </View>
@@ -173,17 +175,17 @@ export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
                         </View>
                         <View>
                           <Text variant="labelLarge" style={styles.infoLabel}>
-                            Who&apos;s going?
+                            {t("timetable.actInfo.whosGoing")}
                           </Text>
                           <Text variant="bodySmall" style={{ opacity: 0.6 }}>
-                            From your group
+                            {t("timetable.actInfo.fromGroup")}
                           </Text>
                         </View>
                       </View>
                       
                       <View style={styles.friendList}>
                         {isLoadingAttendees ? (
-                           <Text variant="bodyMedium" style={styles.emptyFriends}>Loading attendees...</Text>
+                           <Text variant="bodyMedium" style={styles.emptyFriends}>{t("timetable.actInfo.loadingAttendees")}</Text>
                         ) : attendees && attendees.length > 0 ? (
                            <View style={styles.avatarRow}>
                              {attendees.map((a: import("../../types/user").User) => (
@@ -196,12 +198,12 @@ export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
                                  <Text variant="labelSmall" style={styles.attendeeName} numberOfLines={1}>
                                    {a.name || a.username}
                                  </Text>
-                               </View>
+                                </View>
                              ))}
                            </View>
                         ) : (
                            <Text variant="bodyMedium" style={styles.emptyFriends}>
-                              No one from your group is attending yet.
+                              {t("timetable.actInfo.noAttendees")}
                            </Text>
                         )}
                       </View>
@@ -211,7 +213,7 @@ export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
                   {entry.act.description && (
                     <View style={styles.descriptionSection}>
                       <Text variant="labelLarge" style={styles.infoLabel}>
-                        About
+                        {t("timetable.actInfo.about")}
                       </Text>
                       <Text variant="bodyMedium" style={styles.description}>
                         {entry.act.description}
@@ -227,7 +229,7 @@ export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
                     style={styles.closeButton}
                     contentStyle={{ height: 48 }}
                   >
-                    Got it
+                    {t("timetable.actInfo.gotIt")}
                   </Button>
                 </View>
               </>
