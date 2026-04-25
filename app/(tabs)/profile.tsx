@@ -28,13 +28,23 @@ export default function ProfileScreen() {
   const router = useRouter();
   const [focusKey, setFocusKey] = React.useState(0);
   const { data: userProfile, isLoading: loading, refetch: refreshProfile } = useProfile();
+  const [localUser, setLocalUser] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    const loadLocal = async () => {
+      const { usersRepository } = await import("../../src/database/repositories/users.repository");
+      const me = await usersRepository.getMe();
+      if (me) setLocalUser(me);
+    };
+    loadLocal();
+  }, []);
   
   const [isEditModalVisible, setIsEditModalVisible] = React.useState(false);
 
-  const user = userProfile;
-  const attendingEvents = userProfile?.attendingEvents || [];
-  const pastEvents = userProfile?.pastEvents || [];
-  const friendsCount = userProfile?.friends_count || 0;
+  const user = userProfile || localUser;
+  const attendingEvents = user?.attendingEvents || [];
+  const pastEvents = user?.pastEvents || [];
+  const friendsCount = user?.friends_count || 0;
 
   const scrollOffset = useSharedScroll();
 
@@ -83,7 +93,16 @@ export default function ProfileScreen() {
     >
       <View style={styles.header}>
         <View style={styles.profileHeader}>
-          <TouchableOpacity onPress={() => setIsEditModalVisible(true)} activeOpacity={0.7}>
+          <TouchableOpacity 
+            onPress={() => {
+              if (useUIStore.getState().isOffline) {
+                alert(t("common.offline_warning"));
+                return;
+              }
+              setIsEditModalVisible(true);
+            }} 
+            activeOpacity={0.7}
+          >
             <View style={styles.avatarWrapper}>
               {user?.profile_media_url ? (
                 <Avatar.Image
@@ -169,7 +188,7 @@ export default function ProfileScreen() {
                   color={theme.colors.primary}
                   style={{ marginBottom: 4 }}
                 />
-                {loading ? (
+                {loading && !user ? (
                   <ContentLoader
                     viewBox="0 0 40 20"
                     width={40}
@@ -213,7 +232,7 @@ export default function ProfileScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.horizontalScroll}
         >
-          {loading ? (
+          {loading && attendingEvents.length === 0 ? (
             <>
               <EventCardSkeleton variant="horizontal" style={{ marginRight: 16 }} />
               <EventCardSkeleton variant="horizontal" style={{ marginRight: 16 }} />
@@ -244,7 +263,7 @@ export default function ProfileScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.horizontalScroll}
         >
-          {loading ? (
+          {loading && pastEvents.length === 0 ? (
             <>
               <EventCardSkeleton variant="horizontal" style={{ marginRight: 16 }} />
               <EventCardSkeleton variant="horizontal" style={{ marginRight: 16 }} />

@@ -191,7 +191,7 @@ export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
                                  {a.profile_media_url ? (
                                    <Avatar.Image size={32} source={{ uri: resolveMediaUrl(a.profile_media_url) || undefined }} style={styles.avatar} />
                                  ) : (
-                                   <Avatar.Text size={32} label={(a.name || a.username || "?").substring(0, 2).toUpperCase()} style={styles.avatar} />
+                                   <Avatar.Text size={32} label={(a.name || a.username || "U").substring(0, 2).toUpperCase()} style={styles.avatar} />
                                  )}
                                  <Text variant="labelSmall" style={styles.attendeeName} numberOfLines={1}>
                                    {a.name || a.username}

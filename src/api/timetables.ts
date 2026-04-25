@@ -7,7 +7,8 @@ export const timetablesApi = {
     apiClient.get(`/events/${eventId}/timetable`, config),
   toggleOfficialAttend: (eventId: string, entryId: string) =>
     apiClient.post(`/events/${eventId}/timetable/entries/${entryId}/toggle-attend`),
-  getGroups: (config?: AxiosRequestConfig) => apiClient.get("/groups", config),
+  getGroups: (eventId?: string, config?: AxiosRequestConfig) => 
+    apiClient.get("/groups", { ...config, params: { ...config?.params, event_id: eventId } }),
   getGroupTimetables: (groupId: string, config?: AxiosRequestConfig) => 
     apiClient.get<Timetable[]>(`/groups/${groupId}/timetables`, config),
   getGroupTimetable: (groupId: string, id: string, config?: AxiosRequestConfig) => 
@@ -23,7 +24,7 @@ export const timetablesApi = {
   },
   getAttendance: (groupId: string, timetableId: string, entryId: string) =>
     apiClient.get<any[]>(`/groups/${groupId}/timetables/${timetableId}/entries/${entryId}/attendance`),
-  createGroup: (data: { name: string; description?: string; user_ids?: string[] }) =>
+  createGroup: (data: { name: string; description?: string; user_ids?: string[]; event_id?: string }) =>
     apiClient.post("/groups", data),
   acceptInvitation: (groupId: string) =>
     apiClient.post(`/groups/${groupId}/accept`),

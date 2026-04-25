@@ -2,6 +2,7 @@ import React from "react";
 import { StyleSheet, View, TouchableOpacity, ScrollView } from "react-native";
 import { Text, useTheme, ActivityIndicator, IconButton, Card, Button } from "react-native-paper";
 import { Calendar, Users, Globe } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { addAlpha } from "../../utils/theme";
 import { Group } from "../../types/group";
 import { Timetable } from "../../types/timetable";
@@ -32,6 +33,7 @@ export const TimetableOverview: React.FC<TimetableOverviewProps> = ({
   onSelectGroup,
 }) => {
   const theme = useTheme();
+  const { t } = useTranslation();
 
   const invitations = groups.filter(g => g.pivot?.invitation_status === 'pending');
   const activeGroups = groups.filter(g => g.pivot?.invitation_status === 'accepted');
@@ -50,9 +52,11 @@ export const TimetableOverview: React.FC<TimetableOverviewProps> = ({
         <View style={[styles.iconBox, { backgroundColor: addAlpha(theme.colors.error, 0.1) }]}>
           <Calendar size={48} color={theme.colors.error} />
         </View>
-        <Text variant="headlineSmall" style={styles.emptyTitle}>Not Published Yet</Text>
+        <Text variant="headlineSmall" style={styles.emptyTitle}>
+          {t("timetable.empty.title") || "Not Published Yet"}
+        </Text>
         <Text variant="bodyMedium" style={styles.emptyText}>
-          Sorry, please wait for the official timetable to be published for this event, or create a group to start planning.
+          {t("timetable.empty.description") || "Sorry, please wait for the official timetable to be published for this event, or create a group to start planning."}
         </Text>
         <Button 
           mode="contained" 
@@ -60,7 +64,7 @@ export const TimetableOverview: React.FC<TimetableOverviewProps> = ({
           style={{ marginTop: 24 }}
           icon="plus"
         >
-          Create Group
+          {t("timetable.groups.create") || "Create Group"}
         </Button>
       </View>
     );
@@ -70,14 +74,16 @@ export const TimetableOverview: React.FC<TimetableOverviewProps> = ({
     <ScrollView contentContainerStyle={styles.container}>
       {official && (
         <>
-          <Text variant="titleMedium" style={styles.sectionTitle}>Official Schedule</Text>
+          <Text variant="titleMedium" style={styles.sectionTitle}>
+            {t("timetable.sections.official") || "Official Schedule"}
+          </Text>
           <Card
             style={styles.card}
             onPress={() => onSelect(official)}
           >
             <Card.Title
               title={official.name}
-              subtitle="Official Event Timetable"
+              subtitle={t("timetable.sections.officialSubtitle") || "Official Event Timetable"}
               left={(props) => <Globe {...props} size={24} color={theme.colors.primary} />}
               right={(props) => <IconButton {...props} icon="chevron-right" />}
             />
@@ -88,18 +94,27 @@ export const TimetableOverview: React.FC<TimetableOverviewProps> = ({
       {invitations.length > 0 && (
         <>
           <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.primary }]}>
-            Invitations ({invitations.length})
+            {t("timetable.sections.invitations", { count: invitations.length }) || `Invitations (${invitations.length})`}
           </Text>
           {invitations.map(group => (
             <Card key={group.id} style={[styles.card, { borderLeftWidth: 4, borderLeftColor: theme.colors.primary }]}>
               <Card.Title
                 title={group.name}
-                subtitle={`Invited by ${group.owner?.name}`}
+                subtitle={t("timetable.groups.invitedBy", { 
+                  name: group.owner?.name || 
+                        (group.owner?.first_name ? `${group.owner.first_name} ${group.owner.last_name || ""}`.trim() : null) ||
+                        group.owner?.username || 
+                        t("common.someone") || "someone"
+                })}
                 left={(props) => <Users {...props} size={24} color={theme.colors.primary} />}
               />
               <Card.Actions>
-                <Button mode="text" onPress={() => onRejectInvitation(group.id)}>Decline</Button>
-                <Button mode="contained" onPress={() => onAcceptInvitation(group.id)}>Accept</Button>
+                <Button mode="text" onPress={() => onRejectInvitation(group.id)}>
+                  {t("common.decline") || "Decline"}
+                </Button>
+                <Button mode="contained" onPress={() => onAcceptInvitation(group.id)}>
+                  {t("common.accept") || "Accept"}
+                </Button>
               </Card.Actions>
             </Card>
           ))}
@@ -107,7 +122,9 @@ export const TimetableOverview: React.FC<TimetableOverviewProps> = ({
       )}
 
       <View style={styles.sectionHeader}>
-        <Text variant="titleMedium" style={styles.sectionTitle}>Groups</Text>
+        <Text variant="titleMedium" style={styles.sectionTitle}>
+          {t("timetable.sections.groups") || "Groups"}
+        </Text>
         {loadingGroups && <ActivityIndicator size="small" color={theme.colors.primary} />}
       </View>
       
@@ -120,7 +137,7 @@ export const TimetableOverview: React.FC<TimetableOverviewProps> = ({
         >
           <Card.Title
             title={group.name}
-            subtitle={`${group.members_count || 1} Members • Long press to delete`}
+            subtitle={t("timetable.groups.memberCount", { count: group.members_count || 1 }) || `${group.members_count || 1} Members • Long press to delete`}
             left={(props) => <Users {...props} size={24} color={theme.colors.primary} />}
             right={(props) => <IconButton {...props} icon="chevron-right" />}
           />
@@ -141,7 +158,9 @@ export const TimetableOverview: React.FC<TimetableOverviewProps> = ({
               variant={activeGroups.length > 0 ? "bodySmall" : "bodyMedium"} 
               style={{ color: theme.colors.primary, marginTop: 4 }}
             >
-              {activeGroups.length > 0 ? "Create another group" : "Create your first group"}
+              {activeGroups.length > 0 
+                ? t("timetable.groups.createAnother") || "Create another group" 
+                : t("timetable.groups.createFirst") || "Create your first group"}
             </Text>
           </>
         )}

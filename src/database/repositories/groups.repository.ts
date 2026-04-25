@@ -13,8 +13,8 @@ class GroupsRepository extends BaseRepository<Group> {
       await db.withTransactionAsync(async () => {
         // 1. Upsert the group itself
         await db.runAsync(
-          `INSERT OR REPLACE INTO groups (id, name, description, owner_id, members_count, invitation_status, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT OR REPLACE INTO groups (id, name, description, owner_id, members_count, invitation_status, event_id, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           sanitizeParams([
             group.id,
             group.name,
@@ -22,6 +22,7 @@ class GroupsRepository extends BaseRepository<Group> {
             group.owner_id,
             group.members_count ?? (group.members?.length || 0),
             group.pivot?.invitation_status ?? null,
+            group.event_id || null,
             group.created_at,
             group.updated_at,
           ]),
@@ -67,9 +68,18 @@ class GroupsRepository extends BaseRepository<Group> {
     });
   }
 
-  async getAll(): Promise<Group[]> {
+  async getAll(eventId?: string): Promise<Group[]> {
     const db = await this.getDb();
-    const rows = await db.getAllAsync<any>("SELECT * FROM groups ORDER BY updated_at DESC");
+    let query = "SELECT * FROM groups";
+    let params: any[] = [];
+
+    if (eventId) {
+      query += " WHERE event_id = ?";
+      params.push(eventId);
+    }
+
+    query += " ORDER BY updated_at DESC";
+    const rows = await db.getAllAsync<any>(query, params);
     
     const groups: Group[] = [];
     for (const row of rows) {
@@ -88,6 +98,7 @@ class GroupsRepository extends BaseRepository<Group> {
         } : undefined,
         members,
         timetables,
+        event_id: row.event_id,
         created_at: row.created_at,
         updated_at: row.updated_at,
       } as Group);

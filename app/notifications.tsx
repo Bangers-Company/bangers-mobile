@@ -13,7 +13,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { PageContainer } from "../src/components/PageContainer";
 import { useFriendRequests } from "../src/hooks/useFriendship";
-import { useTimetableStore } from "../src/store/useTimetableStore";
+import { useGroups, useAcceptInvitation, useRejectInvitation } from "../src/hooks/useTimetables";
 import { resolveMediaUrl } from "../src/utils/format";
 
 export default function NotificationsScreen() {
@@ -21,13 +21,15 @@ export default function NotificationsScreen() {
   const theme = useTheme();
   const router = useRouter();
   const { data: friendRequests = [], isLoading: friendLoading, refetch: refetchFriends, accept, reject } = useFriendRequests();
-  const { groups, fetchGroups } = useTimetableStore();
+  const { data: groups = [], isLoading: groupsLoading, refetch: refetchGroups } = useGroups();
+  const acceptGroup = useAcceptInvitation();
+  const rejectGroup = useRejectInvitation();
 
   const groupInvites = groups.filter(g => g.pivot?.invitation_status === 'pending');
-  const isLoading = friendLoading;
+  const isLoading = friendLoading || groupsLoading;
 
   const onRefresh = async () => {
-    await Promise.all([refetchFriends(), fetchGroups()]);
+    await Promise.all([refetchFriends(), refetchGroups()]);
   };
 
   return (
@@ -120,19 +122,28 @@ export default function NotificationsScreen() {
                       {group.name}
                     </Text>
                     <Text variant="bodySmall" style={styles.subtitle}>
-                      {t("notifications.groupInviteSub")}
+                      {t("timetable.groups.invitedBy", { 
+                        name: group.owner?.name || 
+                              (group.owner?.first_name ? `${group.owner.first_name} ${group.owner.last_name || ""}`.trim() : null) ||
+                              group.owner?.username || 
+                              t("common.someone") || "someone"
+                      })}
                     </Text>
                   </View>
                 </View>
                 <View style={styles.actions}>
-                  <Button 
-                    mode="contained" 
-                    onPress={() => {
-                      alert(t("settings.notifications.joinSuccess") || "Successfully joined group!");
-                    }}
-                  >
-                    {t("common.join")}
-                  </Button>
+                  <IconButton
+                    icon={() => <Check size={20} color={theme.colors.primary} />}
+                    mode="contained-tonal"
+                    onPress={() => acceptGroup.mutate(group.id)}
+                    loading={acceptGroup.isPending}
+                  />
+                  <IconButton
+                    icon={() => <X size={20} color={theme.colors.error} />}
+                    mode="contained-tonal"
+                    onPress={() => rejectGroup.mutate(group.id)}
+                    loading={rejectGroup.isPending}
+                  />
                 </View>
               </View>
             ))

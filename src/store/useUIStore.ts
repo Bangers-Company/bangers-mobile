@@ -9,10 +9,12 @@ interface UIState {
   isAmoled: boolean;
   accentColor: string | null;
   isBottomNavVisible: boolean;
+  isOffline: boolean;
   setThemeMode: (mode: ThemeMode) => void;
   setIsAmoled: (isAmoled: boolean) => void;
   setAccentColor: (color: string | null) => void;
   setIsBottomNavVisible: (visible: boolean) => void;
+  setIsOffline: (isOffline: boolean) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -22,10 +24,12 @@ export const useUIStore = create<UIState>()(
       isAmoled: false,
       accentColor: null,
       isBottomNavVisible: true,
+      isOffline: false,
       setThemeMode: (mode) => set({ themeMode: mode }),
       setIsAmoled: (isAmoled) => set({ isAmoled }),
       setAccentColor: (color) => set({ accentColor: color }),
       setIsBottomNavVisible: (visible) => set({ isBottomNavVisible: visible }),
+      setIsOffline: (isOffline) => set({ isOffline }),
     }),
     {
       name: "ui-storage",

@@ -15,7 +15,7 @@ interface TimetableState {
   reset: () => void;
   acceptInvitation: (groupId: string) => Promise<void>;
   rejectInvitation: (groupId: string) => Promise<void>;
-  createGroup: (name: string, user_ids: string[]) => Promise<void>;
+  createGroup: (name: string, user_ids: string[], eventId?: string) => Promise<void>;
   deleteGroup: (groupId: string) => Promise<void>;
   createGroupTimetable: (groupId: string, event_id: string, name: string) => Promise<void>;
 }
@@ -38,26 +38,44 @@ export const useTimetableStore = create<TimetableState>()(
   },
 
   acceptInvitation: async (groupId: string) => {
+    // Optimistic update
+    const previousGroups = get().groups;
+    set({
+      groups: previousGroups.map(g => 
+        g.id === groupId 
+          ? { ...g, pivot: g.pivot ? { ...g.pivot, invitation_status: 'accepted' } : { invitation_status: 'accepted', role: 'member' } } as Group 
+          : g
+      )
+    });
+
     try {
       await timetablesApi.acceptInvitation(groupId);
-      get().fetchGroups();
+      // Optional: fetch to ensure sync, but the local change is what user sees
+      await get().fetchGroups();
     } catch (e) {
       console.error("Failed to accept invitation", e);
+      set({ groups: previousGroups }); // Rollback
     }
   },
 
   rejectInvitation: async (groupId: string) => {
+    // Optimistic update
+    const previousGroups = get().groups;
+    set({
+      groups: previousGroups.filter(g => g.id !== groupId)
+    });
+
     try {
       await timetablesApi.rejectInvitation(groupId);
-      get().fetchGroups();
     } catch (e) {
       console.error("Failed to reject invitation", e);
+      set({ groups: previousGroups }); // Rollback
     }
   },
 
-  createGroup: async (name: string, user_ids: string[]) => {
+  createGroup: async (name: string, user_ids: string[], eventId?: string) => {
     try {
-      await timetablesApi.createGroup({ name, user_ids });
+      await timetablesApi.createGroup({ name, user_ids, event_id: eventId });
       await get().fetchGroups();
     } catch (e) {
       console.error("Failed to create group", e);

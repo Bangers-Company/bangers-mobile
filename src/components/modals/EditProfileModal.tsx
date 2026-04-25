@@ -160,7 +160,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 {profileImage ? (
                   <Avatar.Image size={100} source={{ uri: profileImage }} style={{ borderRadius: 28 }} />
                 ) : (
-                  <Avatar.Text size={100} label={user.username.substring(0, 2).toUpperCase()} style={{ borderRadius: 28 }} />
+                  <Avatar.Text size={100} label={(user.username || user.first_name || "U").substring(0, 2).toUpperCase()} style={{ borderRadius: 28 }} />
                 )}
                 <View style={styles.imageActions}>
                   <IconButton 

@@ -11,6 +11,7 @@ class EventsRepository extends BaseRepository<Event, JoinedEventRow> {
       ...row,
       banner: row.banner_url ? { url: row.banner_url } : null,
       user_status: (row.status as any) || null,
+      attendee_count: row.attendee_count || 0,
     } as unknown as Event;
   }
 
@@ -19,8 +20,8 @@ class EventsRepository extends BaseRepository<Event, JoinedEventRow> {
     return this.transaction(async (db) => {
       await db.runAsync(
         `INSERT OR REPLACE INTO events (
-            id, name, description, location, start_date, end_date, version, banner_url, created_at, updated_at, deleted_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            id, name, description, location, start_date, end_date, version, banner_url, attendee_count, created_at, updated_at, deleted_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         sanitizeParams([
           event.id,
           event.name,
@@ -30,6 +31,7 @@ class EventsRepository extends BaseRepository<Event, JoinedEventRow> {
           event.end_date,
           event.version,
           event.banner?.url || null,
+          event.attendee_count || 0,
           event.created_at,
           event.updated_at,
           event.deleted_at || null,
@@ -58,8 +60,8 @@ class EventsRepository extends BaseRepository<Event, JoinedEventRow> {
         for (const event of events) {
           await db.runAsync(
             `INSERT OR REPLACE INTO events (
-                id, name, description, location, start_date, end_date, version, banner_url, created_at, updated_at, deleted_at
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                id, name, description, location, start_date, end_date, version, banner_url, attendee_count, created_at, updated_at, deleted_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             sanitizeParams([
               event.id,
               event.name,
@@ -69,6 +71,7 @@ class EventsRepository extends BaseRepository<Event, JoinedEventRow> {
               event.end_date,
               event.version,
               event.banner?.url || null,
+              event.attendee_count || 0,
               event.created_at,
               event.updated_at,
               event.deleted_at || null,

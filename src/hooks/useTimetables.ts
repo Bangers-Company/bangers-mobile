@@ -78,24 +78,85 @@ export const useGroupTimetable = (groupId: string | null, timetableId: string | 
   });
 };
 
-export const useGroups = () => {
+export const useGroups = (eventId?: string) => {
   return useQuery({
-    queryKey: ['groups'],
+    queryKey: ['groups', eventId],
     queryFn: async () => {
       try {
-        const res = await timetablesApi.getGroups();
-        if (Array.isArray(res.data)) {
-          for (const group of res.data) {
+        const res = await timetablesApi.getGroups(eventId);
+        let data = res.data;
+        if (Array.isArray(data)) {
+          // Filter data to only include groups for this event if eventId is provided
+          if (eventId) {
+            data = data.filter((g: any) => String(g.event_id) === String(eventId));
+          }
+          for (const group of data) {
             await groupsRepository.upsert(group);
           }
         }
-        return res.data;
+        return data;
       } catch (err) {
         console.warn('Failed to fetch groups, trying local DB:', err);
-        const localGroups = await groupsRepository.getAll();
+        const localGroups = await groupsRepository.getAll(eventId);
         if (localGroups.length > 0) return localGroups;
         throw err;
       }
+    },
+  });
+};
+
+export const useAcceptInvitation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (groupId: string) => timetablesApi.acceptInvitation(groupId),
+    onMutate: async (groupId) => {
+      await queryClient.cancelQueries({ queryKey: ['groups'] });
+      const previousGroups = queryClient.getQueryData<Group[]>(['groups']);
+
+      if (previousGroups) {
+        queryClient.setQueryData(['groups'], previousGroups.map(g => 
+          g.id === groupId 
+            ? { ...g, pivot: g.pivot ? { ...g.pivot, invitation_status: 'accepted' } : { invitation_status: 'accepted', role: 'member' } } as Group 
+            : g
+        ));
+      }
+
+      return { previousGroups };
+    },
+    onError: (err, groupId, context) => {
+      if (context?.previousGroups) {
+        queryClient.setQueryData(['groups'], context.previousGroups);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['groups'] });
+    },
+  });
+};
+
+export const useRejectInvitation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (groupId: string) => timetablesApi.rejectInvitation(groupId),
+    onMutate: async (groupId) => {
+      await queryClient.cancelQueries({ queryKey: ['groups'] });
+      const previousGroups = queryClient.getQueryData<Group[]>(['groups']);
+
+      if (previousGroups) {
+        queryClient.setQueryData(['groups'], previousGroups.filter(g => g.id !== groupId));
+      }
+
+      return { previousGroups };
+    },
+    onError: (err, groupId, context) => {
+      if (context?.previousGroups) {
+        queryClient.setQueryData(['groups'], context.previousGroups);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['groups'] });
     },
   });
 };

@@ -25,6 +25,7 @@ import {
   Inter_800ExtraBold,
   Inter_900Black,
 } from "@expo-google-fonts/inter";
+import { NetworkStatusIndicator } from "../src/components/ui/NetworkStatusIndicator";
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -279,6 +280,7 @@ export default function RootLayout() {
                 />
               </Stack>
               <StatusBar style="auto" />
+              <NetworkStatusIndicator />
             </ScrollProvider>
           </LoadingProvider>
         </ThemeProvider>

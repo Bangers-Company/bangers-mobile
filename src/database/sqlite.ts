@@ -252,6 +252,32 @@ export const initDatabase = async () => {
         ALTER TABLE group_timetable_entries ADD COLUMN attending_count INTEGER DEFAULT 0;
       `);
     },
+    // Migration 8: Add attendee_count to events for offline visibility
+    async (tx: SQLite.SQLiteDatabase) => {
+      await tx.execAsync(`
+        ALTER TABLE events ADD COLUMN attendee_count INTEGER DEFAULT 0;
+      `);
+    },
+    // Migration 9: Add event_id to groups to link groups to specific events
+    async (tx: SQLite.SQLiteDatabase) => {
+      await tx.execAsync(`
+        ALTER TABLE groups ADD COLUMN event_id TEXT;
+        CREATE INDEX IF NOT EXISTS idx_groups_event ON groups(event_id);
+      `);
+    },
+    // Migration 10: Extend users table for full offline profile visibility
+    async (tx: SQLite.SQLiteDatabase) => {
+      await tx.execAsync(`
+        ALTER TABLE users ADD COLUMN username TEXT;
+        ALTER TABLE users ADD COLUMN first_name TEXT;
+        ALTER TABLE users ADD COLUMN last_name TEXT;
+        ALTER TABLE users ADD COLUMN friends_count INTEGER DEFAULT 0;
+        ALTER TABLE users ADD COLUMN upcoming_count INTEGER DEFAULT 0;
+        ALTER TABLE users ADD COLUMN past_count INTEGER DEFAULT 0;
+        -- profile_photo_url is already there from migration 5, but we might want a more formal column name
+        -- adding it if not exists is tricky with ALTER, but it's already there.
+      `);
+    },
   ];
 
   // Get current version

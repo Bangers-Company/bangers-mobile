@@ -54,13 +54,13 @@ export default function HomeScreen() {
         <TopBar />
         <View style={styles.loadingWrapper}>
           <Text variant="bodyLarge" style={{ color: theme.colors.error }}>
-            Failed to load events
+            {t("common.error.title") || "Failed to load events"}
           </Text>
           <Text variant="bodySmall" style={styles.loadingText}>
             {error.message}
           </Text>
           <Button mode="outlined" onPress={refresh} style={{ marginTop: 24 }}>
-            Try Again
+            {t("common.tryAgain") || "Try Again"}
           </Button>
         </View>
       </View>

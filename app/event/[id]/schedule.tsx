@@ -1,11 +1,12 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { LayoutGrid, Plus, Share2 } from "lucide-react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Alert, StyleSheet, View } from "react-native";
-import { IconButton, Text, useTheme, ActivityIndicator } from "react-native-paper";
+import { IconButton, Text, useTheme, ActivityIndicator, Portal } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PageContainer } from "../../../src/components/PageContainer";
 import { CreateGroupModal } from "../../../src/components/timetable/CreateGroupModal";
+import { ConfirmDeleteModal } from "../../../src/components/modals/ConfirmDeleteModal";
 import { TimetableGrid } from "../../../src/components/timetable/TimetableGrid";
 import { TimetableOverview } from "../../../src/components/timetable/TimetableOverview";
 import { useAuthStore } from "../../../src/store/useAuthStore";
@@ -15,7 +16,9 @@ import {
   useOfficialTimetable, 
   useGroups, 
   useGroupTimetable,
-  useToggleAttendance 
+  useToggleAttendance,
+  useAcceptInvitation,
+  useRejectInvitation
 } from "../../../src/hooks/useTimetables";
 import { timetablesApi } from "../../../src/api/timetables";
 import { useQueryClient } from "@tanstack/react-query";
@@ -26,7 +29,7 @@ import { useEvent } from "../../../src/hooks/useEvent";
 const EMPTY_ARRAY: any[] = [];
 
 export default function ScheduleScreen() {
-  const { id: eventId } = useLocalSearchParams<{ id: string }>();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useTheme();
   const router = useRouter();
   const { top } = useSafeAreaInsets();
@@ -34,15 +37,19 @@ export default function ScheduleScreen() {
   const [selectedTimetableId, setSelectedTimetableId] = useState<string | null>(null);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [createGroupModalVisible, setCreateGroupModalVisible] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [groupToDelete, setGroupToDelete] = useState<any>(null);
   const [loadingGroupsOp, setLoadingGroupsOp] = useState(false);
 
   // TanStack Query Hooks
   const queryClient = useQueryClient();
-  const { data: event } = useEvent(eventId as string);
-  const { data: officialQuery, isLoading: isLoadingOfficial } = useOfficialTimetable(eventId as string);
-  const { data: groupsQuery, isLoading: isLoadingGroups } = useGroups();
+  const { data: event } = useEvent(id as string);
+  const { data: officialQuery, isLoading: isLoadingOfficial } = useOfficialTimetable(id as string);
+  const { data: groupsQuery, isLoading: isLoadingGroups } = useGroups(id as string);
   const { data: specificGroupTimetable, isLoading: isLoadingSpecificGroup } = useGroupTimetable(selectedGroupId, selectedTimetableId);
   const toggleMutation = useToggleAttendance();
+  const acceptMutation = useAcceptInvitation();
+  const rejectMutation = useRejectInvitation();
 
   // Zustand Store
   const {
@@ -61,10 +68,10 @@ export default function ScheduleScreen() {
   const official = React.useMemo(() => {
     return officialQuery || (event?.official_timetable ? {
       ...event.official_timetable,
-      event_id: eventId,
+      event_id: id,
       entries: (event.official_timetable as any).entries || [],
     } as Timetable : null);
-  }, [officialQuery, event, eventId]);
+  }, [officialQuery, event, id]);
   
   const groups = React.useMemo(() => groupsQuery || EMPTY_ARRAY, [groupsQuery]);
 
@@ -84,38 +91,43 @@ export default function ScheduleScreen() {
     (selectedTimetable.is_official || !!selectedGroupId);
 
   // Handle BottomNav visibility
-  useEffect(() => {
-    setIsBottomNavVisible(!selectedTimetable);
-    return () => setIsBottomNavVisible(true);
-  }, [selectedTimetable, setIsBottomNavVisible]);
-
-  const handleDeleteGroup = async (group: any) => {
-    const isOwner = group.owner_id === (useAuthStore.getState().user?.id);
-    const title = isOwner ? "Delete Group" : "Leave Group";
-    const message = isOwner 
-      ? "Are you sure you want to delete this group? This will remove all members and schedules for everyone."
-      : "Are you sure you want to leave this group? You will lose access to its schedules.";
-
-    Alert.alert(title, message, [
-      { text: "Cancel", style: "cancel" },
-      { text: isOwner ? "Delete" : "Leave", style: "destructive", onPress: async () => {
-          setLoadingGroupsOp(true);
-          try {
-            await deleteGroup(group.id);
-            if (selectedGroupId === group.id) {
-               setSelectedTimetableId(null);
-               setSelectedGroupId(null);
-            }
-          } finally { setLoadingGroupsOp(false); }
-        }
+  useFocusEffect(
+    useCallback(() => {
+      if (selectedTimetable) {
+        setIsBottomNavVisible(false);
       }
-    ]);
+      return () => {
+        setIsBottomNavVisible(true);
+      };
+    }, [selectedTimetable, setIsBottomNavVisible])
+  );
+
+  const handleDeleteGroup = (group: any) => {
+    setGroupToDelete(group);
+    setDeleteModalVisible(true);
+  };
+
+  const confirmDeleteGroup = async () => {
+    if (!groupToDelete) return;
+    const group = groupToDelete;
+    setLoadingGroupsOp(true);
+    try {
+      await deleteGroup(group.id);
+      if (selectedGroupId === group.id) {
+         setSelectedTimetableId(null);
+         setSelectedGroupId(null);
+      }
+      setDeleteModalVisible(false);
+    } finally { 
+      setLoadingGroupsOp(false); 
+      setGroupToDelete(null);
+    }
   };
 
   const handleCreateGroup = async (name: string, members: string[]) => {
     setLoadingGroupsOp(true);
     try {
-      await createGroup(name, members);
+      await createGroup(name, members, id as string);
       queryClient.invalidateQueries({ queryKey: ["groups"] });
       setCreateGroupModalVisible(false);
     } catch (e) { console.error(e); } finally { setLoadingGroupsOp(false); }
@@ -129,10 +141,10 @@ export default function ScheduleScreen() {
       entryId: entry.id,
       isGroup: !!selectedGroupId,
       type: selectedGroupId ? 'group' : 'official',
-      targetId: selectedGroupId || (eventId as string),
-      eventId: eventId as string
+      targetId: selectedGroupId || (id as string),
+      eventId: id as string
     });
-  }, [selectedTimetable, selectedGroupId, eventId, toggleMutation]);
+  }, [selectedTimetable, selectedGroupId, id, toggleMutation]);
 
   const toggleViewMode = () => {
     setViewMode(viewMode === "vertical" ? "horizontal" : "vertical");
@@ -192,28 +204,32 @@ export default function ScheduleScreen() {
             loadingGroups={loadingGroupsOp || isLoadingGroups}
             onSelect={(t: Timetable) => setSelectedTimetableId(t.id)}
             onAcceptInvitation={async (gid: string) => {
-               setLoadingGroupsOp(true);
-               try { await acceptInvitation(gid); } finally { setLoadingGroupsOp(false); }
+               acceptMutation.mutate(gid);
             }}
             onRejectInvitation={async (gid) => {
-               setLoadingGroupsOp(true);
-               try { await rejectInvitation(gid); } finally { setLoadingGroupsOp(false); }
+               rejectMutation.mutate(gid);
             }}
-            onCreateGroup={() => setCreateGroupModalVisible(true)}
+            onCreateGroup={() => {
+              if (useUIStore.getState().isOffline) {
+                alert(t("common.offline_warning"));
+                return;
+              }
+              setCreateGroupModalVisible(true);
+            }}
             onDeleteGroup={(group: any) => handleDeleteGroup(group)}
             onSelectGroup={async (group: any) => {
               setLoadingGroupsOp(true);
               try {
                 const updatedGroup = groups.find((g: any) => g.id === group.id) || group;
                 const groupSchedule = (updatedGroup.timetables || []).find((t: any) => 
-                  String(t.event_id).toLowerCase() === String(eventId).toLowerCase()
+                  String(t.event_id).toLowerCase() === String(id).toLowerCase()
                 );
                 
                 if (groupSchedule) {
                   setSelectedTimetableId(groupSchedule.id);
                   setSelectedGroupId(updatedGroup.id);
                 } else {
-                  const res = await timetablesApi.createGroupTimetable(updatedGroup.id, { event_id: eventId as string, name: `${updatedGroup.name} Schedule` });
+                  const res = await timetablesApi.createGroupTimetable(updatedGroup.id, { event_id: id as string, name: `${updatedGroup.name} Schedule` });
                   queryClient.invalidateQueries({ queryKey: ["groups"] });
                   setSelectedGroupId(updatedGroup.id);
                   setSelectedTimetableId(res.data.id);
@@ -229,6 +245,21 @@ export default function ScheduleScreen() {
         onDismiss={() => setCreateGroupModalVisible(false)}
         onConfirm={handleCreateGroup}
         loading={loadingGroupsOp}
+      />
+
+      <ConfirmDeleteModal
+        visible={deleteModalVisible}
+        title={groupToDelete?.owner_id === useAuthStore.getState().user?.id ? "Delete Group" : "Leave Group"}
+        message={groupToDelete?.owner_id === useAuthStore.getState().user?.id 
+          ? `Are you sure you want to delete ${groupToDelete?.name}? This will remove all members and schedules.`
+          : `Are you sure you want to leave ${groupToDelete?.name}?`}
+        onConfirm={confirmDeleteGroup}
+        onDismiss={() => {
+          setDeleteModalVisible(false);
+          setGroupToDelete(null);
+        }}
+        loading={loadingGroupsOp}
+        confirmLabel={groupToDelete?.owner_id === useAuthStore.getState().user?.id ? "Delete" : "Leave"}
       />
     </PageContainer>
   );

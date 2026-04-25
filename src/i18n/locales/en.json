@@ -20,7 +20,9 @@
     "remove": "Remove",
     "join": "Join",
     "accept": "Accept",
-    "reject": "Reject"
+    "reject": "Reject",
+    "offline": "Offline",
+    "offline_warning": "Only available when connected"
   },
   "auth": {
     "login": {
@@ -183,6 +185,25 @@
     "privacy": {
       "title": "Privacy",
       "description": "Control your visibility and security settings."
+    }
+  },
+  "timetable": {
+    "sections": {
+      "official": "Official Schedule",
+      "officialSubtitle": "Official Event Timetable",
+      "invitations": "Invitations ({{count}})",
+      "groups": "Groups"
+    },
+    "groups": {
+      "create": "Create Group",
+      "createFirst": "Create your first group",
+      "createAnother": "Create another group",
+      "memberCount": "{{count}} Members • Long press to delete",
+      "invitedBy": "Invited by {{name}}"
+    },
+    "empty": {
+      "title": "Not Published Yet",
+      "description": "Sorry, please wait for the official timetable to be published for this event, or create a group to start planning."
     }
   }
 }

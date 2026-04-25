@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect } from "react";
 import { dashboardApi, DashboardData } from "../api/dashboard";
 import { eventsRepository } from "../database/repositories/events.repository";
+import { usersRepository } from "../database/repositories/users.repository";
 import { useSyncStore } from "../store/useSyncStore";
 import { runDeltaSync } from "../sync/deltaSync";
 import { useAuthStore } from "../store/useAuthStore";
@@ -18,6 +19,7 @@ export const useDashboardData = () => {
       if (dashboardData) {
         if (dashboardData.user) {
           useAuthStore.getState().setUser(dashboardData.user);
+          usersRepository.upsertMe(dashboardData.user);
         }
 
         const sortEvents = (events: any[]) => 

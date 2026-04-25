@@ -12,6 +12,7 @@ import {
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { Text, TouchableRipple, useTheme } from "react-native-paper";
+import { useTranslation } from "react-i18next";
 import Animated, {
   interpolate,
   interpolateColor,
@@ -40,22 +41,23 @@ export const BottomNav: React.FC = () => {
   const pathSegments = pathname.split("/");
   const eventId = isEventPage ? pathSegments[2] : null;
 
+  const { t } = useTranslation();
   const dashboardItems: NavItem[] = [
-    { label: "Home", icon: Home, route: "/(tabs)/" },
-    { label: "Search", icon: Search, route: "/(tabs)/search" },
-    { label: "Profile", icon: User, route: "/(tabs)/profile" },
+    { label: t("navigation.home"), icon: Home, route: "/(tabs)/" },
+    { label: t("common.search"), icon: Search, route: "/(tabs)/search" },
+    { label: t("navigation.profile"), icon: User, route: "/(tabs)/profile" },
   ];
 
   const eventItems: NavItem[] = eventId
     ? [
-        { label: "Home", icon: Home, route: `/event/${eventId}` },
-        { label: "Line-up", icon: Music2, route: `/event/${eventId}/lineup` },
+        { label: t("navigation.home"), icon: Home, route: `/event/${eventId}` },
+        { label: t("navigation.lineup"), icon: Music2, route: `/event/${eventId}/lineup` },
         {
-          label: "Schedule",
+          label: t("navigation.schedule"),
           icon: Calendar,
           route: `/event/${eventId}/schedule`,
         },
-        { label: "Visitors", icon: Users, route: `/event/${eventId}/visitors` },
+        { label: t("navigation.visitors"), icon: Users, route: `/event/${eventId}/visitors` },
       ]
     : [];
 

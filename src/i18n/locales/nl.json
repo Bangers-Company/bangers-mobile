@@ -20,7 +20,9 @@
     "remove": "Verwijderen",
     "join": "Deelnemen",
     "accept": "Accepteren",
-    "reject": "Weigeren"
+    "reject": "Weigeren",
+    "offline": "Offline",
+    "offline_warning": "Alleen beschikbaar met internet"
   },
   "auth": {
     "login": {
@@ -183,6 +185,25 @@
     "privacy": {
       "title": "Privacy",
       "description": "Beheer je zichtbaarheid en beveiligingsinstellingen."
+    }
+  },
+  "timetable": {
+    "sections": {
+      "official": "Officieel Rooster",
+      "officialSubtitle": "Officieel Rooster van het Evenement",
+      "invitations": "Uitnodigingen ({{count}})",
+      "groups": "Groepen"
+    },
+    "groups": {
+      "create": "Groep Aanmaken",
+      "createFirst": "Maak je eerste groep aan",
+      "createAnother": "Maak nog een groep aan",
+      "memberCount": "{{count}} Leden • Ingedrukt houden om te verwijderen",
+      "invitedBy": "Uitgenodigd door {{name}}"
+    },
+    "empty": {
+      "title": "Nog niet gepubliceerd",
+      "description": "Sorry, wacht tot het officiële rooster voor dit evenement is gepubliceerd, of maak een groep aan om te beginnen met plannen."
     }
   }
 }

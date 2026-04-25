@@ -3,9 +3,10 @@ import { Timetable } from "../types/timetable";
 import apiClient from "./client";
 
 export const groupsApi = {
-  getAll: () => apiClient.get<Group[]>("/groups"),
+  getAll: (eventId?: string) => 
+    apiClient.get<Group[]>("/groups", { params: { event_id: eventId } }),
   getById: (id: string) => apiClient.get<Group>(`/groups/${id}`),
-  create: (data: { name: string; description?: string }) =>
+  create: (data: { name: string; description?: string; event_id?: string }) =>
     apiClient.post<Group>("/groups", data),
   addMember: (
     groupId: string,

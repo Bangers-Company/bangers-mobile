@@ -273,18 +273,17 @@ export const EventCard: React.FC<EventCardProps> = ({
                     {event.genres[0].name}
                   </Text>
                 </View>
-              ) : (
-                <View style={styles.metaItem}>
-                  <MapPin size={12} color={theme.colors.outline} />
-                  <Text
-                    variant="bodySmall"
-                    style={{ color: theme.colors.outline }}
-                    numberOfLines={1}
-                  >
-                    {event.location}
-                  </Text>
-                </View>
-              )}
+              ) : null}
+              <View style={styles.metaItem}>
+                <MapPin size={12} color={theme.colors.outline} />
+                <Text
+                  variant="bodySmall"
+                  style={{ color: theme.colors.outline }}
+                  numberOfLines={1}
+                >
+                  {event.attendee_count || 0}
+                </Text>
+              </View>
             </View>
           </View>
           <ChevronRight size={18} color={theme.colors.outline} />

@@ -76,10 +76,13 @@ export default function FriendsListScreen() {
     const filteredFriends = useMemo(() => {
         return friends.filter((f: User) => {
             const query = searchQuery.toLowerCase();
+            const firstName = (f.first_name || "").toLowerCase();
+            const lastName = (f.last_name || "").toLowerCase();
+            const username = (f.username || "").toLowerCase();
             return (
-                f.first_name.toLowerCase().includes(query) ||
-                f.last_name.toLowerCase().includes(query) ||
-                f.username.toLowerCase().includes(query)
+                firstName.includes(query) ||
+                lastName.includes(query) ||
+                username.includes(query)
             );
         });
     }, [friends, searchQuery]);
@@ -106,7 +109,7 @@ export default function FriendsListScreen() {
                     <View style={styles.friendInfo}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                             <Text variant="titleMedium" style={styles.friendName}>
-                                {item.first_name} {item.last_name}
+                                {item.first_name || "Unknown"} {item.last_name || ""}
                             </Text>
                             {item.roles?.some((r: any) => (typeof r === 'string' ? r === 'admin' : r?.name === 'admin')) && (
                                 <ShieldAlert size={16} color={theme.colors.error} />

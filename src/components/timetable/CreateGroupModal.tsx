@@ -157,7 +157,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
                     >
                       <Avatar.Text 
                         size={40} 
-                        label={friend.username.substring(0, 2).toUpperCase()} 
+                        label={(friend.username || friend.first_name || "U").substring(0, 2).toUpperCase()} 
                         style={{ backgroundColor: addAlpha(theme.colors.primary, 0.1) }}
                         labelStyle={{ color: theme.colors.primary }}
                       />
