@@ -48,13 +48,13 @@ export const NotificationScheduler = {
           sound: true,
           priority: Notifications.AndroidNotificationPriority.MAX,
           color: "#a60df2",
-          channelId: "timetable-reminders",
         },
         trigger: {
           type: "timeInterval",
           seconds: seconds,
           repeats: false,
           channelId: "timetable-reminders",
+          exact: true,
         } as any,
       });
     } catch (e) {
