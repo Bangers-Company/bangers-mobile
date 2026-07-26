@@ -1,0 +1,250 @@
+{
+  "common": {
+    "next": "Next",
+    "back": "Back",
+    "save": "Save Changes",
+    "cancel": "Cancel",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "logout": "Logout",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "viewAll": "View All",
+    "search": "Search",
+    "noResults": "No results found",
+    "attending": "Attending",
+    "attend": "Attend",
+    "going": "Going",
+    "remove": "Remove",
+    "join": "Join",
+    "accept": "Accept",
+    "reject": "Reject",
+    "decline": "Decline",
+    "someone": "someone",
+    "offline": "Offline",
+    "offline_warning": "Only available when connected"
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome Back",
+      "subtitle": "Enter your credentials to continue",
+      "email": "Email Address",
+      "password": "Password",
+      "signIn": "Sign In",
+      "newHere": "New here?",
+      "createAccount": "Create Account",
+      "invalidCredentials": "Invalid email or password"
+    },
+    "register": {
+      "steps": {
+        "email": {
+          "title": "Enter your Email",
+          "subtitle": "We'll send you updates and verification."
+        },
+        "username": {
+          "title": "Pick a Username",
+          "subtitle": "This is how others will see you."
+        },
+        "password": {
+          "title": "Secure your account",
+          "subtitle": "Choose a strong password."
+        },
+        "birthday": {
+          "title": "When's your birthday?",
+          "subtitle": "You must be 18+ to join the rave."
+        },
+        "policies": {
+          "title": "Final touches",
+          "subtitle": "Agree to our terms and conditions."
+        }
+      },
+      "usernamePlaceholder": "UniqueRaver123",
+      "register": "Register",
+      "emailTaken": "Email already in use",
+      "usernameTaken": "Username already taken",
+      "ageRestriction": "You must be 18 or older to join.",
+      "policyAgreement": "I agree to the Terms of Service and Privacy Policy."
+    }
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "Welcome to the Rave!",
+      "description": "We're thrilled to have you part of the Bangers community. Let's get your experience personalized."
+    },
+    "identity": {
+      "title": "Who are you?",
+      "subtitle": "How should your friends find you?",
+      "firstName": "First Name",
+      "lastName": "Last Name"
+    },
+    "genres": {
+      "title": "Your Vibe",
+      "subtitle": "Select the music genres you live for."
+    },
+    "bio": {
+      "title": "Tell your story",
+      "subtitle": "A little bit about you (optional).",
+      "placeholder": "Hardstyle enthusiast, festival hopper..."
+    },
+    "finish": {
+      "title": "You're all set!",
+      "feature1": "Build your perfect festival timetable",
+      "feature2": "Stay synced with your friends' locations",
+      "feature3": "Get personalized act recommendations",
+      "ready": "Ready to Go!"
+    }
+  },
+  "profile": {
+    "edit": {
+      "title": "Edit Profile",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "bio": "Bio",
+      "dob": "Date of Birth",
+      "publicProfile": "Public Profile",
+      "publicProfileSub": "Allow others to see which events you attend",
+      "permissionRequired": "Permission Required",
+      "cameraPermissionMsg": "You need to allow camera access to change your profile picture.",
+      "libraryPermissionMsg": "You need to allow library access to change your profile picture.",
+      "updateError": "Failed to update profile. Please try again."
+    },
+    "stats": {
+      "events": "Events",
+      "past": "Past",
+      "friends": "Friends"
+    },
+    "sections": {
+      "past": "Past Events",
+      "noEvents": "No events found",
+      "noUpcoming": "No upcoming events",
+      "noPast": "No past events recorded",
+      "about": "About",
+      "lineup": "Line-up",
+      "viewLineup": "View full line-up",
+      "location": "Location",
+      "dates": "Dates",
+      "upcoming": "Upcoming Events"
+    }
+  },
+  "dashboard": {
+    "myEvents": "My Events",
+    "maybeInterested": "Maybe interested in",
+    "suggested": "Suggested for You"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "friends": "Friend Requests",
+    "groups": "Group Invites",
+    "emptyFriends": "No pending friend requests",
+    "emptyGroups": "No pending group invitations",
+    "friendRequestSub": "wants to be your friend",
+    "groupInviteSub": "invited you to join their group"
+  },
+  "navigation": {
+    "home": "Home",
+    "events": "Events",
+    "profile": "Profile",
+    "map": "Map",
+    "timetable": "Timetable",
+    "settings": "Settings",
+    "notifications": "Notifications",
+    "lineup": "Line-up",
+    "schedule": "Schedule",
+    "visitors": "Visitors",
+    "info": "Info"
+  },
+  "settings": {
+    "title": "Settings",
+    "general": {
+      "title": "General",
+      "language": "Language",
+      "english": "English",
+      "dutch": "Dutch",
+      "french": "French",
+      "german": "German",
+      "spanish": "Spanish",
+      "italian": "Italian"
+    },
+    "appearance": {
+      "title": "Appearance",
+      "themeTitle": "Theme Mode",
+      "themeSubtitle": "Choose your preferred look",
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark",
+      "amoledTitle": "AMOLED Mode",
+      "amoledSubtitle": "Pure black for OLED screens",
+      "accentTitle": "Accent Color"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Manage your alerts and timetable reminders.",
+      "enabled": "Timetable Reminders",
+      "enabledSubtitle": "Get notified before an act starts",
+      "minutesBefore": "Reminder Time",
+      "minutesBeforeSubtitle": "How long before the act starts",
+      "minutes": "{{count}} minutes",
+      "joinSuccess": "Successfully joined group!"
+    },
+    "account": {
+      "title": "Account",
+      "description": "Update your email, password, and subscription details."
+    },
+    "privacy": {
+      "title": "Privacy",
+      "description": "Control your visibility and security settings."
+    }
+  },
+  "timetable": {
+    "sections": {
+      "official": "Official Schedule",
+      "officialSubtitle": "Official Event Timetable",
+      "invitations": "Invitations ({{count}})",
+      "groups": "Groups"
+    },
+    "groups": {
+      "create": "Create Group",
+      "createFirst": "Create your first group",
+      "createAnother": "Create another group",
+      "memberCount": "{{count}} Members • Long press to delete",
+      "invitedBy": "Invited by {{name}}",
+      "createModal": {
+        "titleStep1": "Create Group",
+        "titleStep2": "Invite Members",
+        "stepIndicator": "Step {{current}} of {{total}}",
+        "nameSubtitle": "What should we call your new squad?",
+        "nameLabel": "Group Name",
+        "namePlaceholder": "e.g. Festival Squad",
+        "inviteSubtitle": "Select friends to join {{name}}.",
+        "searchPlaceholder": "Search friends...",
+        "noFriends": "No friends found.",
+        "createWithCount": "Create ({{count}})"
+      },
+      "deleteModal": {
+        "titleDelete": "Delete Group",
+        "titleLeave": "Leave Group",
+        "messageDelete": "Are you sure you want to delete {{name}}? This will remove all members and schedules.",
+        "messageLeave": "Are you sure you want to leave {{name}}?",
+        "confirmDelete": "Delete",
+        "confirmLeave": "Leave"
+      }
+    },
+    "empty": {
+      "title": "Not Published Yet",
+      "description": "Sorry, please wait for the official timetable to be published for this event, or create a group to start planning."
+    },
+    "actInfo": {
+      "stage": "Stage",
+      "time": "Time",
+      "date": "Date",
+      "whosGoing": "Who's going?",
+      "fromGroup": "From your group",
+      "loadingAttendees": "Loading attendees...",
+      "noAttendees": "No one from your group is attending yet.",
+      "about": "About",
+      "gotIt": "Got it"
+    }
+  }
+}

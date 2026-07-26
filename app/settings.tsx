@@ -1,0 +1,582 @@
+import { useRouter } from "expo-router";
+import {
+  Globe,
+  LogOut,
+  Bell as Notifications,
+  Palette,
+  Shield,
+  User,
+} from "lucide-react-native";
+import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { ScrollView, StyleSheet, TouchableOpacity, useColorScheme, View } from "react-native";
+import {
+  Divider,
+  IconButton,
+  Menu,
+  SegmentedButtons,
+  Switch,
+  Text,
+  TouchableRipple,
+  useTheme,
+} from "react-native-paper";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { PageContainer } from "../src/components/PageContainer";
+import { useAuthStore } from "../src/store/useAuthStore";
+import { useSettingsStore } from "../src/store/useSettingsStore";
+import { useUIStore } from "../src/store/useUIStore";
+import { addAlpha, COLORS } from "../src/utils/theme";
+
+const ACCENT_COLORS = [
+  "#a60df2", // Primary Purple
+  "#2196F3", // Blue
+  "#F44336", // Red
+  "#10b981", // Emerald
+  "#f59e0b", // Amber
+  "#ec4899", // Pink
+  "#00BCD4", // Cyan
+  "#8BC34A", // Light Green
+  "#FF5722", // Deep Orange
+  "#607D8B", // Blue Grey
+];
+
+const AnimatedSection = ({
+  isExpanded,
+  children,
+}: {
+  isExpanded: boolean;
+  children: React.ReactNode;
+}) => {
+  const height = useSharedValue(0);
+  const opacity = useSharedValue(0);
+  const [measuredHeight, setMeasuredHeight] = useState(0);
+
+  React.useEffect(() => {
+    height.value = withTiming(isExpanded ? measuredHeight : 0, { duration: 300 });
+    opacity.value = withTiming(isExpanded ? 1 : 0, { duration: 300 });
+  }, [isExpanded, measuredHeight, height, opacity]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    height: height.value,
+    opacity: opacity.value,
+    overflow: "hidden",
+  }));
+
+  return (
+    <Animated.View style={animatedStyle}>
+      <View
+        onLayout={(e) => setMeasuredHeight(e.nativeEvent.layout.height)}
+        style={{ position: "absolute", top: 0, left: 0, right: 0 }}
+      >
+        {children}
+      </View>
+    </Animated.View>
+  );
+};
+
+export default function SettingsScreen() {
+  const { bottom } = useSafeAreaInsets();
+  const theme = useTheme();
+  const router = useRouter();
+  const systemColorScheme = useColorScheme();
+
+  const { t } = useTranslation();
+  const {
+    themeMode,
+    isAmoled,
+    accentColor,
+    setThemeMode,
+    setIsAmoled,
+    setAccentColor
+  } = useUIStore();
+
+  const { 
+    language, 
+    setLanguage, 
+    notificationsEnabled, 
+    setNotificationsEnabled,
+    notificationMinutesBefore,
+    setNotificationMinutesBefore
+  } = useSettingsStore();
+
+  const logout = useAuthStore((state) => state.logout);
+
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [langMenuVisible, setLangMenuVisible] = useState(false);
+  const [notifMinutesMenuVisible, setNotifMinutesMenuVisible] = useState(false);
+
+  const languages = [
+    { code: "en", label: t("settings.general.english") },
+    { code: "nl", label: t("settings.general.dutch") },
+    { code: "fr", label: t("settings.general.french") },
+    { code: "de", label: t("settings.general.german") },
+    { code: "es", label: t("settings.general.spanish") },
+    { code: "it", label: t("settings.general.italian") },
+  ];
+
+  const currentLanguageLabel = languages.find(l => l.code === language)?.label || language;
+
+  const toggleSection = (section: string) => {
+    setExpandedSection(expandedSection === section ? null : section);
+  };
+
+  const handleLogout = async () => {
+    // Clear user-specific local data
+    try {
+      const { getDb, runExclusive } = await import("../src/database/sqlite");
+      await runExclusive(async () => {
+        const db = await getDb();
+        await db.execAsync(`
+          DELETE FROM user_event_attendance;
+          DELETE FROM favorites;
+        `);
+      });
+    } catch (e) {
+      console.error("Failed to clear local data on logout:", e);
+    }
+    logout();
+    router.replace("/(auth)/login");
+  };
+
+  const isSystemDark = systemColorScheme === "dark";
+  const isDarkActive =
+    themeMode === "system" ? isSystemDark : themeMode === "dark";
+
+  const renderSection = (
+    id: string,
+    title: string,
+    icon: React.ReactNode,
+    children: React.ReactNode,
+  ) => {
+    const isExpanded = expandedSection === id;
+    return (
+      <View style={styles.section}>
+        <TouchableRipple
+          onPress={() => toggleSection(id)}
+          rippleColor="rgba(0, 0, 0, .1)"
+        >
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitleWrapper}>
+              {icon}
+              <Text variant="titleLarge" style={styles.sectionTitle}>
+                {title}
+              </Text>
+            </View>
+            <IconButton
+              icon={isExpanded ? "chevron-up" : "chevron-down"}
+              size={24}
+              iconColor={theme.colors.onSurfaceVariant}
+            />
+          </View>
+        </TouchableRipple>
+        <AnimatedSection isExpanded={isExpanded}>
+          <View style={styles.sectionContent}>{children}</View>
+        </AnimatedSection>
+        <Divider style={styles.divider} />
+      </View>
+    );
+  };
+
+  return (
+    <PageContainer withPadding={false}>
+      <View
+        style={[
+          styles.topBar,
+          {
+            backgroundColor: "transparent",
+          },
+        ]}
+      >
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={[
+            styles.backButtonCircular,
+            { backgroundColor: theme.colors.surface },
+          ]}
+        >
+          <IconButton icon="arrow-left" onPress={() => router.back()} />
+        </TouchableOpacity>
+
+        <Text variant="titleLarge" style={styles.headerTitle}>
+          {t("settings.title")}
+        </Text>
+
+        <View style={{ width: 44 }} />
+      </View>
+
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: bottom + 100 },
+        ]}
+      >
+        {/* General */}
+        {renderSection(
+          "general",
+          t("settings.general.title"),
+          <Globe size={24} color={theme.colors.primary} />,
+          <View style={styles.appearanceContent}>
+            <View
+              style={[
+                styles.settingRow,
+                { flexDirection: "column", alignItems: "flex-start", gap: 12 },
+              ]}
+            >
+              <View>
+                <Text variant="bodyLarge" style={styles.settingLabel}>
+                  {t("settings.general.language")}
+                </Text>
+              </View>
+              <Menu
+                visible={langMenuVisible}
+                onDismiss={() => setLangMenuVisible(false)}
+                anchor={
+                  <TouchableRipple
+                    onPress={() => setLangMenuVisible(true)}
+                    style={[
+                      styles.dropdownTrigger,
+                      {
+                        backgroundColor: addAlpha(theme.colors.onSurface, 0.05),
+                        borderColor: addAlpha(theme.colors.onSurface, 0.1),
+                      },
+                    ]}
+                  >
+                    <View style={styles.dropdownInner}>
+                      <Text variant="bodyLarge">{currentLanguageLabel}</Text>
+                      <IconButton
+                        icon={langMenuVisible ? "chevron-up" : "chevron-down"}
+                        size={20}
+                        style={{ margin: 0 }}
+                      />
+                    </View>
+                  </TouchableRipple>
+                }
+                contentStyle={{
+                  backgroundColor: theme.colors.elevation.level3,
+                  borderRadius: 12,
+                }}
+              >
+                {languages.map((lang) => (
+                  <Menu.Item
+                    key={lang.code}
+                    onPress={() => {
+                      setLanguage(lang.code);
+                      setLangMenuVisible(false);
+                    }}
+                    title={lang.label}
+                    leadingIcon={language === lang.code ? "check" : undefined}
+                  />
+                ))}
+              </Menu>
+            </View>
+          </View>,
+        )}
+
+        {/* Appearance */}
+        {renderSection(
+          "appearance",
+          "Appearance",
+          <Palette size={24} color={theme.colors.primary} />,
+          <View style={styles.appearanceContent}>
+            <View
+              style={[
+                styles.settingRow,
+                { flexDirection: "column", alignItems: "flex-start", gap: 12 },
+              ]}
+            >
+              <View>
+                <Text variant="bodyLarge" style={styles.settingLabel}>
+                  {t("settings.appearance.themeTitle") || "Theme Mode"}
+                </Text>
+                <Text variant="bodySmall" style={styles.settingSubtext}>
+                  {t("settings.appearance.themeSubtitle") || "Choose your preferred look"}
+                </Text>
+              </View>
+              <SegmentedButtons
+                value={themeMode}
+                onValueChange={(val) => setThemeMode(val as "system" | "light" | "dark")}
+                buttons={[
+                  { value: "system", label: t("settings.appearance.system") || "System" },
+                  { value: "light", label: t("settings.appearance.light") || "Light" },
+                  { value: "dark", label: t("settings.appearance.dark") || "Dark" },
+                ]}
+                style={styles.segmentedButtons}
+              />
+            </View>
+
+            <View style={styles.settingRow}>
+              <View>
+                <Text variant="bodyLarge" style={styles.settingLabel}>
+                  {t("settings.appearance.amoledTitle") || "AMOLED Mode"}
+                </Text>
+                <Text variant="bodySmall" style={styles.settingSubtext}>
+                  {t("settings.appearance.amoledSubtitle") || "Pure black for OLED screens"}
+                </Text>
+              </View>
+              <Switch
+                value={isAmoled}
+                onValueChange={(val) => {
+                  setIsAmoled(val);
+                }}
+                disabled={!isDarkActive}
+                color={theme.colors.primary}
+              />
+            </View>
+
+            <View style={styles.accentSection}>
+              <Text variant="bodyLarge" style={styles.settingLabel}>
+                {t("settings.appearance.accentTitle") || "Accent Color"}
+              </Text>
+              <View style={styles.colorGrid}>
+                {ACCENT_COLORS.map((color) => {
+                  const isSelected = (accentColor || COLORS.primary) === color;
+                  return (
+                    <TouchableOpacity
+                      key={color}
+                      onPress={() => setAccentColor(color)}
+                      style={[
+                        styles.colorCircle,
+                        { backgroundColor: color },
+                        isSelected && [
+                          styles.selectedColorCircle,
+                          { borderColor: theme.colors.onSurface },
+                        ],
+                      ]}
+                    >
+                      {isSelected && (
+                        <View
+                          style={[styles.selectionRing, { borderColor: color }]}
+                        />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          </View>,
+        )}
+
+        {/* Notifications */}
+        {renderSection(
+          "notifications",
+          t("settings.notifications.title") || "Notifications",
+          <Notifications size={24} color={theme.colors.primary} />,
+          <View style={styles.appearanceContent}>
+            <View style={styles.settingRow}>
+              <View style={{ flex: 1, marginRight: 16 }}>
+                <Text variant="bodyLarge" style={styles.settingLabel}>
+                  {t("settings.notifications.enabled")}
+                </Text>
+                <Text variant="bodySmall" style={styles.settingSubtext}>
+                  {t("settings.notifications.enabledSubtitle")}
+                </Text>
+              </View>
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={setNotificationsEnabled}
+                color={theme.colors.primary}
+              />
+            </View>
+
+            <View
+              style={[
+                styles.settingRow,
+                { flexDirection: "column", alignItems: "flex-start", gap: 12 },
+              ]}
+            >
+              <View>
+                <Text variant="bodyLarge" style={styles.settingLabel}>
+                  {t("settings.notifications.minutesBefore")}
+                </Text>
+                <Text variant="bodySmall" style={styles.settingSubtext}>
+                  {t("settings.notifications.minutesBeforeSubtitle")}
+                </Text>
+              </View>
+              
+              <Menu
+                visible={notifMinutesMenuVisible}
+                onDismiss={() => setNotifMinutesMenuVisible(false)}
+                anchor={
+                  <TouchableRipple
+                    onPress={() => setNotifMinutesMenuVisible(true)}
+                    disabled={!notificationsEnabled}
+                    style={[
+                      styles.dropdownTrigger,
+                      {
+                        backgroundColor: addAlpha(theme.colors.onSurface, 0.05),
+                        borderColor: addAlpha(theme.colors.onSurface, 0.1),
+                        opacity: notificationsEnabled ? 1 : 0.5,
+                      },
+                    ]}
+                  >
+                    <View style={styles.dropdownInner}>
+                      <Text variant="bodyLarge">
+                        {t("settings.notifications.minutes", { count: notificationMinutesBefore })}
+                      </Text>
+                      <IconButton
+                        icon={notifMinutesMenuVisible ? "chevron-up" : "chevron-down"}
+                        size={20}
+                        style={{ margin: 0 }}
+                      />
+                    </View>
+                  </TouchableRipple>
+                }
+                contentStyle={{
+                  backgroundColor: theme.colors.elevation.level3,
+                  borderRadius: 12,
+                }}
+              >
+                {[5, 10, 15, 20, 25, 30].map((mins) => (
+                  <Menu.Item
+                    key={mins}
+                    onPress={() => {
+                      setNotificationMinutesBefore(mins);
+                      setNotifMinutesMenuVisible(false);
+                    }}
+                    title={t("settings.notifications.minutes", { count: mins })}
+                    leadingIcon={notificationMinutesBefore === mins ? "check" : undefined}
+                  />
+                ))}
+              </Menu>
+            </View>
+          </View>,
+        )}
+
+        {/* Account */}
+        {renderSection(
+          "account",
+          t("settings.account.title") || "Account",
+          <User size={24} color={theme.colors.primary} />,
+          <Text variant="bodyMedium" style={styles.placeholderText}>
+            {t("settings.account.description") || "Update your email, password, and subscription details."}
+          </Text>,
+        )}
+
+        {/* Privacy */}
+        {renderSection(
+          "privacy",
+          t("settings.privacy.title") || "Privacy",
+          <Shield size={24} color={theme.colors.primary} />,
+          <Text variant="bodyMedium" style={styles.placeholderText}>
+            {t("settings.privacy.description") || "Control your visibility and security settings."}
+          </Text>,
+        )}
+
+        <TouchableRipple
+          style={[
+            styles.logoutButton,
+            {
+              backgroundColor: addAlpha(theme.colors.error, 0.1),
+              borderColor: addAlpha(theme.colors.error, 0.2),
+            },
+          ]}
+          onPress={handleLogout}
+          rippleColor={addAlpha(theme.colors.error, 0.2)}
+        >
+          <View style={styles.logoutContent}>
+            <LogOut size={20} color={theme.colors.error} />
+            <Text style={[styles.logoutText, { color: theme.colors.error }]}>
+              {t("common.logout") || "Logout"}
+            </Text>
+          </View>
+        </TouchableRipple>
+      </ScrollView>
+    </PageContainer>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    zIndex: 10,
+    borderBottomWidth: 0,
+  },
+  backButtonCircular: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerTitle: {
+    fontWeight: "800",
+    letterSpacing: -0.5,
+    textAlign: "center",
+    flex: 1,
+  },
+  scrollContent: { padding: 16 },
+  section: { marginBottom: 8 },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 16,
+  },
+  sectionTitleWrapper: { flexDirection: "row", alignItems: "center", gap: 12 },
+  sectionTitle: { fontWeight: "600" },
+  sectionContent: { paddingBottom: 16, paddingLeft: 36 },
+  divider: { opacity: 0.1 },
+  appearanceContent: { paddingTop: 8 },
+  settingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
+  settingLabel: { fontWeight: "600" },
+  settingSubtext: { opacity: 0.6 },
+  segmentedButtons: { width: "100%" },
+  accentSection: { marginTop: 8 },
+  colorGrid: { flexDirection: "row", flexWrap: "wrap", gap: 16, marginTop: 12, maxWidth: 240 },
+  colorCircle: { width: 32, height: 32, borderRadius: 16 },
+  selectedColorCircle: { borderWidth: 2, transform: [{ scale: 1.2 }] },
+  selectionRing: {
+    position: "absolute",
+    top: -6,
+    left: -6,
+    right: -6,
+    bottom: -6,
+    borderRadius: 22,
+    borderWidth: 2,
+    opacity: 0.5,
+  },
+  placeholderText: { opacity: 0.6, lineHeight: 20 },
+  logoutButton: { marginTop: 32, borderRadius: 16, borderWidth: 1, overflow: "hidden" },
+  logoutContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    padding: 16,
+  },
+  logoutText: { fontWeight: "700", fontSize: 16 },
+  dropdownTrigger: {
+    width: "100%",
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  dropdownInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingLeft: 16,
+    paddingRight: 8,
+    height: 48,
+  },
+});
