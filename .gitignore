@@ -3,6 +3,9 @@
 # dependencies
 node_modules/
 
+docs/Wireframes/
+docs/*
+
 # Expo
 .expo/
 dist/
@@ -41,3 +44,9 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Environment
+.env
+.env.local
+.env.*.local
+*.apk

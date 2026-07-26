@@ -1,98 +1,168 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { useRouter } from "expo-router";
+import React from "react";
+import { useTranslation } from "react-i18next";
+import { RefreshControl, StyleSheet, View } from "react-native";
+import { Button, Text, useTheme } from "react-native-paper";
+import Animated, {
+  runOnJS,
+  useAnimatedScrollHandler,
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { MyEventsCarousel } from "../../src/components/dashboard/MyEventsCarousel";
+import { SuggestedEvents } from "../../src/components/dashboard/SuggestedEvents";
+import { OnboardingModal } from "../../src/components/modals/OnboardingModal";
+import { TopBar } from "../../src/components/navigation/TopBar";
+import { Droplet } from "../../src/components/ui/Droplet";
+import { useDashboardData } from "../../src/hooks/useDashboardData";
+import { useSharedScroll } from "../../src/hooks/useSharedScroll";
+import { useAuthStore } from "../../src/store/useAuthStore";
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { data, loading, refreshing, refresh, error } = useDashboardData();
+  const [showDroplet, setShowDroplet] = React.useState(false);
+  const scrollRef = React.useRef<Animated.ScrollView>(null);
+  const scrollOffset = useSharedScroll();
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const user = useAuthStore((state) => state.user);
+  const [showOnboarding, setShowOnboarding] = React.useState(
+    user?.last_login_at === null,
+  );
+
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (ev) => {
+      scrollOffset.value = ev.contentOffset.y;
+
+      if (ev.contentOffset.y > 200 !== showDroplet) {
+        runOnJS(setShowDroplet)(ev.contentOffset.y > 200);
+      }
+    },
+  });
+
+  const scrollToTop = () => {
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  };
+
+  if (error && !data) {
+    return (
+      <View
+        style={[styles.center, { backgroundColor: theme.colors.background }]}
+      >
+        <TopBar />
+        <View style={styles.loadingWrapper}>
+          <Text variant="bodyLarge" style={{ color: theme.colors.error }}>
+            {t("common.error.title") || "Failed to load events"}
+          </Text>
+          <Text variant="bodySmall" style={styles.loadingText}>
+            {error.message}
+          </Text>
+          <Button mode="outlined" onPress={refresh} style={{ marginTop: 24 }}>
+            {t("common.tryAgain") || "Try Again"}
+          </Button>
+        </View>
+      </View>
+    );
+  }
+
+  // Full-screen loading removed in favor of inline skeletons
+
+  const rawAttending = data?.attending_events;
+  const attendingEvents = Array.isArray(rawAttending)
+    ? rawAttending
+    : (rawAttending as any)?.data || [];
+
+  const rawUpcoming = data?.upcoming_events;
+  const upcomingEvents = Array.isArray(rawUpcoming)
+    ? rawUpcoming
+    : (rawUpcoming as any)?.data || [];
+
+  const rawSuggested = data?.suggested_events;
+  const suggestedEvents = Array.isArray(rawSuggested)
+    ? rawSuggested
+    : (rawSuggested as any)?.data || [];
+
+  return (
+    <View style={styles.container}>
+      <Droplet
+        visible={showDroplet}
+        onPress={scrollToTop}
+        position="top"
+        topOffset={insets.top + 8}
+      />
+      <Animated.ScrollView
+        ref={scrollRef}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={refresh}
+            tintColor={theme.colors.primary}
+          />
+        }
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: insets.bottom + 100 },
+        ]}
+      >
+        {(loading || attendingEvents.length > 0) && (
+          <MyEventsCarousel
+            title={t("dashboard.myEvents")}
+            events={attendingEvents}
+            loading={loading && attendingEvents.length === 0}
+            onPress={(ev) => router.push(`/event/${ev.id}` as any)}
+          />
+        )}
+
+        {(loading || upcomingEvents.length > 0) && (
+          <MyEventsCarousel
+            title={t("dashboard.maybeInterested")}
+            events={upcomingEvents}
+            loading={loading && upcomingEvents.length === 0}
+            onPress={(ev) => router.push(`/event/${ev.id}` as any)}
+          />
+        )}
+
+        <SuggestedEvents
+          events={suggestedEvents}
+          onRefresh={refresh}
+          refreshing={refreshing}
+          loading={loading && suggestedEvents.length === 0}
+          onEventPress={(ev) => router.push(`/event/${ev.id}` as any)}
+        />
+      </Animated.ScrollView>
+
+      {user && (
+        <OnboardingModal
+          visible={showOnboarding}
+          user={user}
+          onComplete={() => setShowOnboarding(false)}
+        />
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  center: {
+    flex: 1,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  loadingWrapper: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 16,
+    opacity: 0.6,
+  },
+  scrollContent: {
+    paddingTop: 16,
   },
 });

@@ -1,0 +1,241 @@
+import React from "react";
+import { StyleSheet, View, TouchableOpacity, ScrollView } from "react-native";
+import { Text, useTheme, ActivityIndicator, IconButton, Card, Button } from "react-native-paper";
+import { Calendar, Users, Globe } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
+import { addAlpha } from "../../utils/theme";
+import { Group } from "../../types/group";
+import { Timetable } from "../../types/timetable";
+
+interface TimetableOverviewProps {
+  official: Timetable | null;
+  groups: Group[];
+  loadingGroups: boolean;
+  loadingOfficial: boolean;
+  onSelect: (timetable: Timetable) => void;
+  onAcceptInvitation: (groupId: string) => void;
+  onRejectInvitation: (groupId: string) => void;
+  onCreateGroup: () => void;
+  onDeleteGroup: (group: Group) => void;
+  onSelectGroup: (group: Group) => void;
+}
+
+export const TimetableOverview: React.FC<TimetableOverviewProps> = ({
+  official,
+  groups,
+  loadingGroups,
+  loadingOfficial,
+  onSelect,
+  onAcceptInvitation,
+  onRejectInvitation,
+  onCreateGroup,
+  onDeleteGroup,
+  onSelectGroup,
+}) => {
+  const theme = useTheme();
+  const { t } = useTranslation();
+
+  const invitations = groups.filter(g => g.pivot?.invitation_status === 'pending');
+  const activeGroups = groups.filter(g => g.pivot?.invitation_status === 'accepted');
+
+  if (loadingOfficial && !official) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator color={theme.colors.primary} />
+      </View>
+    );
+  }
+
+  if (!official && activeGroups.length === 0 && invitations.length === 0) {
+    return (
+      <View style={styles.emptyContainer}>
+        <View style={[styles.iconBox, { backgroundColor: addAlpha(theme.colors.error, 0.1) }]}>
+          <Calendar size={48} color={theme.colors.error} />
+        </View>
+        <Text variant="headlineSmall" style={styles.emptyTitle}>
+          {t("timetable.empty.title") || "Not Published Yet"}
+        </Text>
+        <Text variant="bodyMedium" style={styles.emptyText}>
+          {t("timetable.empty.description") || "Sorry, please wait for the official timetable to be published for this event, or create a group to start planning."}
+        </Text>
+        <Button 
+          mode="contained" 
+          onPress={onCreateGroup} 
+          style={{ marginTop: 24 }}
+          icon="plus"
+        >
+          {t("timetable.groups.create") || "Create Group"}
+        </Button>
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      {official && (
+        <>
+          <Text variant="titleMedium" style={styles.sectionTitle}>
+            {t("timetable.sections.official") || "Official Schedule"}
+          </Text>
+          <Card
+            style={styles.card}
+            onPress={() => onSelect(official)}
+          >
+            <Card.Title
+              title={official.name}
+              subtitle={t("timetable.sections.officialSubtitle") || "Official Event Timetable"}
+              left={(props) => <Globe {...props} size={24} color={theme.colors.primary} />}
+              right={(props) => <IconButton {...props} icon="chevron-right" />}
+            />
+          </Card>
+        </>
+      )}
+
+      {invitations.length > 0 && (
+        <>
+          <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.primary }]}>
+            {t("timetable.sections.invitations", { count: invitations.length }) || `Invitations (${invitations.length})`}
+          </Text>
+          {invitations.map(group => (
+            <Card key={group.id} style={[styles.card, { borderLeftWidth: 4, borderLeftColor: theme.colors.primary }]}>
+              <Card.Title
+                title={group.name}
+                subtitle={t("timetable.groups.invitedBy", { 
+                  name: group.owner?.name || 
+                        (group.owner?.first_name ? `${group.owner.first_name} ${group.owner.last_name || ""}`.trim() : null) ||
+                        group.owner?.username || 
+                        t("common.someone") || "someone"
+                })}
+                left={(props) => <Users {...props} size={24} color={theme.colors.primary} />}
+              />
+              <Card.Actions>
+                <Button mode="text" onPress={() => onRejectInvitation(group.id)}>
+                  {t("common.decline") || "Decline"}
+                </Button>
+                <Button mode="contained" onPress={() => onAcceptInvitation(group.id)}>
+                  {t("common.accept") || "Accept"}
+                </Button>
+              </Card.Actions>
+            </Card>
+          ))}
+        </>
+      )}
+
+      <View style={styles.sectionHeader}>
+        <Text variant="titleMedium" style={styles.sectionTitle}>
+          {t("timetable.sections.groups") || "Groups"}
+        </Text>
+        {loadingGroups && <ActivityIndicator size="small" color={theme.colors.primary} />}
+      </View>
+      
+      {activeGroups.map(group => (
+        <Card 
+          key={group.id} 
+          style={styles.card} 
+          onPress={() => onSelectGroup(group)}
+          onLongPress={() => onDeleteGroup(group)}
+        >
+          <Card.Title
+            title={group.name}
+            subtitle={t("timetable.groups.memberCount", { count: group.members_count || 1 }) || `${group.members_count || 1} Members • Long press to delete`}
+            left={(props) => <Users {...props} size={24} color={theme.colors.primary} />}
+            right={(props) => <IconButton {...props} icon="chevron-right" />}
+          />
+        </Card>
+      ))}
+
+      <TouchableOpacity 
+        style={[styles.createPlaceholder, { height: activeGroups.length > 0 ? 80 : 100 }]} 
+        onPress={onCreateGroup}
+        disabled={loadingGroups}
+      >
+        {loadingGroups ? (
+          <ActivityIndicator size="small" color={theme.colors.primary} />
+        ) : (
+          <>
+            <Users size={activeGroups.length > 0 ? 20 : 24} color={theme.colors.primary} />
+            <Text 
+              variant={activeGroups.length > 0 ? "bodySmall" : "bodyMedium"} 
+              style={{ color: theme.colors.primary, marginTop: 4 }}
+            >
+              {activeGroups.length > 0 
+                ? t("timetable.groups.createAnother") || "Create another group" 
+                : t("timetable.groups.createFirst") || "Create your first group"}
+            </Text>
+          </>
+        )}
+      </TouchableOpacity>
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 16,
+  },
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  sectionTitle: {
+    fontWeight: "bold",
+    marginBottom: 8,
+    marginTop: 16,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+    marginTop: 16,
+  },
+  card: {
+    marginBottom: 12,
+    borderRadius: 16,
+  },
+  createPlaceholder: {
+    height: 100,
+    borderWidth: 2,
+    borderStyle: "dashed",
+    borderColor: addAlpha("#000", 0.1),
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  createPlaceholderSmall: {
+    height: 48,
+    borderWidth: 2,
+    borderStyle: "dashed",
+    borderColor: addAlpha("#000", 0.1),
+    borderRadius: 16,
+    flexDirection: 'row',
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 32,
+  },
+  iconBox: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  emptyTitle: {
+    fontWeight: "900",
+    marginBottom: 12,
+  },
+  emptyText: {
+    textAlign: "center",
+    opacity: 0.7,
+    lineHeight: 22,
+  },
+});
