@@ -2,13 +2,14 @@ import React, { useEffect } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import { WifiOff } from 'lucide-react-native';
-import { useTheme, Text, Surface } from 'react-native-paper';
+import { Box, Text } from '@gluestack-ui/themed';
+import { useAppTheme } from '../../context/ThemeProvider';
 import { useUIStore } from '../../store/useUIStore';
 import { useTranslation } from 'react-i18next';
 
 export const NetworkStatusIndicator = () => {
   const { isOffline, setIsOffline } = useUIStore();
-  const theme = useTheme();
+  const theme = useAppTheme();
   const { t } = useTranslation();
   const opacity = React.useRef(new Animated.Value(0)).current;
 
@@ -29,14 +30,16 @@ export const NetworkStatusIndicator = () => {
 
   if (!isOffline) return null;
 
+  const errorColor = "#ff5252";
+
   return (
     <Animated.View style={[styles.container, { opacity }]}>
-      <Surface style={[styles.badge, { backgroundColor: theme.colors.errorContainer }]} elevation={2}>
-        <WifiOff size={14} color={theme.colors.error} />
-        <Text variant="labelSmall" style={[styles.text, { color: theme.colors.error }]}>
+      <Box style={[styles.badge, { backgroundColor: "rgba(255, 82, 82, 0.15)" }]}>
+        <WifiOff size={14} color={errorColor} />
+        <Text style={[styles.text, { color: errorColor }]}>
           {t("common.offline") || "Offline"}
         </Text>
-      </Surface>
+      </Box>
     </Animated.View>
   );
 };
@@ -58,6 +61,8 @@ const styles = StyleSheet.create({
   },
   text: {
     fontWeight: 'bold',
+    fontSize: 11,
     textTransform: 'uppercase',
   }
 });
+

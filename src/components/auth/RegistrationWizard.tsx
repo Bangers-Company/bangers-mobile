@@ -1,21 +1,24 @@
 import React, { useState, useMemo } from "react";
-import { StyleSheet, View, useWindowDimensions } from "react-native";
+import { StyleSheet, View, useWindowDimensions, TextInput as RNTextInput, Pressable } from "react-native";
 import { useTranslation } from "react-i18next";
 import {
   Button,
+  ButtonText,
   Checkbox,
+  CheckboxIcon,
+  CheckboxIndicator,
+  CheckIcon,
   Text,
-  TextInput,
-  useTheme,
-  TouchableRipple,
-} from "react-native-paper";
+  Input,
+  InputField,
+} from "@gluestack-ui/themed";
+import { useAppTheme } from "../../context/ThemeProvider";
 import { Calendar, Lock, Mail, ChevronLeft, User as UserIcon } from "lucide-react-native";
 import Animated, {
   useAnimatedStyle,
   withTiming,
   Easing,
 } from "react-native-reanimated";
-import { DatePickerInput } from "react-native-paper-dates";
 import { PasswordStrength } from "./PasswordStrength";
 
 interface RegistrationData {
@@ -37,8 +40,8 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
   loading,
   onBackToLogin,
 }) => {
-  const { t, i18n } = useTranslation();
-  const theme = useTheme();
+  const { t } = useTranslation();
+  const theme = useAppTheme();
   const { width: screenWidth } = useWindowDimensions();
 
   const [step, setStep] = useState(0);
@@ -46,9 +49,19 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [dob, setDob] = useState<Date | undefined>(undefined);
+  const [dobString, setDobString] = useState("");
   const [agreedToPolicies, setAgreedToPolicies] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const parsedDob = useMemo(() => {
+    if (!dobString || dobString.length < 10) return undefined;
+    const parts = dobString.split("-");
+    if (parts.length === 3) {
+      const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      if (!isNaN(d.getTime())) return d;
+    }
+    return undefined;
+  }, [dobString]);
 
   // Verification Logic
   const canGoNext = useMemo(() => {
@@ -57,17 +70,17 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
       case 1: return username.length >= 3;
       case 2: return password.length >= 8 && password === confirmPassword;
       case 3:
-        if (!dob) return false;
-        const age = new Date().getFullYear() - dob.getFullYear();
+        if (!parsedDob) return false;
+        const age = new Date().getFullYear() - parsedDob.getFullYear();
         return age >= 18;
       case 4: return agreedToPolicies;
       default: return false;
     }
-  }, [step, email, username, password, confirmPassword, dob, agreedToPolicies]);
+  }, [step, email, username, password, confirmPassword, parsedDob, agreedToPolicies]);
 
   const handleNext = async () => {
     if (!canGoNext) {
-      if (step === 2 && dob) {
+      if (step === 3 && parsedDob) {
         setError("You must be 18 or older to join.");
       }
       return;
@@ -76,7 +89,7 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
     if (step < 4) {
       setStep(step + 1);
     } else {
-      const result = await onRegister({ email, username, password, dob: dob!, agreedToPolicies });
+      const result = await onRegister({ email, username, password, dob: parsedDob!, agreedToPolicies });
       if (result && !result.success) {
         if (result.field === 'email') setStep(0);
         else if (result.field === 'username') setStep(1);
@@ -100,7 +113,7 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
         { 
           translateX: withTiming(-step * (screenWidth - 48), { 
             duration: 400,
-            easing: Easing.bezier(0.33, 1, 0.68, 1) // Ease Out Cubic
+            easing: Easing.bezier(0.33, 1, 0.68, 1)
           }) 
         },
       ],
@@ -110,109 +123,116 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
   const renderStepContent = () => (
     <View style={styles.contentWrapper}>
       <View style={styles.headerRow}>
-        <TouchableRipple onPress={handleBack} style={styles.backButtonIcon} borderless>
+        <Pressable onPress={handleBack} style={styles.backButtonIcon}>
           <ChevronLeft size={24} color={theme.colors.onSurface} strokeWidth={2.5} />
-        </TouchableRipple>
+        </Pressable>
       </View>
       <Animated.View style={[styles.stepContainer, containerAnimatedStyle]}>
         {/* STEP 0: EMAIL */}
         <View style={[styles.step, { width: screenWidth - 48 }]}>
-          <Text variant="headlineSmall" style={styles.stepTitle}>{t("auth.register.steps.email.title")}</Text>
-          <Text variant="bodyMedium" style={styles.stepSubtitle}>{t("auth.register.steps.email.subtitle")}</Text>
-          <TextInput
-            mode="outlined"
-            placeholder="email@example.com"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            style={styles.pillInput}
-            outlineStyle={styles.pillOutline}
-            left={<TextInput.Icon icon={() => <Mail size={20} color={theme.colors.outline} />} />}
-            activeOutlineColor={theme.colors.primary}
-          />
+          <Text style={[styles.stepTitle, { color: theme.colors.onSurface }]}>{t("auth.register.steps.email.title")}</Text>
+          <Text style={[styles.stepSubtitle, { color: theme.colors.onSurface }]}>{t("auth.register.steps.email.subtitle")}</Text>
+          <View style={styles.inputRow}>
+            <Mail size={20} color="#888" style={{ marginRight: 8 }} />
+            <RNTextInput
+              placeholder="email@example.com"
+              placeholderTextColor="#888"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              style={[styles.rnInput, { color: theme.colors.onSurface }]}
+            />
+          </View>
         </View>
 
         {/* STEP 1: USERNAME */}
         <View style={[styles.step, { width: screenWidth - 48 }]}>
-          <Text variant="headlineSmall" style={styles.stepTitle}>{t("auth.register.steps.username.title")}</Text>
-          <Text variant="bodyMedium" style={styles.stepSubtitle}>{t("auth.register.steps.username.subtitle")}</Text>
-          <TextInput
-            mode="outlined"
-            placeholder={t("auth.register.usernamePlaceholder")}
-            value={username}
-            onChangeText={setUsername}
-            autoCapitalize="none"
-            style={styles.pillInput}
-            outlineStyle={styles.pillOutline}
-            left={<TextInput.Icon icon={() => <UserIcon size={20} color={theme.colors.outline} />} />}
-            activeOutlineColor={theme.colors.primary}
-          />
+          <Text style={[styles.stepTitle, { color: theme.colors.onSurface }]}>{t("auth.register.steps.username.title")}</Text>
+          <Text style={[styles.stepSubtitle, { color: theme.colors.onSurface }]}>{t("auth.register.steps.username.subtitle")}</Text>
+          <View style={styles.inputRow}>
+            <UserIcon size={20} color="#888" style={{ marginRight: 8 }} />
+            <RNTextInput
+              placeholder={t("auth.register.usernamePlaceholder")}
+              placeholderTextColor="#888"
+              value={username}
+              onChangeText={setUsername}
+              autoCapitalize="none"
+              style={[styles.rnInput, { color: theme.colors.onSurface }]}
+            />
+          </View>
         </View>
 
         {/* STEP 2: PASSWORD */}
         <View style={[styles.step, { width: screenWidth - 48 }]}>
-          <Text variant="headlineSmall" style={styles.stepTitle}>{t("auth.register.steps.password.title")}</Text>
-          <Text variant="bodyMedium" style={styles.stepSubtitle}>{t("auth.register.steps.password.subtitle")}</Text>
-          <TextInput
-            mode="outlined"
-            placeholder={t("auth.login.password")}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            style={styles.pillInput}
-            outlineStyle={styles.pillOutline}
-            left={<TextInput.Icon icon={() => <Lock size={20} color={theme.colors.outline} />} />}
-            activeOutlineColor={theme.colors.primary}
-          />
+          <Text style={[styles.stepTitle, { color: theme.colors.onSurface }]}>{t("auth.register.steps.password.title")}</Text>
+          <Text style={[styles.stepSubtitle, { color: theme.colors.onSurface }]}>{t("auth.register.steps.password.subtitle")}</Text>
+          <View style={styles.inputRow}>
+            <Lock size={20} color="#888" style={{ marginRight: 8 }} />
+            <RNTextInput
+              placeholder={t("auth.login.password")}
+              placeholderTextColor="#888"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              style={[styles.rnInput, { color: theme.colors.onSurface }]}
+            />
+          </View>
           <PasswordStrength password={password} />
-          <TextInput
-            mode="outlined"
-            placeholder={t("auth.login.password")}
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry
-            style={[styles.pillInput, { marginTop: 12 }]}
-            outlineStyle={styles.pillOutline}
-            error={confirmPassword.length > 0 && confirmPassword !== password}
-            left={<TextInput.Icon icon={() => <Lock size={20} color={theme.colors.outline} />} />}
-            activeOutlineColor={theme.colors.primary}
-          />
+          <View style={[styles.inputRow, { marginTop: 12 }]}>
+            <Lock size={20} color="#888" style={{ marginRight: 8 }} />
+            <RNTextInput
+              placeholder={t("auth.login.password")}
+              placeholderTextColor="#888"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry
+              style={[styles.rnInput, { color: theme.colors.onSurface }]}
+            />
+          </View>
         </View>
 
         {/* STEP 3: BIRTHDAY */}
         <View style={[styles.step, { width: screenWidth - 48 }]}>
-          <Text variant="headlineSmall" style={styles.stepTitle}>{t("auth.register.steps.birthday.title")}</Text>
-          <Text variant="bodyMedium" style={styles.stepSubtitle}>{t("auth.register.steps.birthday.subtitle")}</Text>
-          <DatePickerInput
-            locale={i18n.language}
-            label=""
-            value={dob}
-            onChange={(d) => setDob(d)}
-            inputMode="start"
-            mode="outlined"
-            style={styles.pillInput}
-            outlineStyle={styles.pillOutline}
-            left={<TextInput.Icon icon={() => <Calendar size={20} color={theme.colors.outline} />} />}
-            activeOutlineColor={theme.colors.primary}
-          />
-          {error && <Text style={[styles.error, { color: theme.colors.error }]}>{error}</Text>}
+          <Text style={[styles.stepTitle, { color: theme.colors.onSurface }]}>{t("auth.register.steps.birthday.title")}</Text>
+          <Text style={[styles.stepSubtitle, { color: theme.colors.onSurface }]}>{t("auth.register.steps.birthday.subtitle")}</Text>
+          <View style={styles.inputRow}>
+            <Calendar size={20} color="#888" style={{ marginRight: 8 }} />
+            <RNTextInput
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor="#888"
+              value={dobString}
+              onChangeText={setDobString}
+              keyboardType="numeric"
+              maxLength={10}
+              style={[styles.rnInput, { color: theme.colors.onSurface }]}
+            />
+          </View>
+          {error && <Text style={[styles.error, { color: "#ff5252" }]}>{error}</Text>}
         </View>
 
         {/* STEP 4: POLICIES */}
         <View style={[styles.step, { width: screenWidth - 48 }]}>
-          <Text variant="headlineSmall" style={styles.stepTitle}>{t("auth.register.steps.policies.title")}</Text>
-          <Text variant="bodyMedium" style={styles.stepSubtitle}>{t("auth.register.steps.policies.subtitle")}</Text>
-          <View style={styles.policyRow}>
-            <Checkbox.Android
-              status={agreedToPolicies ? "checked" : "unchecked"}
-              onPress={() => setAgreedToPolicies(!agreedToPolicies)}
-              color={theme.colors.primary}
-            />
-            <Text variant="bodySmall" style={styles.policyText}>
+          <Text style={[styles.stepTitle, { color: theme.colors.onSurface }]}>{t("auth.register.steps.policies.title")}</Text>
+          <Text style={[styles.stepSubtitle, { color: theme.colors.onSurface }]}>{t("auth.register.steps.policies.subtitle")}</Text>
+          <Pressable 
+            style={styles.policyRow} 
+            onPress={() => setAgreedToPolicies(!agreedToPolicies)}
+          >
+            <Checkbox 
+              value="agreed" 
+              isChecked={agreedToPolicies} 
+              onChange={setAgreedToPolicies}
+              aria-label="Agree to policies"
+            >
+              <CheckboxIndicator style={{ borderColor: theme.colors.primary }}>
+                <CheckboxIcon as={CheckIcon} />
+              </CheckboxIndicator>
+            </Checkbox>
+            <Text style={[styles.policyText, { color: theme.colors.onSurface }]}>
               {t("auth.register.policyAgreement")}
             </Text>
-          </View>
+          </Pressable>
         </View>
       </Animated.View>
     </View>
@@ -225,18 +245,17 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
       </View>
 
       <View style={styles.footer}>
-        <Button mode="text" onPress={onBackToLogin} disabled={loading && step === 0}>
-          Cancel
-        </Button>
+        <Pressable onPress={onBackToLogin} disabled={loading && step === 0} style={{ padding: 12 }}>
+          <Text style={{ color: theme.colors.primary, fontWeight: "600" }}>Cancel</Text>
+        </Pressable>
         <Button
-          mode="contained"
           onPress={handleNext}
-          loading={loading}
-          disabled={!canGoNext || loading}
-          style={styles.nextButton}
-          contentStyle={styles.nextButtonContent}
+          isDisabled={!canGoNext || loading}
+          style={[styles.nextButton, { backgroundColor: theme.colors.primary }]}
         >
-          {step === 4 ? t("auth.register.register") : t("common.next")}
+          <ButtonText style={{ color: "#fff", fontWeight: "700" }}>
+            {step === 4 ? t("auth.register.register") : t("common.next")}
+          </ButtonText>
         </Button>
       </View>
     </View>
@@ -253,7 +272,7 @@ const styles = StyleSheet.create({
   headerRow: {
     height: 48,
     justifyContent: "center",
-    marginLeft: -12, // Align with left edge better
+    marginLeft: -12,
     marginBottom: 8,
   },
   backButtonIcon: {
@@ -273,30 +292,38 @@ const styles = StyleSheet.create({
     paddingTop: 0,
   },
   stepTitle: {
+    fontSize: 22,
     fontWeight: "900",
     letterSpacing: -0.5,
   },
   stepSubtitle: {
+    fontSize: 14,
     opacity: 0.6,
     marginBottom: 20,
   },
-  input: {
-    backgroundColor: "transparent",
-  },
-  pillInput: {
-    backgroundColor: "transparent",
-  },
-  pillOutline: {
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(150,150,150,0.3)",
     borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  rnInput: {
+    flex: 1,
+    fontSize: 16,
+    padding: 0,
   },
   policyRow: {
     flexDirection: "row",
     alignItems: "center",
     marginTop: 16,
-    gap: 8,
+    gap: 12,
   },
   policyText: {
     flex: 1,
+    fontSize: 13,
     opacity: 0.8,
   },
   footer: {
@@ -308,9 +335,9 @@ const styles = StyleSheet.create({
   nextButton: {
     borderRadius: 12,
     minWidth: 120,
-  },
-  nextButtonContent: {
     height: 48,
+    justifyContent: "center",
+    alignItems: "center",
   },
   error: {
     marginTop: 12,
@@ -319,3 +346,4 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 });
+

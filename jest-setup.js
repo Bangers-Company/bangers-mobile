@@ -48,14 +48,15 @@ jest.mock('react-native-reanimated', () => {
 
 // Mock Expo SQLite
 jest.mock('expo-sqlite', () => ({
-  openDatabaseAsync: jest.fn(() => ({
-    execAsync: jest.fn(),
-    runAsync: jest.fn(),
-    getAllAsync: jest.fn(),
-    getFirstAsync: jest.fn(),
+  openDatabaseAsync: jest.fn(() => Promise.resolve({
+    execAsync: jest.fn(() => Promise.resolve()),
+    runAsync: jest.fn(() => Promise.resolve()),
+    getAllAsync: jest.fn(() => Promise.resolve([])),
+    getFirstAsync: jest.fn(() => Promise.resolve(null)),
     withTransactionAsync: jest.fn((cb) => cb()),
   })),
 }));
+
 
 // Mock Expo Secure Store
 jest.mock('expo-secure-store', () => ({
@@ -63,6 +64,15 @@ jest.mock('expo-secure-store', () => ({
   setItemAsync: jest.fn(),
   deleteItemAsync: jest.fn(),
 }));
+
+// Mock Async Storage
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  getItem: jest.fn(() => Promise.resolve(null)),
+  setItem: jest.fn(() => Promise.resolve()),
+  removeItem: jest.fn(() => Promise.resolve()),
+  clear: jest.fn(() => Promise.resolve()),
+}));
+
 
 // Mock Expo Constants
 jest.mock('expo-constants', () => ({
@@ -72,6 +82,24 @@ jest.mock('expo-constants', () => ({
     },
   },
 }));
+
+// Mock Expo Localization
+jest.mock('expo-localization', () => ({
+  getLocales: () => [{ languageCode: 'en' }],
+  locale: 'en-US',
+}));
+
+// Mock Expo Notifications
+jest.mock('expo-notifications', () => ({
+  setNotificationHandler: jest.fn(),
+  addNotificationReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  scheduleNotificationAsync: jest.fn(),
+  cancelScheduledNotificationAsync: jest.fn(),
+  getAllScheduledNotificationsAsync: jest.fn(() => Promise.resolve([])),
+}));
+
+
 
 // Mock Safe Area Context
 jest.mock('react-native-safe-area-context', () => {
@@ -113,3 +141,41 @@ jest.mock('react-native-paper', () => {
     Surface: View,
   };
 });
+
+// Mock Gluestack UI
+jest.mock('@gluestack-ui/themed', () => {
+  const React = require('react');
+  const View = ({ children, ...props }) => React.createElement('View', props, children);
+  const Text = ({ children, ...props }) => React.createElement('Text', props, children);
+  return {
+    GluestackUIProvider: ({ children }) => children,
+    Box: View,
+    Text: Text,
+    Button: View,
+    ButtonText: Text,
+    Input: View,
+    InputField: View,
+    InputIcon: View,
+    Checkbox: View,
+    CheckboxIndicator: View,
+    CheckboxIcon: View,
+    CheckIcon: View,
+    Switch: View,
+    Spinner: View,
+    Pressable: View,
+    Modal: View,
+    ModalBackdrop: View,
+    ModalContent: View,
+    Popover: View,
+    PopoverBackdrop: View,
+    PopoverContent: View,
+    PopoverBody: View,
+    Avatar: View,
+    AvatarImage: View,
+    AvatarFallbackText: Text,
+    Badge: View,
+    BadgeText: Text,
+    Divider: View,
+  };
+});
+

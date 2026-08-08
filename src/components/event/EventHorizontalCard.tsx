@@ -2,7 +2,8 @@ import { MapPin, Users } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, View, StyleProp, ViewStyle } from "react-native";
 import { Image } from "expo-image";
-import { Card, Surface, Text, TouchableRipple, useTheme } from "react-native-paper";
+import { Box, Text, Pressable } from "@gluestack-ui/themed";
+import { useAppTheme } from "../../context/ThemeProvider";
 import { Event } from "../../types/event";
 import { resolveMediaUrl } from "../../utils/format";
 
@@ -17,7 +18,7 @@ export const EventHorizontalCard: React.FC<EventHorizontalCardProps> = ({
   onPress,
   style,
 }) => {
-  const theme = useTheme();
+  const theme = useAppTheme();
   const bannerUrl = resolveMediaUrl(event.banner?.url);
 
   const formatDate = (dateString: string) => {
@@ -30,17 +31,15 @@ export const EventHorizontalCard: React.FC<EventHorizontalCardProps> = ({
   };
 
   return (
-    <Card
+    <Box
       style={[
         styles.card,
         { backgroundColor: theme.colors.surface },
         style,
       ]}
-      elevation={1}
     >
-      <TouchableRipple
+      <Pressable
         onPress={() => onPress?.(event)}
-        rippleColor="rgba(0,0,0,0.1)"
         style={styles.ripple}
         accessibilityLabel={`${event.name}, ${event.location}, ${event.attendee_count ?? 0} attending`}
         accessibilityRole="button"
@@ -59,11 +58,11 @@ export const EventHorizontalCard: React.FC<EventHorizontalCardProps> = ({
               />
             )}
             <View style={styles.overlay} />
-            <Surface style={styles.dateBadge} elevation={4}>
-              <Text variant="labelSmall" style={styles.dateText}>
+            <Box style={styles.dateBadge}>
+              <Text style={styles.dateText}>
                 {formatDate(event.start_date)}
               </Text>
-            </Surface>
+            </Box>
           </View>
 
           <View
@@ -71,13 +70,13 @@ export const EventHorizontalCard: React.FC<EventHorizontalCardProps> = ({
             accessibilityLabel={`${event.name} event details`}
             accessibilityLiveRegion="polite"
           >
-            <Text variant="titleMedium" style={styles.title} numberOfLines={1}>
+            <Text style={styles.title} numberOfLines={1}>
               {event.name}
             </Text>
 
             {event.genres && event.genres.length > 0 && (
               <View style={[styles.genreBadgeCard, { backgroundColor: theme.colors.primaryContainer }]}>
-                <Text variant="labelSmall" style={[styles.genreTextCard, { color: theme.colors.onPrimaryContainer }]}>
+                <Text style={[styles.genreTextCard, { color: theme.colors.onPrimaryContainer }]}>
                   {event.genres[0].name}
                 </Text>
               </View>
@@ -87,7 +86,6 @@ export const EventHorizontalCard: React.FC<EventHorizontalCardProps> = ({
               <View style={styles.metaItem}>
                 <MapPin size={14} color={theme.colors.primary} />
                 <Text
-                  variant="bodySmall"
                   style={styles.metaText}
                   numberOfLines={1}
                 >
@@ -97,15 +95,15 @@ export const EventHorizontalCard: React.FC<EventHorizontalCardProps> = ({
 
               <View style={styles.metaItem}>
                 <Users size={14} color={theme.colors.primary} />
-                <Text variant="bodySmall" style={styles.metaText}>
+                <Text style={styles.metaText}>
                   {event.attendee_count ?? 0} attending
                 </Text>
               </View>
             </View>
           </View>
         </View>
-      </TouchableRipple>
-    </Card>
+      </Pressable>
+    </Box>
   );
 };
 
@@ -154,6 +152,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   title: {
+    fontSize: 16,
     fontWeight: "900",
     marginBottom: 4,
     letterSpacing: -0.5,
@@ -185,3 +184,4 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
 });
+

@@ -228,7 +228,7 @@ export default function EventDetailsScreen() {
 
         <View style={styles.content}>
           <View style={styles.titleSection}>
-            <Text variant="displaySmall" style={styles.eventName}>
+            <Text variant="displaySmall" style={[styles.eventName, { color: theme.colors.onSurface }]}>
               {event.name}
             </Text>
           </View>
@@ -244,10 +244,10 @@ export default function EventDetailsScreen() {
                 <Calendar size={20} color={theme.colors.primary} />
               </View>
               <View style={styles.metaTexts}>
-                <Text variant="bodyLarge" style={styles.metaTitle}>
+                <Text variant="bodyLarge" style={[styles.metaTitle, { color: theme.colors.onSurface }]}>
                   {startEndMerged}
                 </Text>
-                <Text variant="bodyMedium" style={styles.metaSubtitle}>
+                <Text variant="bodyMedium" style={[styles.metaSubtitle, { color: theme.colors.onSurface }]}>
                   {t("profile.sections.dates")}
                 </Text>
               </View>
@@ -263,10 +263,10 @@ export default function EventDetailsScreen() {
                 <MapPin size={20} color={theme.colors.primary} />
               </View>
               <View style={styles.metaTexts}>
-                <Text variant="bodyLarge" style={styles.metaTitle}>
+                <Text variant="bodyLarge" style={[styles.metaTitle, { color: theme.colors.onSurface }]}>
                   {event.location}
                 </Text>
-                <Text variant="bodyMedium" style={styles.metaSubtitle}>
+                <Text variant="bodyMedium" style={[styles.metaSubtitle, { color: theme.colors.onSurface }]}>
                   {t("profile.sections.location")}
                 </Text>
               </View>
@@ -285,9 +285,9 @@ export default function EventDetailsScreen() {
                 <AnimatedCounter
                   value={event.attendee_count ?? attendees.length}
                   variant="bodyLarge"
-                  textStyle={styles.metaTitle}
+                  textStyle={[styles.metaTitle, { color: theme.colors.onSurface }]}
                 />
-                <Text variant="bodyMedium" style={styles.metaSubtitle}>
+                <Text variant="bodyMedium" style={[styles.metaSubtitle, { color: theme.colors.onSurface }]}>
                   {t("common.going")}
                 </Text>
               </View>
@@ -296,8 +296,13 @@ export default function EventDetailsScreen() {
                 mode={isGoing ? "outlined" : "contained"}
                 loading={actionLoading}
                 onPress={() => toggleAttendance("going")}
-                labelStyle={{ fontWeight: "800" }}
-                style={styles.attendButton}
+                buttonColor={isGoing ? "transparent" : theme.colors.primary}
+                textColor={isGoing ? theme.colors.primary : "#ffffff"}
+                labelStyle={{ fontWeight: "800", color: isGoing ? theme.colors.primary : "#ffffff" }}
+                style={[
+                  styles.attendButton,
+                  isGoing && { borderColor: theme.colors.primary, borderWidth: 1 }
+                ]}
               >
                 {isGoing ? t("common.going") : t("common.attend")}
               </Button>
@@ -334,27 +339,27 @@ export default function EventDetailsScreen() {
 
           {event.description && (
             <View style={styles.descriptionSection}>
-              <Text variant="titleMedium" style={styles.sectionTitle}>
+              <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
                 {t("profile.sections.about")}
               </Text>
-              <Text variant="bodyMedium" style={styles.descriptionText}>
+              <Text variant="bodyMedium" style={[styles.descriptionText, { color: theme.colors.onSurface }]}>
                 {event.description}
               </Text>
             </View>
           )}
 
           <View style={styles.lineupSection}>
-            <Text variant="titleMedium" style={styles.sectionTitle}>
+            <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
               {t("profile.sections.lineup")}
             </Text>
             {acts.length > 0 ? (
               <>
                 <View style={styles.actGrid}>
                   {previewActs.map((act: Act) => (
-                    <Surface key={act.id} style={styles.actCard} elevation={1}>
+                    <Surface key={act.id} style={[styles.actCard, { backgroundColor: theme.colors.surface }]} elevation={1}>
                       <Text
                         variant="bodyLarge"
-                        style={styles.actName}
+                        style={[styles.actName, { color: theme.colors.onSurface }]}
                         numberOfLines={2}
                       >
                         {act.artists && act.artists.length > 0
@@ -364,6 +369,7 @@ export default function EventDetailsScreen() {
                     </Surface>
                   ))}
                 </View>
+
                 <Button
                   mode="text"
                   onPress={() => router.push(`/event/${id}/lineup` as any)}

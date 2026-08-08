@@ -11,13 +11,16 @@ import {
 } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { Text, TouchableRipple, useTheme } from "react-native-paper";
+import { Text, Pressable } from "@gluestack-ui/themed";
+import { useAppTheme } from "../../context/ThemeProvider";
 import { useTranslation } from "react-i18next";
 import Animated, {
   interpolate,
   interpolateColor,
   useAnimatedStyle,
 } from "react-native-reanimated";
+
+
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useUIStore } from "../../store/useUIStore";
 import { addAlpha } from "../../utils/theme";
@@ -30,7 +33,7 @@ interface NavItem {
 }
 
 export const BottomNav: React.FC = () => {
-  const theme = useTheme();
+  const theme = useAppTheme();
   const pathname = usePathname();
   const router = useRouter();
   const isBottomNavVisible = useUIStore((state) => state.isBottomNavVisible);
@@ -64,7 +67,6 @@ export const BottomNav: React.FC = () => {
   const items = isEventPage ? eventItems : dashboardItems;
 
   const renderItem = (item: NavItem, index: number) => {
-    // Determine active state with strict matching for event routes
     const isActive =
       pathname === item.route ||
       (item.route === "/(tabs)/" &&
@@ -73,11 +75,12 @@ export const BottomNav: React.FC = () => {
       (item.route === "/(tabs)/profile" && pathname === "/profile");
     const Icon = item.icon;
 
+    const inactiveColor = theme.isDark ? "#94a3b8" : "#64748b";
+
     return (
-      <TouchableRipple
+      <Pressable
         key={index}
         onPress={() => router.navigate(item.route as any)}
-        rippleColor={addAlpha(theme.colors.primary, 0.2)}
         style={[styles.item]}
       >
         <View style={styles.itemContent}>
@@ -92,16 +95,15 @@ export const BottomNav: React.FC = () => {
           )}
           <Icon
             size={24}
-            color={isActive ? theme.colors.primary : theme.colors.outline}
+            color={isActive ? theme.colors.primary : inactiveColor}
             strokeWidth={isActive ? 2.5 : 2}
           />
           {isActive && (
             <Text
-              variant="labelSmall"
               style={[
                 styles.label,
                 {
-                  color: isActive ? theme.colors.primary : theme.colors.outline,
+                  color: isActive ? theme.colors.primary : inactiveColor,
                 },
               ]}
             >
@@ -109,12 +111,18 @@ export const BottomNav: React.FC = () => {
             </Text>
           )}
         </View>
-      </TouchableRipple>
+      </Pressable>
     );
+
   };
 
-  const bgColorTo = addAlpha(theme.colors.surface, 0.85);
-  const borderColorTo = addAlpha(theme.colors.outlineVariant, 0.3);
+  const surfaceFrom = theme.colors.surface || "#ffffff";
+  const surfaceVariantFrom = theme.colors.surfaceVariant || "#e0e0e0";
+
+  const bgColorStart = addAlpha(surfaceFrom, 1);
+  const bgColorEnd = addAlpha(surfaceFrom, 0.85);
+  const borderColorStart = addAlpha(surfaceVariantFrom, 1);
+  const borderColorEnd = addAlpha(surfaceVariantFrom, 0.3);
 
   const animatedContainerStyle = useAnimatedStyle(() => {
     const offset = scrollOffset.value;
@@ -134,17 +142,17 @@ export const BottomNav: React.FC = () => {
     );
     const opacity = interpolate(offset, [0, 50], [0, 0.2], "clamp");
 
-    // Dynamic color values
     const bgColor = interpolateColor(
       offset,
       [0, 50],
-      [theme.colors.surface, bgColorTo],
+      [bgColorStart, bgColorEnd],
     );
     const borderColor = interpolateColor(
       offset,
       [0, 50],
-      [theme.colors.outlineVariant, borderColorTo],
+      [borderColorStart, borderColorEnd],
     );
+
 
     return {
       marginHorizontal: margin,
@@ -159,6 +167,8 @@ export const BottomNav: React.FC = () => {
     };
   });
 
+
+
   if (!isBottomNavVisible) return null;
 
   return (
@@ -167,7 +177,7 @@ export const BottomNav: React.FC = () => {
         styles.container,
         animatedContainerStyle,
         {
-          shadowColor: theme.colors.shadow,
+          shadowColor: "#000",
         },
       ]}
     >
@@ -206,3 +216,4 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
 });
+

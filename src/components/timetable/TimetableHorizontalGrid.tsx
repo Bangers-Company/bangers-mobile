@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from "react";
 import { StyleSheet, View } from "react-native";
-import { Text, useTheme } from "react-native-paper";
+import { Text } from "@gluestack-ui/themed";
+import { useAppTheme } from "../../context/ThemeProvider";
 import Animated, { useAnimatedScrollHandler, useSharedValue, useAnimatedStyle } from "react-native-reanimated";
 import { Timetable, TimetableEntry } from "../../types/timetable";
 import { addAlpha } from "../../utils/theme";
@@ -27,7 +28,8 @@ export const TimetableHorizontalGrid: React.FC<HorizontalGridProps> = ({
   isPersonal,
   currentTime,
 }) => {
-  const theme = useTheme();
+  const theme = useAppTheme();
+
   const scrollRef = useRef<Animated.ScrollView>(null);
   const horizontalScrollOffset = useSharedValue(0);
   const verticalScrollOffset = useSharedValue(0);

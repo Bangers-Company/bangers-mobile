@@ -6,17 +6,20 @@ import {
   Platform,
   ScrollView,
   KeyboardAvoidingView,
+  TextInput as RNTextInput,
 } from "react-native";
 import {
   Modal,
-  Portal,
+  ModalBackdrop,
+  ModalContent,
   Text,
   Button,
-  TextInput,
-  Chip,
-  useTheme,
-  IconButton,
-} from "react-native-paper";
+  ButtonText,
+  Badge,
+  BadgeText,
+  Pressable,
+} from "@gluestack-ui/themed";
+import { useAppTheme } from "../../context/ThemeProvider";
 import { useTranslation } from "react-i18next";
 import { BlurView } from "expo-blur";
 import Animated, {
@@ -24,8 +27,6 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   Easing,
-  FadeIn,
-  FadeOut,
 } from "react-native-reanimated";
 import { User, Genre } from "../../types/user";
 import { userApi } from "../../api/user";
@@ -50,7 +51,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   onComplete,
 }) => {
   const { t } = useTranslation();
-  const theme = useTheme();
+  const theme = useAppTheme();
   const setUser = useAuthStore((state) => state.setUser);
   
   const [step, setStep] = useState(0);
@@ -138,8 +139,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
         {/* STEP 0: Welcome */}
         <View style={styles.stepPage}>
            <PartyPopper size={64} color={theme.colors.primary} style={styles.icon} />
-           <Text variant="headlineLarge" style={styles.title}>{t("onboarding.welcome.title")}</Text>
-           <Text variant="bodyLarge" style={styles.description}>
+           <Text style={[styles.title, { color: theme.colors.onSurface }]}>{t("onboarding.welcome.title")}</Text>
+           <Text style={[styles.description, { color: theme.colors.onSurface }]}>
              {t("onboarding.welcome.description")}
            </Text>
         </View>
@@ -147,26 +148,28 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
         {/* STEP 1: Identity */}
         <View style={styles.stepPage}>
            <UserIcon size={48} color={theme.colors.primary} style={styles.icon} />
-           <Text variant="headlineMedium" style={styles.stepTitle}>{t("onboarding.identity.title")}</Text>
-           <Text variant="bodyMedium" style={styles.stepSub}>{t("onboarding.identity.subtitle")}</Text>
+           <Text style={[styles.stepTitle, { color: theme.colors.onSurface }]}>{t("onboarding.identity.title")}</Text>
+           <Text style={[styles.stepSub, { color: theme.colors.onSurface }]}>{t("onboarding.identity.subtitle")}</Text>
            <View style={styles.form}>
             <View style={styles.nameRow}>
-              <TextInput
-                label={t("onboarding.identity.firstName")}
-                value={firstName}
-                onChangeText={setFirstName}
-                mode="outlined"
-                style={[styles.pillInput, { flex: 1 }]}
-                outlineStyle={styles.pillOutline}
-              />
-              <TextInput
-                label={t("onboarding.identity.lastName")}
-                value={lastName}
-                onChangeText={setLastName}
-                mode="outlined"
-                style={[styles.pillInput, { flex: 1 }]}
-                outlineStyle={styles.pillOutline}
-              />
+              <View style={[styles.inputRow, { flex: 1 }]}>
+                <RNTextInput
+                  placeholder={t("onboarding.identity.firstName")}
+                  placeholderTextColor="#888"
+                  value={firstName}
+                  onChangeText={setFirstName}
+                  style={[styles.rnInput, { color: theme.colors.onSurface }]}
+                />
+              </View>
+              <View style={[styles.inputRow, { flex: 1 }]}>
+                <RNTextInput
+                  placeholder={t("onboarding.identity.lastName")}
+                  placeholderTextColor="#888"
+                  value={lastName}
+                  onChangeText={setLastName}
+                  style={[styles.rnInput, { color: theme.colors.onSurface }]}
+                />
+              </View>
             </View>
            </View>
         </View>
@@ -174,32 +177,29 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
         {/* STEP 2: Genres */}
         <View style={styles.stepPage}>
            <Music size={48} color={theme.colors.primary} style={styles.icon} />
-           <Text variant="headlineMedium" style={styles.stepTitle}>{t("onboarding.genres.title")}</Text>
-           <Text variant="bodyMedium" style={styles.stepSub}>{t("onboarding.genres.subtitle")}</Text>
+           <Text style={[styles.stepTitle, { color: theme.colors.onSurface }]}>{t("onboarding.genres.title")}</Text>
+           <Text style={[styles.stepSub, { color: theme.colors.onSurface }]}>{t("onboarding.genres.subtitle")}</Text>
            <ScrollView contentContainerStyle={styles.genresList}>
              <View style={styles.chipGrid}>
-               {availableGenres.map((genre) => (
-                  <Chip
-                    key={genre.id}
-                    selected={selectedGenres.includes(genre.id)}
-                    onPress={() => toggleGenre(genre.id)}
-                    style={[
-                      styles.chip,
-                      selectedGenres.includes(genre.id) && {
-                        backgroundColor: theme.colors.primary,
-                        shadowColor: theme.colors.primary,
-                        shadowOffset: { width: 0, height: 0 },
-                        shadowOpacity: 0.8,
-                        shadowRadius: 10,
-                        elevation: 10,
-                      }
-                    ]}
-                    selectedColor={selectedGenres.includes(genre.id) ? "white" : undefined}
-                    showSelectedCheck
-                  >
-                   {genre.name}
-                 </Chip>
-               ))}
+               {availableGenres.map((genre) => {
+                 const isSelected = selectedGenres.includes(genre.id);
+                 return (
+                   <Pressable
+                     key={genre.id}
+                     onPress={() => toggleGenre(genre.id)}
+                     style={[
+                       styles.chip,
+                       {
+                         backgroundColor: isSelected ? theme.colors.primary : "rgba(150,150,150,0.2)",
+                       }
+                     ]}
+                   >
+                     <Text style={{ color: isSelected ? "#fff" : theme.colors.onSurface, fontWeight: "600", fontSize: 13 }}>
+                       {genre.name}
+                     </Text>
+                   </Pressable>
+                 );
+               })}
              </View>
            </ScrollView>
         </View>
@@ -207,37 +207,36 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
         {/* STEP 3: Bio */}
         <View style={styles.stepPage}>
            <BookOpen size={48} color={theme.colors.primary} style={styles.icon} />
-           <Text variant="headlineMedium" style={styles.stepTitle}>{t("onboarding.bio.title")}</Text>
-           <Text variant="bodyMedium" style={styles.stepSub}>{t("onboarding.bio.subtitle")}</Text>
-            <TextInput
-              label={t("onboarding.bio.title")}
-              value={bio}
-              onChangeText={setBio}
-              mode="outlined"
-              multiline
-              numberOfLines={6}
-              style={styles.pillTextArea}
-              outlineStyle={styles.pillOutline}
-              placeholder={t("onboarding.bio.placeholder")}
-            />
+           <Text style={[styles.stepTitle, { color: theme.colors.onSurface }]}>{t("onboarding.bio.title")}</Text>
+           <Text style={[styles.stepSub, { color: theme.colors.onSurface }]}>{t("onboarding.bio.subtitle")}</Text>
+           <View style={[styles.inputRow, { minHeight: 120, width: "100%" }]}>
+             <RNTextInput
+               placeholder={t("onboarding.bio.placeholder")}
+               placeholderTextColor="#888"
+               value={bio}
+               onChangeText={setBio}
+               multiline
+               style={[styles.rnInput, { color: theme.colors.onSurface, textAlignVertical: "top" }]}
+             />
+           </View>
         </View>
 
         {/* STEP 4: Features */}
         <View style={styles.stepPage}>
            <CheckCircle size={64} color={theme.colors.primary} style={styles.icon} />
-           <Text variant="headlineMedium" style={styles.stepTitle}>{t("onboarding.finish.title")}</Text>
+           <Text style={[styles.stepTitle, { color: theme.colors.onSurface }]}>{t("onboarding.finish.title")}</Text>
            <View style={styles.featureList}>
              <View style={styles.featureItem}>
-               <PartyPopper size={20} color={theme.colors.secondary} />
-               <Text variant="bodyMedium" style={styles.featureText}>{t("onboarding.finish.feature1")}</Text>
+               <PartyPopper size={20} color={theme.colors.primary} />
+               <Text style={[styles.featureText, { color: theme.colors.onSurface }]}>{t("onboarding.finish.feature1")}</Text>
              </View>
              <View style={styles.featureItem}>
-               <UserIcon size={20} color={theme.colors.secondary} />
-               <Text variant="bodyMedium" style={styles.featureText}>{t("onboarding.finish.feature2")}</Text>
+               <UserIcon size={20} color={theme.colors.primary} />
+               <Text style={[styles.featureText, { color: theme.colors.onSurface }]}>{t("onboarding.finish.feature2")}</Text>
              </View>
              <View style={styles.featureItem}>
-               <Music size={20} color={theme.colors.secondary} />
-               <Text variant="bodyMedium" style={styles.featureText}>{t("onboarding.finish.feature3")}</Text>
+               <Music size={20} color={theme.colors.primary} />
+               <Text style={[styles.featureText, { color: theme.colors.onSurface }]}>{t("onboarding.finish.feature3")}</Text>
              </View>
            </View>
         </View>
@@ -245,84 +244,66 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
     );
   };
 
+
   return (
-    <Portal>
-      {visible && (
-        <Animated.View 
-          entering={FadeIn} 
-          exiting={FadeOut}
-          style={StyleSheet.absoluteFill}
+    <Modal isOpen={visible}>
+      <ModalBackdrop />
+      <ModalContent style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+          style={styles.layout}
         >
-          <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
-        </Animated.View>
-      )}
-      <Modal
-        visible={visible}
-        dismissable={false}
-        contentContainerStyle={styles.modalContent}
-        theme={{ colors: { backdrop: "transparent" } }}
-      >
-        <BlurView intensity={100} tint="dark" style={styles.blurContainer}>
-          <BlurView intensity={100} tint="dark" style={StyleSheet.absoluteFill} />
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
-            style={styles.layout}
-          >
-            <View style={styles.header}>
-              <View style={styles.headerColumn}>
-                {step > 0 && (
-                  <IconButton
-                    icon="chevron-left"
-                    onPress={handleBack}
-                    size={24}
-                  />
-                )}
-              </View>
-              
-              <View style={styles.progressContainer}>
-                {[0, 1, 2, 3, 4].map((i) => (
-                  <View
-                    key={i}
-                    style={[
-                      styles.progressDot,
-                      {
-                        backgroundColor:
-                          i <= step
-                            ? theme.colors.primary
-                            : theme.colors.surfaceVariant,
-                        shadowColor: i <= step ? theme.colors.primary : "transparent",
-                      },
-                    ]}
-                  />
-                ))}
-              </View>
-
-              <View style={styles.headerColumn} />
+          <View style={styles.header}>
+            <View style={styles.headerColumn}>
+              {step > 0 && (
+                <Pressable onPress={handleBack} style={{ padding: 8 }}>
+                  <Text style={{ color: theme.colors.primary, fontWeight: "bold" }}>Back</Text>
+                </Pressable>
+              )}
+            </View>
+            
+            <View style={styles.progressContainer}>
+              {[0, 1, 2, 3, 4].map((i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.progressDot,
+                    {
+                      backgroundColor:
+                        i <= step
+                          ? theme.colors.primary
+                          : theme.colors.surfaceVariant,
+                    },
+                  ]}
+                />
+              ))}
             </View>
 
-            <View style={styles.contentWrapper}>
-              {renderStep()}
-            </View>
+            <View style={styles.headerColumn} />
+          </View>
 
-            <View style={styles.footer}>
-              <Button
-                mode="contained"
-                onPress={handleNext}
-                loading={loading}
-                disabled={loading || (step === 1 && (!firstName || !lastName))}
-                style={styles.nextButton}
-                contentStyle={styles.buttonContent}
-              >
+          <View style={styles.contentWrapper}>
+            {renderStep()}
+          </View>
+
+          <View style={styles.footer}>
+            <Button
+              onPress={handleNext}
+              isDisabled={loading || (step === 1 && (!firstName || !lastName))}
+              style={[styles.nextButton, { backgroundColor: theme.colors.primary }]}
+            >
+              <ButtonText style={{ color: "#fff", fontWeight: "700" }}>
                 {step === 4 ? t("onboarding.finish.ready") : t("common.next")}
-              </Button>
-            </View>
-          </KeyboardAvoidingView>
-        </BlurView>
-      </Modal>
-    </Portal>
+              </ButtonText>
+            </Button>
+          </View>
+        </KeyboardAvoidingView>
+      </ModalContent>
+    </Modal>
   );
 };
+
 
 const styles = StyleSheet.create({
   modalContent: {

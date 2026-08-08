@@ -1,16 +1,20 @@
 import { format } from "date-fns";
-import { Calendar, Clock, MapPin, Users } from "lucide-react-native";
+import { Calendar, Clock, MapPin, Users, X } from "lucide-react-native";
 import React, { useEffect } from "react";
-import { StyleSheet, View, Pressable, Dimensions } from "react-native";
+import { StyleSheet, View, Pressable as RNPressable, Dimensions } from "react-native";
+
 import {
-  Avatar,
-  Button,
-  Divider,
-  IconButton,
-  Portal,
+  Box,
   Text,
-  useTheme,
-} from "react-native-paper";
+  Avatar as GluestackAvatar,
+  AvatarFallbackText,
+  AvatarImage,
+  Button,
+  ButtonText,
+  Divider,
+  Pressable,
+} from "@gluestack-ui/themed";
+import { useAppTheme } from "../../context/ThemeProvider";
 import { useTranslation } from "react-i18next";
 import { useEntryAttendance } from "../../hooks/useTimetables";
 import { resolveMediaUrl } from "../../utils/format";
@@ -43,7 +47,7 @@ export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
   groupId,
   timetableId
 }) => {
-  const theme = useTheme();
+  const theme = useAppTheme();
   const { bottom } = useSafeAreaInsets();
   const { t } = useTranslation();
   const translateY = useSharedValue(SCREEN_HEIGHT);
@@ -94,7 +98,7 @@ export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
   const endTime = entry ? new Date(entry.end_time) : new Date();
 
   return (
-    <Portal>
+    <>
       {visible && (
         <View style={StyleSheet.absoluteFill}>
           <Animated.View style={[styles.backdrop, backdropStyle]}>
@@ -114,16 +118,18 @@ export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
               <>
                 <View style={styles.header}>
                   <View style={styles.headerText}>
-                    <Text variant="headlineSmall" style={styles.title}>
+                    <Text style={[styles.title, { color: theme.colors.onSurface }]}>
                       {entry.act.name}
                     </Text>
                     {entry.act.artists && entry.act.artists.length > 0 && (
-                      <Text variant="bodyMedium" style={{ opacity: 0.7 }}>
+                      <Text style={{ opacity: 0.7, color: theme.colors.onSurface }}>
                         {entry.act.artists.map((a) => a.name).join(", ")}
                       </Text>
                     )}
                   </View>
-                  <IconButton icon="close" onPress={handleDismiss} />
+                  <Pressable onPress={handleDismiss} style={{ padding: 4 }}>
+                    <X size={22} color={theme.colors.onSurface} />
+                  </Pressable>
                 </View>
 
                 <Divider style={styles.divider} />
@@ -134,10 +140,10 @@ export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
                       <MapPin size={20} color={theme.colors.primary} />
                     </View>
                     <View>
-                      <Text variant="labelLarge" style={styles.infoLabel}>
+                      <Text style={[styles.infoLabel, { color: theme.colors.onSurface }]}>
                         {t("timetable.actInfo.stage")}
                       </Text>
-                      <Text variant="bodyLarge">{entry.stage.name}</Text>
+                      <Text style={{ color: theme.colors.onSurface, fontWeight: "600" }}>{entry.stage.name}</Text>
                     </View>
                   </View>
 
@@ -146,10 +152,10 @@ export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
                       <Clock size={20} color={theme.colors.primary} />
                     </View>
                     <View>
-                      <Text variant="labelLarge" style={styles.infoLabel}>
+                      <Text style={[styles.infoLabel, { color: theme.colors.onSurface }]}>
                         {t("timetable.actInfo.time")}
                       </Text>
-                      <Text variant="bodyLarge">
+                      <Text style={{ color: theme.colors.onSurface, fontWeight: "600" }}>
                         {format(startTime, "HH:mm")} - {format(endTime, "HH:mm")}
                       </Text>
                     </View>
@@ -160,10 +166,10 @@ export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
                       <Calendar size={20} color={theme.colors.primary} />
                     </View>
                     <View>
-                      <Text variant="labelLarge" style={styles.infoLabel}>
+                      <Text style={[styles.infoLabel, { color: theme.colors.onSurface }]}>
                         {t("timetable.actInfo.date")}
                       </Text>
-                      <Text variant="bodyLarge">{format(startTime, "EEEE, MMMM do")}</Text>
+                      <Text style={{ color: theme.colors.onSurface, fontWeight: "600" }}>{format(startTime, "EEEE, MMMM do")}</Text>
                     </View>
                   </View>
 
@@ -174,10 +180,10 @@ export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
                           <Users size={20} color={theme.colors.primary} />
                         </View>
                         <View>
-                          <Text variant="labelLarge" style={styles.infoLabel}>
+                          <Text style={[styles.infoLabel, { color: theme.colors.onSurface }]}>
                             {t("timetable.actInfo.whosGoing")}
                           </Text>
-                          <Text variant="bodySmall" style={{ opacity: 0.6 }}>
+                          <Text style={{ opacity: 0.6, fontSize: 12, color: theme.colors.onSurface }}>
                             {t("timetable.actInfo.fromGroup")}
                           </Text>
                         </View>
@@ -185,24 +191,27 @@ export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
                       
                       <View style={styles.friendList}>
                         {isLoadingAttendees ? (
-                           <Text variant="bodyMedium" style={styles.emptyFriends}>{t("timetable.actInfo.loadingAttendees")}</Text>
+                           <Text style={[styles.emptyFriends, { color: theme.colors.onSurface }]}>{t("timetable.actInfo.loadingAttendees")}</Text>
                         ) : attendees && attendees.length > 0 ? (
                            <View style={styles.avatarRow}>
                              {attendees.map((a: import("../../types/user").User) => (
                                <View key={a.id} style={styles.attendeeItem}>
-                                 {a.profile_media_url ? (
-                                   <Avatar.Image size={32} source={{ uri: resolveMediaUrl(a.profile_media_url) || undefined }} style={styles.avatar} />
-                                 ) : (
-                                   <Avatar.Text size={32} label={(a.name || a.username || "U").substring(0, 2).toUpperCase()} style={styles.avatar} />
-                                 )}
-                                 <Text variant="labelSmall" style={styles.attendeeName} numberOfLines={1}>
-                                   {a.name || a.username}
-                                 </Text>
+                                 <GluestackAvatar size="sm">
+                                   {a.profile_media_url ? (
+                                     <AvatarImage source={{ uri: resolveMediaUrl(a.profile_media_url) }} alt={a.username || "User"} />
+                                   ) : (
+                                     <AvatarFallbackText>{(a.first_name || a.username || "U").substring(0, 2).toUpperCase()}</AvatarFallbackText>
+                                   )}
+                                 </GluestackAvatar>
+
+                                  <Text style={[styles.attendeeName, { color: theme.colors.onSurface }]} numberOfLines={1}>
+                                    {a.name || a.username}
+                                  </Text>
                                 </View>
                              ))}
                            </View>
                         ) : (
-                           <Text variant="bodyMedium" style={styles.emptyFriends}>
+                           <Text style={[styles.emptyFriends, { color: theme.colors.onSurface }]}>
                               {t("timetable.actInfo.noAttendees")}
                            </Text>
                         )}
@@ -212,10 +221,10 @@ export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
 
                   {entry.act.description && (
                     <View style={styles.descriptionSection}>
-                      <Text variant="labelLarge" style={styles.infoLabel}>
+                      <Text style={[styles.infoLabel, { color: theme.colors.onSurface }]}>
                         {t("timetable.actInfo.about")}
                       </Text>
-                      <Text variant="bodyMedium" style={styles.description}>
+                      <Text style={[styles.description, { color: theme.colors.onSurface }]}>
                         {entry.act.description}
                       </Text>
                     </View>
@@ -224,12 +233,12 @@ export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
 
                 <View style={styles.footer}>
                   <Button
-                    mode="contained"
                     onPress={handleDismiss}
-                    style={styles.closeButton}
-                    contentStyle={{ height: 48 }}
+                    style={[styles.closeButton, { backgroundColor: theme.colors.primary }]}
                   >
-                    {t("timetable.actInfo.gotIt")}
+                    <ButtonText style={{ color: "#fff", fontWeight: "700" }}>
+                      {t("timetable.actInfo.gotIt")}
+                    </ButtonText>
                   </Button>
                 </View>
               </>
@@ -237,7 +246,7 @@ export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
           </Animated.View>
         </View>
       )}
-    </Portal>
+    </>
   );
 };
 

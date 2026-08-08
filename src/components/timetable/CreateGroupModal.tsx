@@ -1,10 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, ScrollView, TouchableOpacity } from "react-native";
-import { Modal, Portal, Text, TextInput, Button, useTheme, Avatar, Checkbox, ActivityIndicator } from "react-native-paper";
+import { StyleSheet, View, ScrollView, TextInput as RNTextInput } from "react-native";
+import {
+  Modal,
+  ModalBackdrop,
+  ModalContent,
+  Text,
+  Button,
+  ButtonText,
+  Checkbox,
+  CheckboxIndicator,
+  CheckboxIcon,
+  CheckIcon,
+  Avatar as GluestackAvatar,
+  AvatarFallbackText,
+  Spinner,
+  Pressable,
+} from "@gluestack-ui/themed";
+import { useAppTheme } from "../../context/ThemeProvider";
 import { Search, ChevronRight } from "lucide-react-native";
 import { friendsApi } from "../../api/friends";
 import { User } from "../../types/user";
-import { addAlpha } from "../../utils/theme";
 import { useTranslation } from "react-i18next";
 
 interface CreateGroupModalProps {
@@ -26,7 +41,7 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
   const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [loadingFriends, setLoadingFriends] = useState(false);
-  const theme = useTheme();
+  const theme = useAppTheme();
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -61,11 +76,9 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
   const handleConfirm = () => {
     if (name.trim()) {
       onConfirm(name, selectedFriends);
-      // Reset state on success happens in parent usually, but we can reset internal
     }
   };
 
-  // Reset when closing
   useEffect(() => {
     if (!visible) {
       setStep(1);
@@ -87,117 +100,130 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
   );
 
   return (
-    <Portal>
-      <Modal 
-        visible={visible} 
-        onDismiss={onDismiss} 
-        contentContainerStyle={[styles.container, { backgroundColor: theme.colors.surface }]}
-      >
+    <Modal isOpen={visible} onClose={onDismiss}>
+      <ModalBackdrop />
+      <ModalContent style={[styles.container, { backgroundColor: theme.colors.surface }]}>
         <View style={styles.header}>
-          <Text variant="headlineSmall" style={styles.title}>
+          <Text style={[styles.title, { color: theme.colors.onSurface }]}>
             {step === 1 ? t("timetable.groups.createModal.titleStep1") : t("timetable.groups.createModal.titleStep2")}
           </Text>
-          <Text variant="bodySmall" style={styles.stepIndicator}>
+          <Text style={styles.stepIndicator}>
             {t("timetable.groups.createModal.stepIndicator", { current: step, total: 2 })}
           </Text>
         </View>
 
         {step === 1 ? (
-          <View>
-            <Text variant="bodyMedium" style={styles.subtitle}>
-              {t("timetable.groups.createModal.nameSubtitle")}
-            </Text>
-            <TextInput
-              label={t("timetable.groups.createModal.nameLabel")}
-              value={name}
-              onChangeText={setName}
-              mode="outlined"
-              style={styles.input}
-              placeholder={t("timetable.groups.createModal.namePlaceholder")}
-              autoFocus
-            />
+          <View style={styles.step1Content}>
+            <View style={styles.inputRow}>
+              <RNTextInput
+                placeholder={t("timetable.groups.createModal.namePlaceholder")}
+                placeholderTextColor="#888"
+                value={name}
+                onChangeText={setName}
+                autoFocus
+                style={[styles.rnInput, { color: theme.colors.onSurface }]}
+              />
+            </View>
+
             <View style={styles.actions}>
-              <Button onPress={onDismiss}>{t("common.cancel")}</Button>
+              <Button onPress={onDismiss} variant="outline" style={styles.button}>
+                <ButtonText>{t("common.cancel")}</ButtonText>
+              </Button>
               <Button 
-                mode="contained" 
                 onPress={handleNext} 
-                disabled={!name.trim()}
-                icon={() => <ChevronRight size={18} color="white" />}
-                contentStyle={{ flexDirection: 'row-reverse' }}
+                isDisabled={!name.trim()}
+                style={[styles.button, { backgroundColor: theme.colors.primary }]}
               >
-                {t("common.next")}
+                <ButtonText style={{ color: "#fff", fontWeight: "700" }}>{t("common.next")}</ButtonText>
               </Button>
             </View>
           </View>
         ) : (
-          <View style={{ maxHeight: 400 }}>
-             <Text variant="bodyMedium" style={styles.subtitle}>
-              {t("timetable.groups.createModal.inviteSubtitle", { name })}
-            </Text>
-            
-            <TextInput
-              placeholder={t("timetable.groups.createModal.searchPlaceholder")}
-              value={search}
-              onChangeText={setSearch}
-              mode="outlined"
-              style={styles.searchInput}
-              left={<TextInput.Icon icon={() => <Search size={20} color={theme.colors.outline} />} />}
-            />
+          <View style={styles.step2Content}>
+            <View style={[styles.inputRow, { marginBottom: 12 }]}>
+              <Search size={18} color="#888" style={{ marginRight: 8 }} />
+              <RNTextInput
+                placeholder={t("timetable.groups.createModal.searchPlaceholder")}
+                placeholderTextColor="#888"
+                value={search}
+                onChangeText={setSearch}
+                style={[styles.rnInput, { color: theme.colors.onSurface }]}
+              />
+            </View>
 
             {loadingFriends ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator color={theme.colors.primary} />
+              <View style={styles.centerLoading}>
+                <Spinner color={theme.colors.primary} />
               </View>
             ) : (
               <ScrollView style={styles.friendList}>
                 {filteredFriends.length > 0 ? (
-                  filteredFriends.map(friend => (
-                    <TouchableOpacity 
-                      key={friend.id} 
-                      style={styles.friendItem}
-                      onPress={() => toggleFriend(friend.id)}
-                    >
-                      <Avatar.Text 
-                        size={40} 
-                        label={(friend.username || friend.first_name || "U").substring(0, 2).toUpperCase()} 
-                        style={{ backgroundColor: addAlpha(theme.colors.primary, 0.1) }}
-                        labelStyle={{ color: theme.colors.primary }}
-                      />
-                      <View style={styles.friendInfo}>
-                        <Text variant="bodyLarge">{friend.username}</Text>
-                        <Text variant="bodySmall" style={{ opacity: 0.6 }}>{friend.first_name} {friend.last_name}</Text>
-                      </View>
-                      <Checkbox 
-                        status={selectedFriends.includes(friend.id) ? 'checked' : 'unchecked'} 
+                  filteredFriends.map(friend => {
+                    const isSelected = selectedFriends.includes(friend.id);
+                    return (
+                      <Pressable 
+                        key={friend.id} 
+                        style={styles.friendRow}
                         onPress={() => toggleFriend(friend.id)}
-                      />
-                    </TouchableOpacity>
-                  ))
+                      >
+                        <GluestackAvatar size="md" style={{ backgroundColor: theme.colors.primary }}>
+                          <AvatarFallbackText style={{ color: "#ffffff" }}>
+                            {(friend.first_name || friend.username || "U").charAt(0).toUpperCase()}
+                          </AvatarFallbackText>
+                        </GluestackAvatar>
+
+                        
+                        <View style={styles.friendInfo}>
+                          <Text style={[styles.friendName, { color: theme.colors.onSurface }]}>
+                            {friend.first_name ? `${friend.first_name} ${friend.last_name}` : friend.username}
+                          </Text>
+                          <Text style={styles.friendUsername}>
+                            @{friend.username}
+                          </Text>
+                        </View>
+
+                        <Checkbox 
+                          value={friend.id} 
+                          isChecked={isSelected} 
+                          onChange={() => toggleFriend(friend.id)}
+                          aria-label={`Select ${friend.username}`}
+                        >
+                          <CheckboxIndicator style={{ borderColor: theme.colors.primary }}>
+                            <CheckboxIcon as={CheckIcon} />
+                          </CheckboxIndicator>
+                        </Checkbox>
+                      </Pressable>
+                    );
+                  })
                 ) : (
-                  <View style={styles.emptyContainer}>
-                    <Text variant="bodyMedium" style={{ opacity: 0.5 }}>{t("timetable.groups.createModal.noFriends")}</Text>
+                  <View style={{ padding: 20, alignItems: 'center' }}>
+                    <Text style={{ opacity: 0.5 }}>{t("timetable.groups.createModal.noFriends")}</Text>
                   </View>
                 )}
               </ScrollView>
             )}
 
             <View style={[styles.actions, { marginTop: 16 }]}>
-              <Button onPress={handleBack} disabled={loading}>{t("common.back")}</Button>
+              <Button onPress={handleBack} isDisabled={loading} variant="outline" style={styles.button}>
+                <ButtonText>{t("common.back")}</ButtonText>
+              </Button>
               <Button 
-                mode="contained" 
                 onPress={handleConfirm} 
-                loading={loading}
-                disabled={loading}
+                isDisabled={loading}
+                style={[styles.button, { backgroundColor: theme.colors.primary }]}
               >
-                {selectedFriends.length > 0 
-                  ? t("timetable.groups.createModal.createWithCount", { count: selectedFriends.length }) 
-                  : t("timetable.groups.createModal.titleStep1")}
+                <ButtonText style={{ color: "#fff", fontWeight: "700" }}>
+                  {selectedFriends.length > 0 
+                    ? t("timetable.groups.createModal.createWithCount", { count: selectedFriends.length }) 
+                    : t("timetable.groups.createModal.titleStep1")}
+                </ButtonText>
               </Button>
             </View>
           </View>
         )}
-      </Modal>
-    </Portal>
+      </ModalContent>
+    </Modal>
+
   );
 };
 

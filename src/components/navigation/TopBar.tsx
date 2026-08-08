@@ -8,34 +8,43 @@ import {
   Settings,
   User,
 } from "lucide-react-native";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   InteractionManager,
   StyleSheet,
   View,
 } from "react-native";
 import {
-  Avatar,
+  Box,
+  Text,
   Badge,
-  Divider,
-  IconButton,
-  Menu,
-  TouchableRipple,
-  useTheme,
-} from "react-native-paper";
+  BadgeText,
+  Avatar as GluestackAvatar,
+  AvatarFallbackText,
+  AvatarImage,
+  Pressable,
+  Popover,
+  PopoverBackdrop,
+  PopoverContent,
+  PopoverBody,
+} from "@gluestack-ui/themed";
+import { useAppTheme } from "../../context/ThemeProvider";
 import { useTranslation } from "react-i18next";
 import { useFriendRequests } from "../../hooks/useFriendship";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useTimetableStore } from "../../store/useTimetableStore";
-import { resolveMediaUrl } from "../../utils/format";
+import { resolveMediaUrl, getUserDisplayName } from "../../utils/format";
+
+import { addAlpha } from "../../utils/theme";
+
 
 export const TopBar: React.FC = () => {
   const { t } = useTranslation();
-  const theme = useTheme();
+  const theme = useAppTheme();
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
-  const [menuVisible, setMenuVisible] = React.useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
 
   const { data: friendRequests = [] } = useFriendRequests();
   const {
@@ -80,106 +89,132 @@ export const TopBar: React.FC = () => {
         />
 
         <View style={styles.rightSection}>
-          <View>
-            <IconButton
-              icon={() => (
-                <Bell size={24} color={theme.colors.onSurfaceVariant} />
-              )}
+          <View style={{ position: "relative" }}>
+            <Pressable
               onPress={() => router.push("/notifications" as any)}
-            />
+              style={{ padding: 8 }}
+            >
+              <Bell size={24} color={theme.colors.onSurface} />
+            </Pressable>
             {notifications.length > 0 && (
-              <Badge size={16} style={styles.badge}>
-                {notifications.length}
+              <Badge style={[styles.badge, { backgroundColor: theme.colors.primary }]}>
+                <BadgeText style={{ color: "#fff", fontSize: 10, fontWeight: "bold" }}>
+                  {notifications.length}
+                </BadgeText>
               </Badge>
             )}
           </View>
 
-          <Menu
-            visible={menuVisible}
-            onDismiss={() => setMenuVisible(false)}
-            contentStyle={[
-              styles.menuContent,
-              { backgroundColor: theme.colors.surface },
-            ]}
-            anchor={
-              <TouchableRipple
+          <Popover
+            isOpen={menuVisible}
+            onClose={() => setMenuVisible(false)}
+            placement="top right"
+            offset={4}
+            trigger={(triggerProps) => (
+              <Pressable
+                {...triggerProps}
                 onPress={() => setMenuVisible(true)}
                 style={styles.avatarWrapper}
-                rippleColor="rgba(0, 0, 0, .1)"
               >
-                {user?.profile_media_url ? (
-                  <Avatar.Image
-                    size={44}
-                    source={{ uri: resolveMediaUrl(user.profile_media_url) || "https://via.placeholder.com/44" }}
-                    style={{ backgroundColor: "transparent", borderRadius: 12 }}
-                  />
-                ) : (
-                  <Avatar.Text
-                    size={44}
-                    label={user?.first_name?.charAt(0) || "U"}
-                    style={{ backgroundColor: theme.colors.primary, borderRadius: 12 }}
-                  />
-                )}
-              </TouchableRipple>
-            }
+                <GluestackAvatar size="md" style={{ backgroundColor: theme.colors.primary }}>
+                  {resolveMediaUrl(user?.profile_media_url) ? (
+                    <AvatarImage source={{ uri: resolveMediaUrl(user?.profile_media_url)! }} alt="User Avatar" />
+                  ) : (
+                    <AvatarFallbackText style={{ color: "#ffffff" }}>
+                      {getUserDisplayName(user).charAt(0).toUpperCase()}
+                    </AvatarFallbackText>
+                  )}
+                </GluestackAvatar>
+
+              </Pressable>
+            )}
           >
-            <Menu.Item
-              onPress={() => {
-                setMenuVisible(false);
-                router.push("/(tabs)/profile");
-              }}
-              leadingIcon={() => (
-                <User size={20} color={theme.colors.primary} />
-              )}
-              title={t("navigation.profile")}
-              titleStyle={styles.menuTitle}
-            />
-            <Divider style={styles.menuDivider} />
-            <Menu.Item
-              onPress={() => {
-                setMenuVisible(false);
-                router.push("/events/attended" as any);
-              }}
-              leadingIcon={() => (
-                <Calendar size={20} color={theme.colors.onSurfaceVariant} />
-              )}
-              title={t("profile.sections.past")}
-              titleStyle={styles.menuTitle}
-            />
-            <Menu.Item
-              onPress={() => {
-                setMenuVisible(false);
-                router.push("/events/past" as any);
-              }}
-              leadingIcon={() => (
-                <HistoryIcon size={20} color={theme.colors.onSurfaceVariant} />
-              )}
-              title={t("navigation.events")}
-              titleStyle={styles.menuTitle}
-            />
-            <Divider style={styles.menuDivider} />
-            <Menu.Item
-              onPress={() => closeAndNavigate("/settings")}
-              leadingIcon={() => (
-                <Settings size={20} color={theme.colors.onSurfaceVariant} />
-              )}
-              title={t("navigation.settings")}
-              titleStyle={styles.menuTitle}
-            />
-            <Menu.Item
-              onPress={() => {
-                setMenuVisible(false);
-                logout();
-                useTimetableStore.getState().reset();
-                router.replace("/(auth)/login");
-              }}
-              leadingIcon={() => (
-                <LogOut size={20} color={theme.colors.error} />
-              )}
-              title={t("common.logout")}
-              titleStyle={[styles.menuTitle, { color: theme.colors.error }]}
-            />
-          </Menu>
+            <PopoverBackdrop />
+            <PopoverContent
+              style={[
+                styles.menuContent,
+                {
+                  backgroundColor: theme.colors.surface,
+                  borderColor: addAlpha(theme.colors.onSurface, 0.15),
+                  borderWidth: 1,
+                },
+              ]}
+            >
+              <PopoverBody style={{ paddingVertical: 4, paddingHorizontal: 0 }}>
+                <Pressable
+                  style={styles.menuItem}
+                  onPress={() => {
+                    setMenuVisible(false);
+                    router.push("/(tabs)/profile");
+                  }}
+                >
+                  <User size={20} color={theme.colors.primary} />
+                  <Text style={[styles.menuTitle, { color: theme.colors.onSurface }]}>
+                    {t("navigation.profile")}
+                  </Text>
+                </Pressable>
+
+                <View style={[styles.separator, { backgroundColor: addAlpha(theme.colors.onSurface, 0.1) }]} />
+                
+                <Pressable
+                  style={styles.menuItem}
+                  onPress={() => {
+                    setMenuVisible(false);
+                    router.push("/events/attended" as any);
+                  }}
+                >
+                  <Calendar size={20} color={theme.colors.onSurface} />
+                  <Text style={[styles.menuTitle, { color: theme.colors.onSurface }]}>
+                    {t("profile.sections.past")}
+                  </Text>
+                </Pressable>
+
+                <View style={[styles.separator, { backgroundColor: addAlpha(theme.colors.onSurface, 0.1) }]} />
+
+                <Pressable
+                  style={styles.menuItem}
+                  onPress={() => {
+                    setMenuVisible(false);
+                    router.push("/events/past" as any);
+                  }}
+                >
+                  <HistoryIcon size={20} color={theme.colors.onSurface} />
+                  <Text style={[styles.menuTitle, { color: theme.colors.onSurface }]}>
+                    {t("navigation.events")}
+                  </Text>
+                </Pressable>
+
+                <View style={[styles.separator, { backgroundColor: addAlpha(theme.colors.onSurface, 0.1) }]} />
+
+                <Pressable
+                  style={styles.menuItem}
+                  onPress={() => closeAndNavigate("/settings")}
+                >
+                  <Settings size={20} color={theme.colors.onSurface} />
+                  <Text style={[styles.menuTitle, { color: theme.colors.onSurface }]}>
+                    {t("navigation.settings")}
+                  </Text>
+                </Pressable>
+
+                <View style={[styles.separator, { backgroundColor: addAlpha(theme.colors.onSurface, 0.1) }]} />
+
+                <Pressable
+                  style={styles.menuItem}
+                  onPress={() => {
+                    setMenuVisible(false);
+                    logout();
+                    useTimetableStore.getState().reset();
+                    router.replace("/(auth)/login");
+                  }}
+                >
+                  <LogOut size={20} color="#ff5252" />
+                  <Text style={[styles.menuTitle, { color: "#ff5252" }]}>
+                    {t("common.logout")}
+                  </Text>
+                </Pressable>
+              </PopoverBody>
+            </PopoverContent>
+          </Popover>
         </View>
       </View>
     </View>
@@ -199,11 +234,30 @@ const styles = StyleSheet.create({
   avatarWrapper: {
     borderRadius: 12,
     overflow: "hidden",
-    borderWidth: 2,
-    borderColor: "transparent",
   },
-  menuContent: { borderRadius: 16, paddingVertical: 8, marginTop: 40 },
-  menuTitle: { fontSize: 16, fontWeight: "600" },
-  menuDivider: { marginVertical: 4, opacity: 0.5 },
-  badge: { position: "absolute", top: 6, right: 8 },
+  menuContent: {
+    borderRadius: 16,
+    paddingVertical: 4,
+    minWidth: 190,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  separator: {
+    height: 1,
+    width: "100%",
+  },
+  menuTitle: { fontSize: 15, fontWeight: "600" },
+  badge: { position: "absolute", top: 2, right: 2, borderRadius: 10, minWidth: 18, height: 18, justifyContent: "center", alignItems: "center" },
 });
+
+

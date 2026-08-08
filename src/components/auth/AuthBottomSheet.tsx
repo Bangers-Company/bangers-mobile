@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { StyleSheet, View, useWindowDimensions } from "react-native";
-import { useTheme } from "react-native-paper";
+import { useAppTheme } from "../../context/ThemeProvider";
 import Animated, {
   Easing,
   useAnimatedKeyboard,
@@ -19,7 +19,7 @@ export const AuthBottomSheet: React.FC<AuthBottomSheetProps> = ({
   isOpen = true,
 }) => {
   const { height: screenHeight } = useWindowDimensions();
-  const theme = useTheme();
+  const theme = useAppTheme();
   const keyboard = useAnimatedKeyboard();
 
   // Initial translation (off-screen)
@@ -62,7 +62,7 @@ export const AuthBottomSheet: React.FC<AuthBottomSheetProps> = ({
         <View
           style={[
             styles.handle,
-            { backgroundColor: theme.colors.outlineVariant },
+            { backgroundColor: theme.colors.surfaceVariant },
           ]}
         />
       </View>
@@ -101,3 +101,4 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
 });
+

@@ -5,15 +5,16 @@ import React, { useState } from "react";
 import {
   StyleSheet,
   View,
+  TextInput as RNTextInput,
 } from "react-native";
 import { useTranslation } from "react-i18next";
 import {
   Button,
+  ButtonText,
   Text,
-  TextInput,
-  TouchableRipple,
-  useTheme,
-} from "react-native-paper";
+  Pressable,
+} from "@gluestack-ui/themed";
+import { useAppTheme } from "../../src/context/ThemeProvider";
 import { authApi } from "../../src/api/auth";
 import { PageContainer } from "../../src/components/PageContainer";
 import { useAuthStore } from "../../src/store/useAuthStore";
@@ -24,7 +25,7 @@ import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 
 export default function AuthScreen() {
   const { t } = useTranslation();
-  const theme = useTheme();
+  const theme = useAppTheme();
   const params = useLocalSearchParams();
   const setAuth = useAuthStore((state) => state.setAuth);
 
@@ -123,62 +124,59 @@ export default function AuthScreen() {
               />
             ) : (
               <Animated.View entering={FadeIn.duration(400)}>
-                <Text variant="headlineMedium" style={styles.title}>{t("auth.login.title")}</Text>
-                <Text variant="bodyMedium" style={styles.subtitle}>{t("auth.login.subtitle")}</Text>
+                <Text style={[styles.title, { color: theme.colors.onSurface }]}>{t("auth.login.title")}</Text>
+                <Text style={[styles.subtitle, { color: theme.colors.onSurface }]}>{t("auth.login.subtitle")}</Text>
                 
                 <View style={styles.form}>
-                  <TextInput
-                    mode="outlined"
-                    placeholder={t("auth.login.email")}
-                    value={email}
-                    onChangeText={setEmail}
-                    autoCapitalize="none"
-                    style={styles.pillInput}
-                    outlineStyle={styles.pillOutline}
-                    left={<TextInput.Icon icon={() => <Mail size={20} color={theme.colors.outline} />} />}
-                    activeOutlineColor={theme.colors.primary}
-                  />
-                  <TextInput
-                    mode="outlined"
-                    placeholder={t("auth.login.password")}
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={!showPassword}
-                    style={styles.pillInput}
-                    outlineStyle={styles.pillOutline}
-                    left={<TextInput.Icon icon={() => <Lock size={20} color={theme.colors.outline} />} />}
-                    right={
-                      <TextInput.Icon 
-                        icon={() => showPassword ? <EyeOff size={20} /> : <Eye size={20} />} 
-                        onPress={() => setShowPassword(!showPassword)}
-                      />
-                    }
-                    activeOutlineColor={theme.colors.primary}
-                  />
+                  <View style={styles.inputRow}>
+                    <Mail size={20} color="#888" style={{ marginRight: 10 }} />
+                    <RNTextInput
+                      placeholder={t("auth.login.email")}
+                      placeholderTextColor="#888"
+                      value={email}
+                      onChangeText={setEmail}
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                      style={[styles.rnInput, { color: theme.colors.onSurface }]}
+                    />
+                  </View>
 
-                  {error && <Text style={[styles.error, { color: theme.colors.error }]}>{error}</Text>}
+                  <View style={styles.inputRow}>
+                    <Lock size={20} color="#888" style={{ marginRight: 10 }} />
+                    <RNTextInput
+                      placeholder={t("auth.login.password")}
+                      placeholderTextColor="#888"
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry={!showPassword}
+                      style={[styles.rnInput, { color: theme.colors.onSurface }]}
+                    />
+                    <Pressable onPress={() => setShowPassword(!showPassword)} style={{ padding: 4 }}>
+                      {showPassword ? <EyeOff size={20} color="#888" /> : <Eye size={20} color="#888" />}
+                    </Pressable>
+                  </View>
+
+                  {error && <Text style={[styles.error, { color: "#ff5252" }]}>{error}</Text>}
 
                   <Button
-                    mode="contained"
                     onPress={handleLogin}
-                    loading={loading}
-                    disabled={loading}
-                    style={styles.mainButton}
-                    contentStyle={styles.mainButtonContent}
+                    isDisabled={loading}
+                    style={[styles.mainButton, { backgroundColor: theme.colors.primary }]}
                   >
-                    Sign In
+                    <ButtonText style={{ color: "#fff", fontWeight: "700" }}>
+                      Sign In
+                    </ButtonText>
                   </Button>
 
                   <View style={styles.footer}>
-                    <Text variant="bodyMedium" style={styles.footerText}>{t("auth.login.newHere")} </Text>
-                    <TouchableRipple 
+                    <Text style={[styles.footerText, { color: theme.colors.onSurface }]}>{t("auth.login.newHere")} </Text>
+                    <Pressable 
                       onPress={() => setIsRegistering(true)}
-                      style={styles.footerRipple}
                     >
-                      <Text variant="bodyMedium" style={[styles.footerLink, { color: theme.colors.primary }]}>
+                      <Text style={[styles.footerLink, { color: theme.colors.primary }]}>
                         {t("auth.login.createAccount")}
                       </Text>
-                    </TouchableRipple>
+                    </Pressable>
                   </View>
                 </View>
               </Animated.View>
@@ -213,25 +211,32 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   title: {
+    fontSize: 22,
     fontWeight: "900",
     letterSpacing: -1,
     marginTop: 8,
   },
   subtitle: {
+    fontSize: 14,
     opacity: 0.6,
     marginBottom: 24,
   },
   form: {
     gap: 16,
   },
-  input: {
-    backgroundColor: "transparent",
-  },
-  pillInput: {
-    backgroundColor: "transparent",
-  },
-  pillOutline: {
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(150,150,150,0.3)",
     borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  rnInput: {
+    flex: 1,
+    fontSize: 15,
+    padding: 0,
   },
   error: {
     textAlign: "center",
@@ -240,9 +245,9 @@ const styles = StyleSheet.create({
   mainButton: {
     marginTop: 12,
     borderRadius: 12,
-  },
-  mainButtonContent: {
-    height: 54,
+    height: 52,
+    justifyContent: "center",
+    alignItems: "center",
   },
   footer: {
     flexDirection: "row",
@@ -252,12 +257,11 @@ const styles = StyleSheet.create({
   },
   footerText: {
     opacity: 0.6,
-  },
-  footerRipple: {
-    borderRadius: 4,
-    padding: 4,
+    fontSize: 14,
   },
   footerLink: {
     fontWeight: "800",
+    fontSize: 14,
   },
 });
+

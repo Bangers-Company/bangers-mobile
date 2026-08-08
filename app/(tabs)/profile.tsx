@@ -12,7 +12,8 @@ import {
 import { useTranslation } from "react-i18next";
 import ContentLoader, { Rect } from "react-content-loader/native";
 import { useProfile } from "../../src/hooks/useProfile";
-import { resolveMediaUrl } from "../../src/utils/format";
+import { resolveMediaUrl, getUserDisplayName } from "../../src/utils/format";
+
 import { useSharedScroll } from "../../src/hooks/useSharedScroll";
 import Animated, { useAnimatedScrollHandler } from "react-native-reanimated";
 import {
@@ -115,9 +116,11 @@ export default function ProfileScreen() {
               ) : (
                 <Avatar.Text
                   size={80}
-                  label={user?.first_name?.charAt(0) || "U"}
+                  label={getUserDisplayName(user).charAt(0).toUpperCase()}
                   style={{ backgroundColor: theme.colors.primary, borderRadius: 22 }}
+                  color="#ffffff"
                 />
+
               )}
               <TouchableRipple
                 onPress={() => setIsEditModalVisible(true)}
@@ -132,9 +135,10 @@ export default function ProfileScreen() {
           <View style={styles.profileInfoContainer}>
             <View style={styles.profileInfo}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                <Text variant="headlineSmall" style={styles.userName}>
-                  {user?.first_name} {user?.last_name}
+                <Text variant="headlineSmall" style={[styles.userName, { color: theme.colors.onSurface }]}>
+                  {getUserDisplayName(user)}
                 </Text>
+
                 {user?.roles?.includes('admin') && (
                   <ShieldAlert size={24} color={theme.colors.error} />
                 )}

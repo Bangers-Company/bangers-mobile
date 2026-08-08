@@ -6,19 +6,23 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  TextInput as RNTextInput,
 } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Modal,
-  Portal,
+  ModalBackdrop,
+  ModalContent,
   Text,
   Button,
-  TextInput,
+  ButtonText,
   Switch,
-  useTheme,
-  Avatar,
-  IconButton,
-} from "react-native-paper";
+  Avatar as GluestackAvatar,
+  AvatarFallbackText,
+  AvatarImage,
+  Pressable,
+} from "@gluestack-ui/themed";
+import { useAppTheme } from "../../context/ThemeProvider";
 import { useTranslation } from "react-i18next";
 import { BlurView } from "expo-blur";
 import * as ImagePicker from "expo-image-picker";
@@ -28,7 +32,6 @@ import { userApi } from "../../api/user";
 import { mediaApi } from "../../api/media";
 import { useAuthStore } from "../../store/useAuthStore";
 import { Camera, Image as ImageIcon, X } from "lucide-react-native";
-import { DatePickerInput } from "react-native-paper-dates";
 
 interface EditProfileModalProps {
   visible: boolean;
@@ -41,8 +44,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   user,
   onClose,
 }) => {
-  const { t, i18n } = useTranslation();
-  const theme = useTheme();
+  const { t } = useTranslation();
+  const theme = useAppTheme();
   const setUser = useAuthStore((state) => state.setUser);
   const queryClient = useQueryClient();
   
@@ -50,7 +53,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const [firstName, setFirstName] = useState(user.first_name || "");
   const [lastName, setLastName] = useState(user.last_name || "");
   const [bio, setBio] = useState(user.bio || "");
-  const [dob, setDob] = useState<Date | undefined>(user.dob ? new Date(user.dob) : undefined);
+  const [dobString, setDobString] = useState(user.dob ? user.dob.split('T')[0] : "");
   const [isPublic, setIsPublic] = useState(user.is_public);
   const [profileImage, setProfileImage] = useState<string | null>(user.profile_media_url || null);
 
@@ -109,7 +112,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
         first_name: firstName,
         last_name: lastName,
         bio: bio,
-        dob: dob?.toISOString().split('T')[0],
+        dob: dobString || undefined,
         is_public: isPublic,
         profile_media_id,
       } as any);
@@ -126,127 +129,123 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   };
 
   return (
-    <Portal>
-      {visible && (
-        <Animated.View 
-          entering={FadeIn} 
-          exiting={FadeOut}
-          style={StyleSheet.absoluteFill}
+    <Modal isOpen={visible} onClose={onClose}>
+      <ModalBackdrop />
+      <ModalContent style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+          style={{ flex: 1 }}
         >
-          <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
-        </Animated.View>
-      )}
-      <Modal
-        visible={visible}
-        onDismiss={onClose}
-        contentContainerStyle={styles.modalContent}
-        theme={{ colors: { backdrop: "transparent" } }}
-      >
-        <BlurView intensity={100} tint="dark" style={styles.blurContainer}>
-          <BlurView intensity={100} tint="dark" style={StyleSheet.absoluteFill} />
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
-            style={{ flex: 1 }}
-          >
-            <View style={styles.header}>
-              <Text variant="titleLarge" style={styles.headerTitle}>{t("profile.edit.title")}</Text>
-              <IconButton icon={() => <X size={24} color={theme.colors.onSurface} />} onPress={onClose} />
-            </View>
+          <View style={styles.header}>
+            <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>{t("profile.edit.title")}</Text>
+            <Pressable onPress={onClose} style={{ padding: 4 }}>
+              <X size={24} color={theme.colors.onSurface} />
+            </Pressable>
+          </View>
 
           <ScrollView contentContainerStyle={styles.scrollContent}>
             <View style={styles.imageContainer}>
               <View style={styles.avatarWrapper}>
-                {profileImage ? (
-                  <Avatar.Image size={100} source={{ uri: profileImage }} style={{ borderRadius: 28 }} />
-                ) : (
-                  <Avatar.Text size={100} label={(user.username || user.first_name || "U").substring(0, 2).toUpperCase()} style={{ borderRadius: 28 }} />
-                )}
+                <GluestackAvatar size="xl" style={{ backgroundColor: theme.colors.primary }}>
+                  {profileImage ? (
+                    <AvatarImage source={{ uri: profileImage }} alt="Profile" />
+                  ) : (
+                    <AvatarFallbackText style={{ color: "#ffffff" }}>
+                      {(user.first_name || user.username || "U").charAt(0).toUpperCase()}
+                    </AvatarFallbackText>
+                  )}
+                </GluestackAvatar>
+
                 <View style={styles.imageActions}>
-                  <IconButton 
-                    icon={() => <Camera size={20} color="white" />} 
-                    style={styles.actionButton}
+                  <Pressable 
+                    style={[styles.actionButton, { backgroundColor: theme.colors.primary }]}
                     onPress={() => handlePickImage(true)}
-                  />
-                  <IconButton 
-                    icon={() => <ImageIcon size={20} color="white" />} 
-                    style={styles.actionButton}
+                  >
+                    <Camera size={16} color="white" />
+                  </Pressable>
+                  <Pressable 
+                    style={[styles.actionButton, { backgroundColor: theme.colors.primary }]}
                     onPress={() => handlePickImage(false)}
-                  />
+                  >
+                    <ImageIcon size={16} color="white" />
+                  </Pressable>
                 </View>
               </View>
             </View>
 
             <View style={styles.form}>
               <View style={styles.row}>
-                <TextInput
-                  label={t("profile.edit.firstName")}
-                  value={firstName}
-                  onChangeText={setFirstName}
-                  mode="outlined"
-                  style={[styles.pillInput, { flex: 1 }]}
-                  outlineStyle={styles.pillOutline}
-                />
-                <TextInput
-                  label={t("profile.edit.lastName")}
-                  value={lastName}
-                  onChangeText={setLastName}
-                  mode="outlined"
-                  style={[styles.pillInput, { flex: 1 }]}
-                  outlineStyle={styles.pillOutline}
+                <View style={[styles.inputRow, { flex: 1 }]}>
+                  <RNTextInput
+                    placeholder={t("profile.edit.firstName")}
+                    placeholderTextColor="#888"
+                    value={firstName}
+                    onChangeText={setFirstName}
+                    style={[styles.rnInput, { color: theme.colors.onSurface }]}
+                  />
+                </View>
+                <View style={[styles.inputRow, { flex: 1 }]}>
+                  <RNTextInput
+                    placeholder={t("profile.edit.lastName")}
+                    placeholderTextColor="#888"
+                    value={lastName}
+                    onChangeText={setLastName}
+                    style={[styles.rnInput, { color: theme.colors.onSurface }]}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.inputRow}>
+                <RNTextInput
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor="#888"
+                  value={dobString}
+                  onChangeText={setDobString}
+                  keyboardType="numeric"
+                  maxLength={10}
+                  style={[styles.rnInput, { color: theme.colors.onSurface }]}
                 />
               </View>
 
-              <DatePickerInput
-                locale={i18n.language}
-                label={t("profile.edit.dob")}
-                value={dob}
-                onChange={(d) => setDob(d)}
-                inputMode="start"
-                mode="outlined"
-                style={styles.pillInput}
-                outlineStyle={styles.pillOutline}
-              />
-
-              <TextInput
-                label={t("profile.edit.bio")}
-                value={bio}
-                onChangeText={setBio}
-                mode="outlined"
-                multiline
-                numberOfLines={6}
-                style={[styles.pillInput, { minHeight: 120 }]}
-                outlineStyle={styles.pillOutline}
-              />
+              <View style={[styles.inputRow, { minHeight: 100 }]}>
+                <RNTextInput
+                  placeholder={t("profile.edit.bio")}
+                  placeholderTextColor="#888"
+                  value={bio}
+                  onChangeText={setBio}
+                  multiline
+                  style={[styles.rnInput, { color: theme.colors.onSurface, textAlignVertical: "top" }]}
+                />
+              </View>
 
               <View style={styles.privacyRow}>
                 <View style={styles.privacyLabel}>
-                  <Text variant="bodyLarge">{t("profile.edit.publicProfile")}</Text>
-                  <Text variant="bodySmall" style={styles.privacySub}>{t("profile.edit.publicProfileSub")}</Text>
+                  <Text style={{ color: theme.colors.onSurface, fontWeight: "600" }}>{t("profile.edit.publicProfile")}</Text>
+                  <Text style={{ color: theme.colors.onSurface, opacity: 0.6, fontSize: 12 }}>{t("profile.edit.publicProfileSub")}</Text>
                 </View>
-                <Switch value={isPublic} onValueChange={setIsPublic} />
+                <Switch value={isPublic} onValueChange={setIsPublic} trackColor={{ true: theme.colors.primary }} />
               </View>
             </View>
           </ScrollView>
 
           <View style={styles.footer}>
             <Button
-              mode="contained"
               onPress={handleSave}
-              loading={loading}
-              disabled={loading}
-              style={styles.saveButton}
-              contentStyle={styles.saveButtonContent}
+              isDisabled={loading}
+              style={[styles.saveButton, { backgroundColor: theme.colors.primary }]}
             >
-              {t("common.save")}
+              <ButtonText style={{ color: "#fff", fontWeight: "700" }}>
+                {t("common.save")}
+              </ButtonText>
             </Button>
           </View>
-          </KeyboardAvoidingView>
-        </BlurView>
-      </Modal>
-    </Portal>
+        </KeyboardAvoidingView>
+      </ModalContent>
+    </Modal>
   );
 };
+
 
 const styles = StyleSheet.create({
   modalContent: {
@@ -295,7 +294,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   actionButton: {
-    margin: 0,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    marginHorizontal: 2,
   },
   form: {
     gap: 16,
@@ -304,14 +308,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 12,
   },
-  input: {
-    backgroundColor: "transparent",
-  },
-  pillInput: {
-    backgroundColor: "transparent",
-  },
-  pillOutline: {
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(150,150,150,0.3)",
     borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  rnInput: {
+    flex: 1,
+    fontSize: 15,
+    padding: 0,
   },
   privacyRow: {
     flexDirection: "row",
@@ -335,8 +344,10 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     borderRadius: 12,
-  },
-  saveButtonContent: {
-    height: 52,
+    height: 48,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
+
+

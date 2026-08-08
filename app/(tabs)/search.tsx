@@ -27,7 +27,8 @@ import {
 } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EventHorizontalCard } from "../../src/components/event/EventHorizontalCard";
-import { resolveMediaUrl } from "../../src/utils/format";
+import { resolveMediaUrl, getUserDisplayName } from "../../src/utils/format";
+
 import { addAlpha } from "../../src/utils/theme";
 import { useSearch } from "../../src/hooks/useSearch";
 import { useDebounce } from "../../src/hooks/useDebounce";
@@ -145,14 +146,22 @@ export default function SearchScreen() {
                         { flexDirection: "row", alignItems: "center", gap: 16 },
                       ]}
                     >
-                      <Avatar.Image
-                        size={40}
-                        source={{
-                          uri:
-                            resolveMediaUrl(item.profile_media_url) ||
-                            "https://via.placeholder.com/40",
-                        }}
-                      />
+                      {resolveMediaUrl(item.profile_media_url) ? (
+                        <Avatar.Image
+                          size={40}
+                          source={{
+                            uri: resolveMediaUrl(item.profile_media_url)!,
+                          }}
+                        />
+                      ) : (
+                        <Avatar.Text
+                          size={40}
+                          label={getUserDisplayName(item).charAt(0).toUpperCase()}
+                          style={{ backgroundColor: theme.colors.primary }}
+                          color="#ffffff"
+                        />
+                      )}
+
                       <View>
                         <View
                           style={{
@@ -161,9 +170,10 @@ export default function SearchScreen() {
                             gap: 6,
                           }}
                         >
-                          <Text variant="titleMedium">
-                            {item.first_name} {item.last_name}
+                          <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+                            {getUserDisplayName(item)}
                           </Text>
+
                           {item.roles?.some((r: any) =>
                             typeof r === "string"
                               ? r === "admin"

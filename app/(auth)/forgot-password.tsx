@@ -2,23 +2,24 @@ import { useRouter } from "expo-router";
 import { ArrowLeft, CheckCircle2, Mail } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    View
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+  TextInput as RNTextInput,
 } from "react-native";
 import {
-    Button,
-    Text,
-    TextInput,
-    TouchableRipple,
-    useTheme,
-} from "react-native-paper";
+  Button,
+  ButtonText,
+  Text,
+  Pressable,
+} from "@gluestack-ui/themed";
+import { useAppTheme } from "../../src/context/ThemeProvider";
 import { PageContainer } from "../../src/components/PageContainer";
 
 export default function ForgotPasswordScreen() {
-  const theme = useTheme();
+  const theme = useAppTheme();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
@@ -30,8 +31,6 @@ export default function ForgotPasswordScreen() {
 
     setLoading(true);
     try {
-      // In a real implementation, we would call the API here
-      // For now, let's simulate a delay
       await new Promise((resolve) => setTimeout(resolve, 1500));
       setSubmitted(true);
     } catch (err) {
@@ -52,19 +51,18 @@ export default function ForgotPasswordScreen() {
         >
           <CheckCircle2 size={60} color="#4ade80" />
         </View>
-        <Text variant="headlineSmall" style={styles.successTitle}>
+        <Text style={[styles.successTitle, { color: theme.colors.onSurface }]}>
           Check your email
         </Text>
-        <Text variant="bodyMedium" style={styles.successText}>
+        <Text style={[styles.successText, { color: theme.colors.onSurface }]}>
           We&apos;ve sent a password reset link to {email}. Please check your
           inbox and follow the instructions.
         </Text>
         <Button
-          mode="contained"
           onPress={() => router.replace("/(auth)/login" as any)}
-          style={styles.button}
+          style={[styles.button, { backgroundColor: theme.colors.primary }]}
         >
-          Back to Login
+          <ButtonText style={{ color: "#fff", fontWeight: "700" }}>Back to Login</ButtonText>
         </Button>
       </PageContainer>
     );
@@ -80,26 +78,25 @@ export default function ForgotPasswordScreen() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          <TouchableRipple
+          <Pressable
             onPress={() => router.back()}
             style={[
               styles.backButtonCircular,
               { backgroundColor: theme.colors.surface },
             ]}
-            rippleColor="rgba(0, 0, 0, .1)"
           >
             <ArrowLeft
               size={24}
               color={theme.colors.onSurface}
               strokeWidth={2.5}
             />
-          </TouchableRipple>
+          </Pressable>
 
           <View style={styles.header}>
-            <Text variant="displaySmall" style={styles.title}>
+            <Text style={[styles.title, { color: theme.colors.onSurface }]}>
               Reset Password
             </Text>
-            <Text variant="titleMedium" style={styles.subtitle}>
+            <Text style={[styles.subtitle, { color: theme.colors.onSurface }]}>
               Enter your email address and we&apos;ll send you a link to reset
               your password.
             </Text>
@@ -107,37 +104,31 @@ export default function ForgotPasswordScreen() {
 
           <View style={styles.form}>
             <View style={styles.inputGroup}>
-              <Text variant="labelLarge" style={styles.label}>
+              <Text style={[styles.label, { color: theme.colors.onSurface }]}>
                 Email Address
               </Text>
-              <TextInput
-                mode="outlined"
-                placeholder="hello@example.com"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                outlineColor={theme.colors.outlineVariant}
-                activeOutlineColor={theme.colors.primary}
-                style={styles.input}
-                left={
-                  <TextInput.Icon
-                    icon={() => <Mail size={20} color={theme.colors.outline} />}
-                  />
-                }
-              />
+              <View style={styles.inputRow}>
+                <Mail size={20} color="#888" style={{ marginRight: 10 }} />
+                <RNTextInput
+                  placeholder="hello@example.com"
+                  placeholderTextColor="#888"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  style={[styles.rnInput, { color: theme.colors.onSurface }]}
+                />
+              </View>
             </View>
 
             <Button
-              mode="contained"
               onPress={handleResetRequest}
-              loading={loading}
-              disabled={loading || !email}
-              style={styles.button}
-              contentStyle={styles.buttonContent}
-              labelStyle={styles.buttonLabel}
+              isDisabled={loading || !email}
+              style={[styles.button, { backgroundColor: theme.colors.primary }]}
             >
-              Send Reset Link
+              <ButtonText style={{ color: "#fff", fontWeight: "700" }}>
+                Send Reset Link
+              </ButtonText>
             </Button>
           </View>
         </ScrollView>
@@ -177,11 +168,13 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   title: {
+    fontSize: 28,
     fontWeight: "800",
     letterSpacing: -1,
     marginBottom: 12,
   },
   subtitle: {
+    fontSize: 15,
     opacity: 0.6,
     fontWeight: "500",
     lineHeight: 24,
@@ -195,20 +188,29 @@ const styles = StyleSheet.create({
   label: {
     marginLeft: 4,
     opacity: 0.8,
+    fontSize: 14,
+    fontWeight: "600",
   },
-  input: {
-    backgroundColor: "transparent",
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(150,150,150,0.3)",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  rnInput: {
+    flex: 1,
+    fontSize: 15,
+    padding: 0,
   },
   button: {
     borderRadius: 12,
     marginTop: 8,
-  },
-  buttonContent: {
-    paddingVertical: 8,
-  },
-  buttonLabel: {
-    fontSize: 18,
-    fontWeight: "bold",
+    height: 50,
+    justifyContent: "center",
+    alignItems: "center",
   },
   successIcon: {
     padding: 20,
@@ -216,6 +218,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   successTitle: {
+    fontSize: 22,
     fontWeight: "800",
     marginBottom: 12,
   },
@@ -224,5 +227,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
     lineHeight: 22,
     marginBottom: 32,
+    fontSize: 15,
   },
 });
+

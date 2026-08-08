@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from "react";
 import { StyleSheet, View } from "react-native";
-import { Text, useTheme } from "react-native-paper";
+import { Text } from "@gluestack-ui/themed";
+import { useAppTheme } from "../../context/ThemeProvider";
 import Animated, {
   useAnimatedScrollHandler,
   useAnimatedStyle,
@@ -32,7 +33,8 @@ export const TimetableVerticalGrid: React.FC<VerticalGridProps> = ({
   isPersonal,
   currentTime,
 }) => {
-  const theme = useTheme();
+  const theme = useAppTheme();
+
   const scrollRef = useRef<Animated.ScrollView>(null);
   const scrollOffset = useSharedScroll();
   const horizontalScrollOffset = useSharedValue(0);

@@ -2,7 +2,8 @@ import { useRouter } from "expo-router";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { RefreshControl, StyleSheet, View } from "react-native";
-import { Button, Text, useTheme } from "react-native-paper";
+import { Button, ButtonText, Text } from "@gluestack-ui/themed";
+import { useAppTheme } from "../../src/context/ThemeProvider";
 import Animated, {
   runOnJS,
   useAnimatedScrollHandler,
@@ -19,7 +20,7 @@ import { useAuthStore } from "../../src/store/useAuthStore";
 
 export default function HomeScreen() {
   const { t } = useTranslation();
-  const theme = useTheme();
+  const theme = useAppTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data, loading, refreshing, refresh, error } = useDashboardData();
@@ -53,19 +54,20 @@ export default function HomeScreen() {
       >
         <TopBar />
         <View style={styles.loadingWrapper}>
-          <Text variant="bodyLarge" style={{ color: theme.colors.error }}>
+          <Text style={{ color: "#ff5252", fontSize: 16, fontWeight: "bold" }}>
             {t("common.error.title") || "Failed to load events"}
           </Text>
-          <Text variant="bodySmall" style={styles.loadingText}>
+          <Text style={[styles.loadingText, { color: theme.colors.onSurface }]}>
             {error.message}
           </Text>
-          <Button mode="outlined" onPress={refresh} style={{ marginTop: 24 }}>
-            {t("common.tryAgain") || "Try Again"}
+          <Button onPress={refresh} variant="outline" style={{ marginTop: 24 }}>
+            <ButtonText>{t("common.tryAgain") || "Try Again"}</ButtonText>
           </Button>
         </View>
       </View>
     );
   }
+
 
   // Full-screen loading removed in favor of inline skeletons
 

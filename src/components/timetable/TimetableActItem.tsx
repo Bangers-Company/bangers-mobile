@@ -1,7 +1,8 @@
 import { format } from "date-fns";
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { Text, TouchableRipple, useTheme } from "react-native-paper";
+import { Text, Pressable } from "@gluestack-ui/themed";
+import { useAppTheme } from "../../context/ThemeProvider";
 import { TimetableEntry } from "../../types/timetable";
 
 interface TimetableActItemProps {
@@ -21,11 +22,8 @@ export const TimetableActItem: React.FC<TimetableActItemProps> = ({
   style,
   variant = "vertical",
 }) => {
-  const theme = useTheme();
+  const theme = useAppTheme();
   
-  // Since Redux updates the state immediately in 'pending', 
-  // we just render what's in the entry object!
-  // Support both official (entry.is_attending) and group (entry.pivot.is_attending)
   const isFavorited = entry.is_attending || (entry.pivot?.is_attending ?? false);
   const attendingCount = entry.pivot?.attending_count ?? 0;
 
@@ -35,10 +33,10 @@ export const TimetableActItem: React.FC<TimetableActItemProps> = ({
     
   const borderColor = isFavorited
     ? theme.colors.primaryContainer
-    : theme.colors.outlineVariant;
+    : theme.colors.surfaceVariant;
     
   const textColor = isFavorited ? "white" : theme.colors.onSurface;
-  const secondaryTextColor = isFavorited ? "rgba(255,255,255,0.8)" : theme.colors.onSurfaceVariant;
+  const secondaryTextColor = isFavorited ? "rgba(255,255,255,0.8)" : theme.colors.onSurface;
 
   return (
     <View
@@ -51,17 +49,15 @@ export const TimetableActItem: React.FC<TimetableActItemProps> = ({
         },
       ]}
     >
-      <TouchableRipple
+      <Pressable
         onPress={() => onPress(entry)}
         onLongPress={() => onLongPress(entry)}
         delayLongPress={500}
         style={styles.touchable}
-        rippleColor={isFavorited ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)"}
       >
         <View style={styles.entryContent}>
           <View style={styles.titleRow}>
             <Text
-              variant={variant === "vertical" ? "labelSmall" : "labelSmall"}
               style={[
                 styles.entryTitle,
                 { color: textColor },
@@ -73,7 +69,6 @@ export const TimetableActItem: React.FC<TimetableActItemProps> = ({
             </Text>
           </View>
           <Text
-            variant="labelSmall"
             style={[
               styles.entryTime,
               { color: secondaryTextColor },
@@ -91,7 +86,7 @@ export const TimetableActItem: React.FC<TimetableActItemProps> = ({
             </View>
           )}
         </View>
-      </TouchableRipple>
+      </Pressable>
     </View>
   );
 };
@@ -121,6 +116,7 @@ const styles = StyleSheet.create({
     lineHeight: 14,
     flex: 1,
     marginRight: 4,
+    fontSize: 11,
   },
   entryTime: {
     fontSize: 10,
@@ -141,3 +137,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   }
 });
+

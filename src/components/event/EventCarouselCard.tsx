@@ -2,7 +2,8 @@ import { MapPin, Users } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { Image } from "expo-image";
-import { Card, Surface, Text, useTheme } from "react-native-paper";
+import { Box, Text, Pressable } from "@gluestack-ui/themed";
+import { useAppTheme } from "../../context/ThemeProvider";
 import Animated, {
   Extrapolate,
   SharedValue,
@@ -31,7 +32,7 @@ export const EventCarouselCard: React.FC<EventCarouselCardProps> = ({
   cardMargin,
   onPress,
 }) => {
-  const theme = useTheme();
+  const theme = useAppTheme();
   const bannerUrl = resolveMediaUrl(event.banner?.url);
 
   const animatedStyle = useAnimatedStyle(() => {
@@ -73,73 +74,71 @@ export const EventCarouselCard: React.FC<EventCarouselCardProps> = ({
         },
       ]}
     >
-      <Card
-        style={[styles.card, { backgroundColor: theme.colors.surface }]}
-        onPress={() => onPress?.(event)}
-        elevation={5}
-      >
-        <View style={styles.imageContainer}>
-          {bannerUrl ? (
-            <Image source={{ uri: bannerUrl }} style={styles.image} />
-          ) : (
-            <View
-              style={[
-                styles.image,
-                { backgroundColor: theme.colors.surfaceVariant },
-              ]}
-            />
-          )}
-          <View style={styles.overlay} />
-          <Surface style={styles.dateBadge} elevation={4}>
-            <Text variant="labelMedium" style={styles.dateText}>
-              {new Date(event.start_date).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })}
-            </Text>
-          </Surface>
-        </View>
-        <View style={styles.content}>
-          <Text variant="titleLarge" style={styles.eventName} numberOfLines={1}>
-            {event.name}
-          </Text>
-          <View style={styles.metaRow}>
-            <View style={styles.locationRow}>
-              <MapPin size={14} color={theme.colors.primary} />
-              <Text
-                variant="bodySmall"
-                style={styles.location}
-                numberOfLines={1}
-              >
-                {event.location}
+      <Pressable onPress={() => onPress?.(event)}>
+        <Box
+          style={[styles.card, { backgroundColor: theme.colors.surface }]}
+        >
+          <View style={styles.imageContainer}>
+            {bannerUrl ? (
+              <Image source={{ uri: bannerUrl }} style={styles.image} />
+            ) : (
+              <View
+                style={[
+                  styles.image,
+                  { backgroundColor: theme.colors.surfaceVariant },
+                ]}
+              />
+            )}
+            <View style={styles.overlay} />
+            <Box style={styles.dateBadge}>
+              <Text style={styles.dateText}>
+                {new Date(event.start_date).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
               </Text>
-            </View>
-            <View style={styles.locationRow}>
-              <Users size={14} color={theme.colors.primary} />
-              <Text variant="bodySmall" style={styles.location}>
-                {event.attendee_count ?? 0} attending
-              </Text>
-            </View>
+            </Box>
           </View>
-
-          {event.genres && event.genres.length > 0 && (
-            <View style={styles.genreContainer}>
-              {event.genres.slice(0, 2).map((genre) => (
-                <Surface
-                  key={genre.id}
-                  style={[styles.genreBadge, { backgroundColor: theme.colors.primaryContainer }]}
-                  elevation={0}
+          <View style={styles.content}>
+            <Text style={styles.eventName} numberOfLines={1}>
+              {event.name}
+            </Text>
+            <View style={styles.metaRow}>
+              <View style={styles.locationRow}>
+                <MapPin size={14} color={theme.colors.primary} />
+                <Text
+                  style={styles.location}
+                  numberOfLines={1}
                 >
-                  <Text variant="labelSmall" style={[styles.genreText, { color: theme.colors.onPrimaryContainer }]}>
-                    {genre.name}
-                  </Text>
-                </Surface>
-              ))}
+                  {event.location}
+                </Text>
+              </View>
+              <View style={styles.locationRow}>
+                <Users size={14} color={theme.colors.primary} />
+                <Text style={styles.location}>
+                  {event.attendee_count ?? 0} attending
+                </Text>
+              </View>
             </View>
-          )}
-        </View>
-      </Card>
+
+            {event.genres && event.genres.length > 0 && (
+              <View style={styles.genreContainer}>
+                {event.genres.slice(0, 2).map((genre) => (
+                  <Box
+                    key={genre.id}
+                    style={[styles.genreBadge, { backgroundColor: theme.colors.primaryContainer }]}
+                  >
+                    <Text style={[styles.genreText, { color: theme.colors.onPrimaryContainer }]}>
+                      {genre.name}
+                    </Text>
+                  </Box>
+                ))}
+              </View>
+            )}
+          </View>
+        </Box>
+      </Pressable>
     </Animated.View>
   );
 };
@@ -176,11 +175,13 @@ const styles = StyleSheet.create({
   dateText: {
     color: "white",
     fontWeight: "bold",
+    fontSize: 12,
   },
   content: {
     padding: 20,
   },
   eventName: {
+    fontSize: 20,
     fontWeight: "900",
     letterSpacing: -0.5,
     marginBottom: 8,
@@ -197,6 +198,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   location: {
+    fontSize: 12,
     opacity: 0.7,
     fontWeight: "600",
   },
@@ -217,3 +219,4 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 });
+

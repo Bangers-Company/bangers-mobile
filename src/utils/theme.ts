@@ -11,12 +11,13 @@ export const COLORS = {
     amoled: "#12081a",
   },
   text: {
-    light: "#1c1022",
-    dark: "#f7f5f8",
-    amoled: "#f7f5f8",
+    light: "#0f172a",
+    dark: "#ffffff",
+    amoled: "#ffffff",
   },
   error: "#ff5252",
 };
+
 
 /**
  * Generates a background color based on the accent color and theme mode.
@@ -139,6 +140,8 @@ export const getDynamicSurface = (
  * @param opacity Opacity from 0 to 1
  */
 export const addAlpha = (color: string, opacity: number) => {
+  if (!color) return `rgba(0, 0, 0, ${opacity})`;
+
   // If it's already rgba, replace the alpha channel
   if (color.startsWith("rgba")) {
     return color.replace(/[\d\.]+\)$/g, `${opacity})`);
@@ -149,13 +152,20 @@ export const addAlpha = (color: string, opacity: number) => {
     return color.replace("rgb", "rgba").replace(/\)$/g, `, ${opacity})`);
   }
 
-  // If it's hex, append hex alpha
+  // If it's hex, convert to rgba format for full Reanimated compatibility
   if (color.startsWith("#")) {
-    const alpha = Math.round(opacity * 255)
-      .toString(16)
-      .padStart(2, "0");
-    return `${color}${alpha}`;
+    let hex = color.slice(1);
+    if (hex.length === 3) {
+      hex = hex.split("").map((c) => c + c).join("");
+    }
+    if (hex.length >= 6) {
+      const r = parseInt(hex.slice(0, 2), 16);
+      const g = parseInt(hex.slice(2, 4), 16);
+      const b = parseInt(hex.slice(4, 6), 16);
+      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    }
   }
 
   return color;
 };
+

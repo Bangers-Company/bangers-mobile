@@ -1,13 +1,13 @@
 import axios, { isCancel } from "axios";
+import ENV from "../config/env";
 import { useAuthStore } from "../store/useAuthStore";
 import { AuthResponse } from "../types/user";
-import ENV from "../config/env";
 import { logger } from "../utils/logger";
 
 const API_BASE_URL = ENV.API_BASE_URL;
 
 const apiClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API_BASE_URL + '/v1',
   timeout: 10000, // 10s timeout to prevent hanging requests
   headers: {
     Accept: "application/json",
@@ -29,6 +29,11 @@ apiClient.interceptors.request.use(
 
 // Shared promise for concurrent refresh requests
 let refreshPromise: Promise<string> | null = null;
+
+export const resetRefreshPromise = () => {
+  refreshPromise = null;
+};
+
 
 
 // Response interceptor to handle token refresh and data unwrapping.

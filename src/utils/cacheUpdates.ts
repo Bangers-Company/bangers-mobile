@@ -52,12 +52,21 @@ export const updateTimetableEntryAttendance = (
             }
           : undefined;
 
+        const newCount =
+          count !== undefined
+            ? count
+            : isAttending
+            ? (entry.count || 0) + 1
+            : Math.max(0, (entry.count || 0) - 1);
+
         return {
           ...entry,
           attendees: isGroup ? newAttendees : entry.attendees,
           is_attending: !isGroup ? isAttending : entry.is_attending,
+          count: newCount,
           pivot: newPivot,
         };
+
       }
       return entry;
     }),

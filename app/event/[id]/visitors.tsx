@@ -17,7 +17,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { useAnimatedScrollHandler } from "react-native-reanimated";
 import { PageContainer } from "../../../src/components/PageContainer";
 import { User } from "../../../src/types/user";
-import { resolveMediaUrl } from "../../../src/utils/format";
+import { resolveMediaUrl, getUserDisplayName } from "../../../src/utils/format";
+
 import { useSharedScroll } from "../../../src/hooks/useSharedScroll";
 import { useEvent, useAttendees } from "../../../src/hooks/useEvent";
 
@@ -118,28 +119,39 @@ export default function VisitorsScreen() {
           rippleColor="rgba(0,0,0,0.05)"
         >
           <View style={styles.visitorContent}>
-            <Avatar.Image
-              size={48}
-              source={{
-                uri:
-                  resolveMediaUrl(item.profile_media_url) ||
-                  "https://via.placeholder.com/48",
-              }}
-            />
+            {resolveMediaUrl(item.profile_media_url) ? (
+              <Avatar.Image
+                size={48}
+                source={{
+                  uri: resolveMediaUrl(item.profile_media_url)!,
+                }}
+              />
+            ) : (
+              <Avatar.Text
+                size={48}
+                label={getUserDisplayName(item).charAt(0).toUpperCase()}
+                style={{ backgroundColor: theme.colors.primary }}
+                color="#ffffff"
+              />
+            )}
+
             <View style={styles.visitorInfo}>
               <View style={styles.nameRow}>
-                <Text variant="titleMedium" style={styles.visitorName}>
-                  {item.first_name} {item.last_name}
+                <Text variant="titleMedium" style={[styles.visitorName, { color: theme.colors.onSurface }]}>
+                  {getUserDisplayName(item)}
                 </Text>
                 {isAdmin && <ShieldAlert size={16} color={theme.colors.error} />}
                 {isModerator && <ShieldCheck size={16} color={theme.colors.primary} />}
               </View>
-              <Text variant="bodySmall" style={styles.visitorUsername}>
-                @{item.username}
-              </Text>
+              {item.username && (
+                <Text variant="bodySmall" style={[styles.visitorUsername, { color: theme.colors.onSurface, opacity: 0.6 }]}>
+                  @{item.username}
+                </Text>
+              )}
             </View>
           </View>
         </TouchableRipple>
+
       </Surface>
     );
   };
@@ -148,14 +160,15 @@ export default function VisitorsScreen() {
     <PageContainer withPadding={false} withSafeArea={false}>
       <View style={[styles.header, { paddingTop: top / 4, paddingBottom: 10 }]}>
         <View style={styles.headerRow}>
-          <IconButton icon="chevron-left" onPress={() => router.back()} />
+          <IconButton icon="chevron-left" iconColor={theme.colors.onSurface} onPress={() => router.back()} />
           <View style={{ flex: 1 }}>
-            <Text variant="titleLarge" style={styles.headerTitle} numberOfLines={1}>Visitors</Text>
-            <Text variant="bodySmall" style={styles.headerSubtitle} numberOfLines={1}>
+            <Text variant="titleLarge" style={[styles.headerTitle, { color: theme.colors.onSurface }]} numberOfLines={1}>Visitors</Text>
+            <Text variant="bodySmall" style={[styles.headerSubtitle, { color: theme.colors.onSurface }]} numberOfLines={1}>
               {attendees.length} attending
             </Text>
           </View>
         </View>
+
       </View>
 
       <AnimatedFlashList
@@ -186,8 +199,9 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: "row", alignItems: "center" },
   headerTitle: { fontWeight: "900" },
   headerSubtitle: { opacity: 0.6 },
-  listContent: { padding: 16, gap: 12 },
-  visitorCard: { borderRadius: 16, overflow: "hidden" },
+  listContent: { padding: 16 },
+  visitorCard: { borderRadius: 16, overflow: "hidden", marginBottom: 16 },
+
   visitorRipple: { padding: 16 },
   visitorContent: { flexDirection: "row", alignItems: "center", gap: 16 },
   visitorInfo: { flex: 1 },

@@ -44,6 +44,11 @@ export const unstable_settings = {
   initialRouteName: "(auth)",
 };
 
+function PushNotificationInitializer() {
+  usePushNotifications();
+  return null;
+}
+
 export default function RootLayout() {
   const session = useAuthStore((state) => state.session);
   const accessToken = session?.accessToken;

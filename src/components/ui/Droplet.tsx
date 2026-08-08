@@ -1,7 +1,8 @@
 import { ChevronUp } from "lucide-react-native";
 import React from "react";
 import { StyleSheet } from "react-native";
-import { TouchableRipple, useTheme } from "react-native-paper";
+import { Pressable } from "@gluestack-ui/themed";
+import { useAppTheme } from "../../context/ThemeProvider";
 import Animated, {
   useAnimatedStyle,
   withSpring,
@@ -21,7 +22,7 @@ export const Droplet: React.FC<DropletProps> = ({
   position = "bottom",
   topOffset = 0,
 }) => {
-  const theme = useTheme();
+  const theme = useAppTheme();
 
   const animatedStyle = useAnimatedStyle(() => {
     const isTop = position === "top";
@@ -42,17 +43,16 @@ export const Droplet: React.FC<DropletProps> = ({
 
   return (
     <Animated.View style={[styles.container, positionStyle, animatedStyle]}>
-      <TouchableRipple
+      <Pressable
         onPress={onPress}
         style={[styles.droplet, { backgroundColor: theme.colors.primary }]}
-        rippleColor="rgba(255, 255, 255, 0.3)"
       >
         <ChevronUp
           color="white"
           size={24}
           style={{ transform: [{ rotate: position === "top" ? "0deg" : "0deg" }] }}
         />
-      </TouchableRipple>
+      </Pressable>
     </Animated.View>
   );
 };
@@ -78,3 +78,4 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
   },
 });
+

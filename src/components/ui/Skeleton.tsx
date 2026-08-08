@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, DimensionValue, StyleProp, ViewStyle } from 'react-native';
-import { useTheme } from 'react-native-paper';
+import { useAppTheme } from '../../context/ThemeProvider';
 
 interface SkeletonProps {
   width?: DimensionValue;
@@ -15,7 +15,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   borderRadius = 4,
   style,
 }) => {
-  const theme = useTheme();
+  const theme = useAppTheme();
   const pulseAnim = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
@@ -50,3 +50,4 @@ export const Skeleton: React.FC<SkeletonProps> = ({
     />
   );
 };
+

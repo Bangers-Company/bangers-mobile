@@ -3,12 +3,11 @@ import React from "react";
 import { StyleSheet, View, StyleProp, ViewStyle } from "react-native";
 import { Image } from "expo-image";
 import {
-  Card,
-  Surface,
+  Box,
   Text,
-  TouchableRipple,
-  useTheme,
-} from "react-native-paper";
+  Pressable,
+} from "@gluestack-ui/themed";
+import { useAppTheme } from "../../context/ThemeProvider";
 import { Event } from "../../types/event";
 import { resolveMediaUrl } from "../../utils/format";
 
@@ -25,7 +24,7 @@ export const EventListCard: React.FC<EventListCardProps> = ({
   style,
   variant = "default",
 }) => {
-  const theme = useTheme();
+  const theme = useAppTheme();
   const bannerUrl = resolveMediaUrl(event.banner?.url);
 
   const formatDate = (dateString: string) => {
@@ -38,18 +37,16 @@ export const EventListCard: React.FC<EventListCardProps> = ({
   };
 
   return (
-    <Card
+    <Box
       style={[
         styles.card,
         { backgroundColor: theme.colors.surface },
         variant === "compact" && styles.compactCard,
         style,
       ]}
-      elevation={variant === "compact" ? 1 : 2}
     >
-      <TouchableRipple
+      <Pressable
         onPress={() => onPress?.(event)}
-        rippleColor="rgba(0,0,0,0.1)"
         style={styles.ripple}
       >
         <View style={variant === "compact" ? styles.horizontalContainer : null}>
@@ -71,20 +68,18 @@ export const EventListCard: React.FC<EventListCardProps> = ({
               />
             )}
             <View style={styles.overlay} />
-            <Surface
+            <Box
               style={[
                 styles.dateBadge,
                 variant === "compact" && styles.compactDateBadge,
               ]}
-              elevation={4}
             >
               <Text
-                variant={variant === "compact" ? "labelSmall" : "labelMedium"}
                 style={styles.dateText}
               >
                 {formatDate(event.start_date)}
               </Text>
-            </Surface>
+            </Box>
           </View>
 
           {/* Content Section */}
@@ -95,7 +90,6 @@ export const EventListCard: React.FC<EventListCardProps> = ({
             ]}
           >
             <Text
-              variant={variant === "compact" ? "titleMedium" : "titleLarge"}
               style={[
                 styles.title,
                 variant === "compact" && styles.compactTitle,
@@ -114,7 +108,6 @@ export const EventListCard: React.FC<EventListCardProps> = ({
               <View style={styles.metaItem}>
                 <MapPin size={14} color={theme.colors.primary} />
                 <Text
-                  variant="bodySmall"
                   style={styles.metaText}
                   numberOfLines={1}
                 >
@@ -124,7 +117,7 @@ export const EventListCard: React.FC<EventListCardProps> = ({
 
               <View style={styles.metaItem}>
                 <Users size={14} color={theme.colors.primary} />
-                <Text variant="bodySmall" style={styles.metaText}>
+                <Text style={styles.metaText}>
                   {variant === "compact"
                     ? (event.attendee_count ?? 0)
                     : `${event.attendee_count ?? 0} attending`}
@@ -133,8 +126,8 @@ export const EventListCard: React.FC<EventListCardProps> = ({
             </View>
           </View>
         </View>
-      </TouchableRipple>
-    </Card>
+      </Pressable>
+    </Box>
   );
 };
 
@@ -172,11 +165,13 @@ const styles = StyleSheet.create({
   dateText: {
     color: "white",
     fontWeight: "bold",
+    fontSize: 12,
   },
   content: {
     padding: 20,
   },
   title: {
+    fontSize: 20,
     fontWeight: "900",
     marginBottom: 8,
     letterSpacing: -0.5,
@@ -194,6 +189,7 @@ const styles = StyleSheet.create({
   metaText: {
     opacity: 0.7,
     fontWeight: "600",
+    fontSize: 12,
   },
   compactCard: {
     borderRadius: 16,
@@ -228,3 +224,4 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
 });
+

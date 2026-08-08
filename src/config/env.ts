@@ -63,16 +63,37 @@ const validateUrl = (url: string, name: string) => {
   return finalUrl;
 };
 
+const getHostIp = () => {
+  const hostUri = Constants.expoConfig?.hostUri || (Constants as any).experienceUrl || "";
+  if (hostUri) {
+    const ip = hostUri.split(":")[0];
+    if (ip && ip !== "localhost" && ip !== "127.0.0.1") {
+      return ip;
+    }
+  }
+  return "localhost";
+};
+
+const sanitizeDevUrl = (url: string) => {
+  if (!url) return url;
+  const hostIp = getHostIp();
+  if (hostIp !== "localhost") {
+    return url.replace("localhost", hostIp).replace("127.0.0.1", hostIp);
+  }
+  return url;
+};
+
+const rawApiUrl = sanitizeDevUrl(
+  getEnvVar("EXPO_PUBLIC_API_BASE_URL") || "http://localhost:8080/api/mobile/v1",
+);
+const rawStorageUrl = sanitizeDevUrl(
+  getEnvVar("EXPO_PUBLIC_STORAGE_BASE_URL") || "http://localhost:8080",
+);
+
 const ENV = {
-  API_BASE_URL: validateUrl(
-    getEnvVar("EXPO_PUBLIC_API_BASE_URL") ||
-      "http://localhost:8080/api/mobile/v1",
-    "API_BASE_URL",
-  ),
-  STORAGE_BASE_URL: validateUrl(
-    getEnvVar("EXPO_PUBLIC_STORAGE_BASE_URL") || "http://localhost:8080",
-    "STORAGE_BASE_URL",
-  ),
+  API_BASE_URL: validateUrl(rawApiUrl, "API_BASE_URL"),
+  STORAGE_BASE_URL: validateUrl(rawStorageUrl, "STORAGE_BASE_URL"),
 } as const;
 
 export default ENV;
+

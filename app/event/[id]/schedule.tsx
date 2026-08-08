@@ -23,13 +23,16 @@ import {
 import { timetablesApi } from "../../../src/api/timetables";
 import { useQueryClient } from "@tanstack/react-query";
 
+import { useTranslation } from "react-i18next";
 import { useUIStore } from "../../../src/store/useUIStore";
 import { useEvent } from "../../../src/hooks/useEvent";
 
 const EMPTY_ARRAY: any[] = [];
 
 export default function ScheduleScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
+
   const theme = useTheme();
   const router = useRouter();
   const { top } = useSafeAreaInsets();
@@ -155,19 +158,20 @@ export default function ScheduleScreen() {
       <View style={[styles.header, { paddingTop: top / 4 }]}>
         <View style={styles.headerRow}>
           {selectedTimetable ? (
-            <IconButton icon="arrow-left" onPress={() => { setSelectedTimetableId(null); setSelectedGroupId(null); }} />
+            <IconButton icon="arrow-left" iconColor={theme.colors.onSurface} onPress={() => { setSelectedTimetableId(null); setSelectedGroupId(null); }} />
           ) : (
-            <IconButton icon="chevron-left" onPress={() => router.back()} />
+            <IconButton icon="chevron-left" iconColor={theme.colors.onSurface} onPress={() => router.back()} />
           )}
 
           <View style={{ flex: 1 }}>
-            <Text variant="titleLarge" style={styles.headerTitle} numberOfLines={1}>
+            <Text variant="titleLarge" style={[styles.headerTitle, { color: theme.colors.onSurface }]} numberOfLines={1}>
               {selectedTimetable ? selectedTimetable.name : "Timetables"}
             </Text>
-            <Text variant="bodySmall" style={styles.headerSubtitle} numberOfLines={1}>
+            <Text variant="bodySmall" style={[styles.headerSubtitle, { color: theme.colors.onSurface }]} numberOfLines={1}>
               {selectedTimetable ? (selectedTimetable.is_official ? "Official Schedule" : "Group Plan") : "Schedules"}
             </Text>
           </View>
+
 
           <View style={styles.headerActions}>
             {selectedTimetable && (

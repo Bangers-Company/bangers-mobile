@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { Text, TouchableRipple, useTheme } from "react-native-paper";
+import { Text, Pressable } from "@gluestack-ui/themed";
+import { useAppTheme } from "../../context/ThemeProvider";
 import { useTimetableStore } from "../../store/useTimetableStore";
 import { Timetable, TimetableEntry } from "../../types/timetable";
 import { addAlpha } from "../../utils/theme";
@@ -33,7 +34,7 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
   groupId,
   timetableId,
 }) => {
-  const theme = useTheme();
+  const theme = useAppTheme();
   const viewMode = useTimetableStore((state) => state.viewMode);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedEntry, setSelectedEntry] = useState<TimetableEntry | null>(
@@ -115,8 +116,8 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
   if (availableDays.length === 0) {
     return (
       <View style={styles.emptyGrid}>
-        <Calendar size={48} color={theme.colors.outline} style={{ opacity: 0.3 }} />
-        <Text variant="titleMedium" style={{ marginTop: 16, opacity: 0.5 }}>
+        <Calendar size={48} color="#888" style={{ opacity: 0.3 }} />
+        <Text style={{ marginTop: 16, opacity: 0.5, color: theme.colors.onSurface }}>
           No timetable available yet
         </Text>
       </View>
@@ -165,16 +166,16 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
             styles.dayContainer,
             {
               backgroundColor: theme.colors.surface,
-              borderTopColor: theme.colors.outlineVariant,
-              shadowColor: theme.colors.shadow,
+              borderTopColor: theme.colors.surfaceVariant,
+              shadowColor: "#000",
             },
           ]}
         >
           <View style={[styles.dayInner, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-            {availableDays.map((day: string, idx: number) => {
+            {availableDays.map((day: string) => {
               const isActive = selectedDay === day;
               return (
-                <TouchableRipple
+                <Pressable
                   key={day}
                   onPress={() => setSelectedDay(day)}
                   style={[
@@ -183,23 +184,21 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
                       backgroundColor: addAlpha(theme.colors.primary, 0.1),
                     },
                   ]}
-                  rippleColor={addAlpha(theme.colors.primary, 0.2)}
                 >
                   <Text
-                    variant="labelLarge"
                     style={[
                       styles.dayTabText,
                       {
                         color: isActive
                           ? theme.colors.primary
-                          : theme.colors.outline,
+                          : "#888888",
                       },
                     ]}
                     numberOfLines={1}
                   >
                     {format(parseISO(day), "EEEE")}
                   </Text>
-                </TouchableRipple>
+                </Pressable>
               );
             })}
           </View>
@@ -258,3 +257,4 @@ const styles = StyleSheet.create({
     padding: 32,
   },
 });
+

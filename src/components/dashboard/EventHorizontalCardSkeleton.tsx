@@ -1,15 +1,15 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Card, useTheme } from 'react-native-paper';
+import { Box } from '@gluestack-ui/themed';
+import { useAppTheme } from '../../context/ThemeProvider';
 import { Skeleton } from '../ui/Skeleton';
 
 export const EventHorizontalCardSkeleton: React.FC = () => {
-  const theme = useTheme();
+  const theme = useAppTheme();
 
   return (
-    <Card
+    <Box
       style={[styles.card, { backgroundColor: theme.colors.surface }]}
-      elevation={1}
     >
       <View style={styles.horizontalContainer}>
         <View style={styles.imageContainer}>
@@ -28,7 +28,7 @@ export const EventHorizontalCardSkeleton: React.FC = () => {
           </View>
         </View>
       </View>
-    </Card>
+    </Box>
   );
 };
 
@@ -61,3 +61,4 @@ const styles = StyleSheet.create({
     gap: 6,
   },
 });
+
