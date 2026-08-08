@@ -25,73 +25,79 @@ class TimetablesRepository extends BaseRepository<Timetable> {
         );
 
         if (timetable.entries && timetable.entries.length > 0) {
-          // 2. Pre-save embedded stages so the JOIN queries and FK constraints work
+          // 2. Collect unique stages, acts, artists to avoid redundant inserts
+          const uniqueStages = new Map<string, any>();
+          const uniqueActs = new Map<string, any>();
+          const uniqueArtists = new Map<string, any>();
+          const actArtistPairs: [string, string][] = [];
+
           for (const entry of timetable.entries) {
-            if (entry.stage?.id) {
-              await db.runAsync(
-                `INSERT OR IGNORE INTO stages (id, name, description, version, created_at, updated_at)
-                   VALUES (?, ?, ?, ?, ?, ?)`,
-                sanitizeParams([
-                  entry.stage.id,
-                  entry.stage.name ?? "Unknown Stage",
-                  entry.stage.description ?? null,
-                  entry.stage.version ?? 1,
-                  entry.stage.created_at ?? null,
-                  entry.stage.updated_at ?? null,
-                ]),
-              );
+            if (entry.stage?.id && !uniqueStages.has(entry.stage.id)) {
+              uniqueStages.set(entry.stage.id, entry.stage);
             }
-          }
-
-          // 3. Pre-save embedded acts (and their artists) so act_id FK is satisfied
-          for (const entry of timetable.entries) {
-            if (entry.act?.id) {
-              await db.runAsync(
-                `INSERT OR IGNORE INTO acts (id, name, description, version, stage_id, date, created_at, updated_at, deleted_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                sanitizeParams([
-                  entry.act.id,
-                  entry.act.name ?? "Unknown Act",
-                  entry.act.description ?? null,
-                  entry.act.version ?? 1,
-                  entry.act.stage_id ?? null,
-                  entry.act.date ?? null,
-                  entry.act.created_at ?? null,
-                  entry.act.updated_at ?? null,
-                  null,
-                ]),
-              );
-
-              // Pre-save act artists if embedded
+            if (entry.act?.id && !uniqueActs.has(entry.act.id)) {
+              uniqueActs.set(entry.act.id, entry.act);
               const artists: Artist[] | undefined = entry.act.artists;
-              if (Array.isArray(artists) && artists.length > 0) {
+              if (Array.isArray(artists)) {
                 for (const artist of artists) {
-                  if (!artist?.id) continue;
-                  await db.runAsync(
-                    `INSERT OR IGNORE INTO artists (id, name, bio, genre, version, image_url, created_at, updated_at, deleted_at)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                    sanitizeParams([
-                      artist.id,
-                      artist.name ?? "Unknown Artist",
-                      artist.bio ?? null,
-                      artist.genre ?? null,
-                      artist.version ?? 1,
-                      artist.image?.url ?? null,
-                      artist.created_at ?? null,
-                      artist.updated_at ?? null,
-                      null,
-                    ]),
-                  );
-                  await db.runAsync(
-                    `INSERT OR IGNORE INTO act_artists (act_id, artist_id) VALUES (?, ?)`,
-                    sanitizeParams([entry.act.id, artist.id]),
-                  );
+                  if (artist?.id && !uniqueArtists.has(artist.id)) {
+                    uniqueArtists.set(artist.id, artist);
+                  }
+                  if (artist?.id) {
+                    actArtistPairs.push([entry.act.id, artist.id]);
+                  }
                 }
               }
             }
           }
 
-          // 4. Delete stale entries then insert fresh ones (FK deps now satisfied)
+          // 3. Batch insert unique stages
+          for (const stage of uniqueStages.values()) {
+            await db.runAsync(
+              `INSERT OR IGNORE INTO stages (id, name, description, version, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?)`,
+              sanitizeParams([
+                stage.id, stage.name ?? "Unknown Stage", stage.description ?? null,
+                stage.version ?? 1, stage.created_at ?? null, stage.updated_at ?? null,
+              ]),
+            );
+          }
+
+          // 4. Batch insert unique acts
+          for (const act of uniqueActs.values()) {
+            await db.runAsync(
+              `INSERT OR IGNORE INTO acts (id, name, description, version, stage_id, date, created_at, updated_at, deleted_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              sanitizeParams([
+                act.id, act.name ?? "Unknown Act", act.description ?? null,
+                act.version ?? 1, act.stage_id ?? null, act.date ?? null,
+                act.created_at ?? null, act.updated_at ?? null, null,
+              ]),
+            );
+          }
+
+          // 5. Batch insert unique artists
+          for (const artist of uniqueArtists.values()) {
+            await db.runAsync(
+              `INSERT OR IGNORE INTO artists (id, name, bio, genre, version, image_url, created_at, updated_at, deleted_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              sanitizeParams([
+                artist.id, artist.name ?? "Unknown Artist", artist.bio ?? null,
+                artist.genre ?? null, artist.version ?? 1, artist.image?.url ?? null,
+                artist.created_at ?? null, artist.updated_at ?? null, null,
+              ]),
+            );
+          }
+
+          // 6. Batch insert act-artist links
+          for (const [actId, artistId] of actArtistPairs) {
+            await db.runAsync(
+              `INSERT OR IGNORE INTO act_artists (act_id, artist_id) VALUES (?, ?)`,
+              sanitizeParams([actId, artistId]),
+            );
+          }
+
+          // 7. Delete stale entries then insert fresh ones (FK deps now satisfied)
           await db.runAsync(
             "DELETE FROM timetable_entries WHERE timetable_id = ?",
             sanitizeParams([timetable.id]),
@@ -102,12 +108,8 @@ class TimetablesRepository extends BaseRepository<Timetable> {
               `INSERT OR REPLACE INTO timetable_entries (id, timetable_id, act_id, stage_id, start_time, end_time)
                  VALUES (?, ?, ?, ?, ?, ?)`,
               sanitizeParams([
-                entry.id,
-                timetable.id,
-                entry.act.id,
-                entry.stage.id,
-                entry.start_time,
-                entry.end_time,
+                entry.id, timetable.id, entry.act.id, entry.stage.id,
+                entry.start_time, entry.end_time,
               ]),
             );
             if (typeof entry.is_attending !== 'undefined') {
@@ -121,6 +123,7 @@ class TimetablesRepository extends BaseRepository<Timetable> {
       });
     });
   }
+
 
   async getById(id: string): Promise<Timetable | null> {
     const db = await this.getDb();

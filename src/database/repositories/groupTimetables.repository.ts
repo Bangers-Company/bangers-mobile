@@ -66,99 +66,125 @@ class GroupTimetablesRepository extends BaseRepository<Timetable> {
         );
 
         if (timetable.entries && timetable.entries.length > 0) {
-          // 2. Pre-save embedded stages
+          // 2. Collect unique stages, acts, artists to avoid redundant inserts
+          const uniqueStages = new Map<string, any>();
+          const uniqueActs = new Map<string, any>();
+          const uniqueArtists = new Map<string, any>();
+          const actArtistPairs: [string, string][] = [];
+          const uniqueUsers = new Map<string, any>();
+
           for (const entry of timetable.entries) {
-            if (entry.stage?.id) {
-              await db.runAsync(
-                `INSERT OR IGNORE INTO stages (id, name, description, version, created_at, updated_at)
-                   VALUES (?, ?, ?, ?, ?, ?)`,
-                sanitizeParams([
-                  entry.stage.id,
-                  entry.stage.name ?? "Unknown Stage",
-                  entry.stage.description ?? null,
-                  entry.stage.version ?? 1,
-                  entry.stage.created_at ?? null,
-                  entry.stage.updated_at ?? null,
-                ]),
-              );
+            if (entry.stage?.id && !uniqueStages.has(entry.stage.id)) {
+              uniqueStages.set(entry.stage.id, entry.stage);
             }
-          }
-
-          // 3. Pre-save embedded acts and artists
-          for (const entry of timetable.entries) {
-            if (entry.act?.id) {
-              await db.runAsync(
-                `INSERT OR IGNORE INTO acts (id, name, description, version, stage_id, date, created_at, updated_at, deleted_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                sanitizeParams([
-                  entry.act.id,
-                  entry.act.name ?? "Unknown Act",
-                  entry.act.description ?? null,
-                  entry.act.version ?? 1,
-                  entry.act.stage_id ?? null,
-                  entry.act.date ?? null,
-                  entry.act.created_at ?? null,
-                  entry.act.updated_at ?? null,
-                  null,
-                ]),
-              );
-
+            if (entry.act?.id && !uniqueActs.has(entry.act.id)) {
+              uniqueActs.set(entry.act.id, entry.act);
               const artists: Artist[] | undefined = entry.act.artists;
-              if (Array.isArray(artists) && artists.length > 0) {
+              if (Array.isArray(artists)) {
                 for (const artist of artists) {
-                  if (!artist?.id) continue;
-                  await db.runAsync(
-                    `INSERT OR IGNORE INTO artists (id, name, bio, genre, version, image_url, created_at, updated_at, deleted_at)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                    sanitizeParams([
-                      artist.id,
-                      artist.name ?? "Unknown Artist",
-                      artist.bio ?? null,
-                      artist.genre ?? null,
-                      artist.version ?? 1,
-                      artist.image?.url ?? null,
-                      artist.created_at ?? null,
-                      artist.updated_at ?? null,
-                      null,
-                    ]),
-                  );
-                  await db.runAsync(
-                    `INSERT OR IGNORE INTO act_artists (act_id, artist_id) VALUES (?, ?)`,
-                    sanitizeParams([entry.act.id, artist.id]),
-                  );
+                  if (artist?.id && !uniqueArtists.has(artist.id)) {
+                    uniqueArtists.set(artist.id, artist);
+                  }
+                  if (artist?.id) {
+                    actArtistPairs.push([entry.act.id, artist.id]);
+                  }
+                }
+              }
+            }
+            // Collect unique attendee users
+            if (entry.attendees && Array.isArray(entry.attendees)) {
+              for (const attendee of entry.attendees) {
+                if (attendee.id && !uniqueUsers.has(attendee.id)) {
+                  uniqueUsers.set(attendee.id, attendee);
                 }
               }
             }
           }
 
-          // 4. Ensure a shadow timetables row exists for FK satisfaction on timetable_entries
+          // 3. Batch insert unique stages
+          for (const stage of uniqueStages.values()) {
+            await db.runAsync(
+              `INSERT OR IGNORE INTO stages (id, name, description, version, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?)`,
+              sanitizeParams([
+                stage.id, stage.name ?? "Unknown Stage", stage.description ?? null,
+                stage.version ?? 1, stage.created_at ?? null, stage.updated_at ?? null,
+              ]),
+            );
+          }
+
+          // 4. Batch insert unique acts
+          for (const act of uniqueActs.values()) {
+            await db.runAsync(
+              `INSERT OR IGNORE INTO acts (id, name, description, version, stage_id, date, created_at, updated_at, deleted_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              sanitizeParams([
+                act.id, act.name ?? "Unknown Act", act.description ?? null,
+                act.version ?? 1, act.stage_id ?? null, act.date ?? null,
+                act.created_at ?? null, act.updated_at ?? null, null,
+              ]),
+            );
+          }
+
+          // 5. Batch insert unique artists
+          for (const artist of uniqueArtists.values()) {
+            await db.runAsync(
+              `INSERT OR IGNORE INTO artists (id, name, bio, genre, version, image_url, created_at, updated_at, deleted_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              sanitizeParams([
+                artist.id, artist.name ?? "Unknown Artist", artist.bio ?? null,
+                artist.genre ?? null, artist.version ?? 1, artist.image?.url ?? null,
+                artist.created_at ?? null, artist.updated_at ?? null, null,
+              ]),
+            );
+          }
+
+          // 6. Batch insert act-artist links
+          for (const [actId, artistId] of actArtistPairs) {
+            await db.runAsync(
+              `INSERT OR IGNORE INTO act_artists (act_id, artist_id) VALUES (?, ?)`,
+              sanitizeParams([actId, artistId]),
+            );
+          }
+
+          // 7. Batch insert unique attendee users
+          for (const user of uniqueUsers.values()) {
+            await db.runAsync(
+              `INSERT OR REPLACE INTO users (id, name, profile_photo_url) VALUES (?, ?, ?)`,
+              [user.id, user.name ?? user.username, user.profile_media_url ?? null]
+            );
+          }
+
+          // 8. Ensure a shadow timetables row exists for FK satisfaction on timetable_entries
           await db.runAsync(
             `INSERT OR IGNORE INTO timetables (id, event_id, name, is_official, is_public)
                VALUES (?, ?, ?, 0, 0)`,
             sanitizeParams([timetable.id, timetable.event_id, timetable.name]),
           );
 
-          // 5. Ensure timetable_entries rows exist for all group entries
+          // 9. Ensure timetable_entries rows exist for all group entries
           for (const entry of timetable.entries) {
             if (!entry.act?.id || !entry.stage?.id) continue;
             await db.runAsync(
               `INSERT OR IGNORE INTO timetable_entries (id, timetable_id, act_id, stage_id, start_time, end_time)
                  VALUES (?, ?, ?, ?, ?, ?)`,
               sanitizeParams([
-                entry.id,
-                timetable.id,
-                entry.act.id,
-                entry.stage.id,
-                entry.start_time,
-                entry.end_time,
+                entry.id, timetable.id, entry.act.id, entry.stage.id,
+                entry.start_time, entry.end_time,
               ]),
             );
           }
 
-          // 6. Sync group_timetable_entries pivot rows
+          // 10. Sync group_timetable_entries pivot rows
           await db.runAsync(
             "DELETE FROM group_timetable_entries WHERE group_timetable_id = ?",
             sanitizeParams([timetable.id]),
+          );
+
+          // 11. Bulk delete attendees for this timetable (we'll re-insert fresh)
+          await db.runAsync(
+            "DELETE FROM timetable_entry_attendees WHERE group_timetable_id = ?",
+            [timetable.id]
           );
 
           for (const entry of timetable.entries) {
@@ -179,24 +205,10 @@ class GroupTimetablesRepository extends BaseRepository<Timetable> {
               );
             }
 
-            // 7. Save attendees for this entry (scoped to this group timetable)
+            // 12. Re-insert attendee links (users already saved in step 7)
             if (entry.attendees && Array.isArray(entry.attendees)) {
-              // Delete existing attendees for this entry IN THIS GROUP to sync fresh
-              await db.runAsync(
-                "DELETE FROM timetable_entry_attendees WHERE group_timetable_id = ? AND entry_id = ?",
-                [timetable.id, entry.id]
-              );
- 
               for (const attendee of entry.attendees) {
                 if (!attendee.id) continue;
-                
-                // Ensure user exists
-                await db.runAsync(
-                  `INSERT OR REPLACE INTO users (id, name, profile_photo_url) VALUES (?, ?, ?)`,
-                  [attendee.id, attendee.name ?? attendee.username, attendee.profile_media_url ?? null]
-                );
- 
-                // Link attendee to entry in this group
                 await db.runAsync(
                   `INSERT OR REPLACE INTO timetable_entry_attendees (group_timetable_id, entry_id, user_id) VALUES (?, ?, ?)`,
                   [timetable.id, entry.id, attendee.id]
@@ -208,6 +220,7 @@ class GroupTimetablesRepository extends BaseRepository<Timetable> {
       });
     });
   }
+
   async getEntryAttendees(timetableId: string, entryId: string): Promise<User[]> {
     const db = await this.getDb();
     const rows = await db.getAllAsync<AttendeeRow>(
@@ -284,36 +297,44 @@ class GroupTimetablesRepository extends BaseRepository<Timetable> {
       [row.id],
     );
 
-    const timetableEntries: TimetableEntry[] = [];
+    // Fetch ALL attendees for this group timetable in ONE query instead of N queries in a loop
+    const allAttendees = await db.getAllAsync<AttendeeRow>(
+      `SELECT tea.entry_id, tea.user_id, u.name, u.profile_photo_url
+       FROM timetable_entry_attendees tea
+       JOIN users u ON tea.user_id = u.id
+       WHERE tea.group_timetable_id = ?`,
+      [row.id]
+    );
 
-    for (const e of entries) {
-      // Fetch attendees for this entry (scoped to this group)
-      const attendees = await db.getAllAsync<AttendeeRow>(
-        `SELECT tea.entry_id, tea.user_id, u.name, u.profile_photo_url
-         FROM timetable_entry_attendees tea
-         JOIN users u ON tea.user_id = u.id
-         WHERE tea.group_timetable_id = ? AND tea.entry_id = ?`,
-        [row.id, e.timetable_entry_id]
-      );
+    const attendeesByEntryId = new Map<string, AttendeeRow[]>();
+    for (const a of allAttendees) {
+      if (!attendeesByEntryId.has(a.entry_id)) {
+        attendeesByEntryId.set(a.entry_id, []);
+      }
+      attendeesByEntryId.get(a.entry_id)!.push(a);
+    }
 
-      timetableEntries.push({
+    const timetableEntries: TimetableEntry[] = entries.map((e) => {
+      const attendees = attendeesByEntryId.get(e.timetable_entry_id) || [];
+      return {
         id: e.timetable_entry_id,
         start_time: e.start_time,
         end_time: e.end_time,
         is_attending: !!e.is_attending,
-        pivot: { 
+        pivot: {
           is_attending: !!e.is_attending,
-          attending_count: e.attending_count || attendees.length
+          attending_count: e.attending_count || attendees.length,
         },
-        attendees: attendees.map(a => ({
+        attendees: attendees.map((a) => ({
           id: a.user_id,
           name: a.name,
-          profile_media_url: a.profile_photo_url
+          profile_media_url: a.profile_photo_url,
         } as User)),
         act: { id: e.act_id, name: e.act_name, version: 1, created_at: "", updated_at: "" },
         stage: { id: e.stage_id, name: e.stage_name, version: 1, created_at: "", updated_at: "" },
-      });
-    }
+      };
+    });
+
 
     return {
       id: row.id,

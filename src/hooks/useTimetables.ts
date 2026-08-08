@@ -40,6 +40,7 @@ export const useOfficialTimetable = (eventId: string) => {
       }
     },
     enabled: !!eventId,
+    staleTime: 5 * 60 * 1000,
   });
 };
 
@@ -52,6 +53,7 @@ export const useGroupTimetables = (groupId: string) => {
       return Array.isArray(list) ? list[0] : list;
     },
     enabled: !!groupId,
+    staleTime: 5 * 60 * 1000,
   });
 };
 
@@ -75,6 +77,7 @@ export const useGroupTimetable = (groupId: string | null, timetableId: string | 
       }
     },
     enabled: !!groupId && !!timetableId,
+    staleTime: 5 * 60 * 1000,
   });
 };
 
@@ -102,6 +105,7 @@ export const useGroups = (eventId?: string) => {
         throw err;
       }
     },
+    staleTime: 5 * 60 * 1000,
   });
 };
 
@@ -301,12 +305,13 @@ export const useToggleAttendance = () => {
       }
     },
     onSettled: (data, error, variables) => {
-      const queryKey = getTimetableQueryKey(variables.type, variables.targetId, variables.id);
-
-      queryClient.invalidateQueries({ queryKey });
-      if (variables.type === 'group') {
-        queryClient.invalidateQueries({ queryKey: ['groups'] });
-        queryClient.invalidateQueries({ queryKey: ['attendance', variables.targetId, variables.id, variables.entryId] });
+      // Only refetch on error — onSuccess already handles optimistic cache updates
+      if (error) {
+        const queryKey = getTimetableQueryKey(variables.type, variables.targetId, variables.id);
+        queryClient.invalidateQueries({ queryKey });
+        if (variables.type === 'group') {
+          queryClient.invalidateQueries({ queryKey: ['groups'] });
+        }
       }
     },
   });
