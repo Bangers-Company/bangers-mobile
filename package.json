@@ -11,7 +11,8 @@
     "lint": "expo lint",
     "test": "jest",
     "test:watch": "jest --watch",
-    "build:apk": "./build-local.sh --platform android --profile preview"
+    "build:apk": "node ./scripts/build-local.js --platform android --profile preview",
+    "build:eas": "npx eas-cli build --platform android --profile preview"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",
