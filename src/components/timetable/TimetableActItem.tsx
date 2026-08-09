@@ -14,7 +14,7 @@ interface TimetableActItemProps {
   variant?: "vertical" | "horizontal";
 }
 
-export const TimetableActItem: React.FC<TimetableActItemProps> = ({
+export const TimetableActItem: React.FC<TimetableActItemProps> = React.memo(({
   entry,
   isPersonal,
   onPress,
@@ -89,7 +89,17 @@ export const TimetableActItem: React.FC<TimetableActItemProps> = ({
       </Pressable>
     </View>
   );
-};
+}, (prevProps, nextProps) => {
+  return (
+    prevProps.entry.id === nextProps.entry.id &&
+    prevProps.entry.is_attending === nextProps.entry.is_attending &&
+    prevProps.entry.pivot?.is_attending === nextProps.entry.pivot?.is_attending &&
+    prevProps.entry.pivot?.attending_count === nextProps.entry.pivot?.attending_count &&
+    prevProps.isPersonal === nextProps.isPersonal &&
+    prevProps.variant === nextProps.variant &&
+    JSON.stringify(prevProps.style) === JSON.stringify(nextProps.style)
+  );
+});
 
 const styles = StyleSheet.create({
   entryCard: {

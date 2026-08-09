@@ -274,8 +274,16 @@ export const initDatabase = async () => {
         ALTER TABLE users ADD COLUMN friends_count INTEGER DEFAULT 0;
         ALTER TABLE users ADD COLUMN upcoming_count INTEGER DEFAULT 0;
         ALTER TABLE users ADD COLUMN past_count INTEGER DEFAULT 0;
-        -- profile_photo_url is already there from migration 5, but we might want a more formal column name
-        -- adding it if not exists is tricky with ALTER, but it's already there.
+      `);
+    },
+    // Migration 11: Speed up timetable entry, group timetable and attendance queries
+    async (tx: SQLite.SQLiteDatabase) => {
+      await tx.execAsync(`
+        CREATE INDEX IF NOT EXISTS idx_group_timetables_group_event ON group_timetables(group_id, event_id);
+        CREATE INDEX IF NOT EXISTS idx_timetable_entries_timetable_start ON timetable_entries(timetable_id, start_time);
+        CREATE INDEX IF NOT EXISTS idx_timetable_entries_act ON timetable_entries(act_id);
+        CREATE INDEX IF NOT EXISTS idx_timetable_entries_stage ON timetable_entries(stage_id);
+        CREATE INDEX IF NOT EXISTS idx_timetable_entry_attendance_entry ON timetable_entry_attendance(entry_id);
       `);
     },
   ];

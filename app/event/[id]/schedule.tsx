@@ -186,8 +186,8 @@ export default function ScheduleScreen() {
 
       <View style={styles.content}>
         {selectedTimetable ? (
-          (isLoadingOfficial && selectedTimetable.id === official?.id) && 
-          (!selectedTimetable.entries || selectedTimetable.entries.length === 0) ? (
+          ((isLoadingOfficial && selectedTimetable.id === official?.id) || 
+           (isLoadingSpecificGroup && selectedGroupId && (!selectedTimetable.entries || selectedTimetable.entries.length === 0))) ? (
             <View style={styles.center}><ActivityIndicator color={theme.colors.primary} /></View>
           ) : (
             <TimetableGrid

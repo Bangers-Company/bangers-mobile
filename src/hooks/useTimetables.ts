@@ -28,7 +28,7 @@ export const useOfficialTimetable = (eventId: string) => {
       try {
         const res = await timetablesApi.getOfficial(eventId);
         if (res.data) {
-          await timetablesRepository.upsert(res.data);
+          timetablesRepository.upsert(res.data).catch(err => console.warn('Failed background sqlite cache:', err));
         }
         return res.data;
       } catch (err) {
@@ -65,8 +65,9 @@ export const useGroupTimetable = (groupId: string | null, timetableId: string | 
       try {
         const res = await timetablesApi.getGroupTimetable(groupId, timetableId);
         if (res.data) {
-          // Cache locally for offline fallback (passes group_id through the API response)
-          await groupTimetablesRepository.upsert({ ...res.data, group_id: groupId });
+          // Cache locally in background for offline fallback without blocking UI
+          groupTimetablesRepository.upsert({ ...res.data, group_id: groupId })
+            .catch(err => console.warn('Failed background sqlite cache:', err));
         }
         return res.data;
       } catch (err) {
@@ -93,9 +94,9 @@ export const useGroups = (eventId?: string) => {
           if (eventId) {
             data = data.filter((g: any) => String(g.event_id) === String(eventId));
           }
-          for (const group of data) {
-            await groupsRepository.upsert(group);
-          }
+          // Non-blocking background cache upsert
+          Promise.all(data.map(g => groupsRepository.upsert(g)))
+            .catch(err => console.warn('Failed background sqlite cache:', err));
         }
         return data;
       } catch (err) {
