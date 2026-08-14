@@ -198,6 +198,10 @@
     }
   },
   "timetable": {
+    "switchTitle": "Timetable Wisselen",
+    "selectTimetable": "Selecteer Timetable",
+    "officialBadge": "Officieel",
+    "groupBadge": "Groep",
     "sections": {
       "official": "Officieel Rooster",
       "officialSubtitle": "Officieel Rooster van het Evenement",

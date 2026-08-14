@@ -198,6 +198,10 @@
     }
   },
   "timetable": {
+    "switchTitle": "Switch Timetable",
+    "selectTimetable": "Select Timetable",
+    "officialBadge": "Official",
+    "groupBadge": "Group",
     "sections": {
       "official": "Official Schedule",
       "officialSubtitle": "Official Event Timetable",

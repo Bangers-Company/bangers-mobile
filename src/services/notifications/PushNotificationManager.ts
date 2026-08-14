@@ -16,6 +16,8 @@ Notifications.setNotificationHandler({
 });
 
 let currentFcmToken: string | null = null;
+let lastRegisteredToken: string | null = null;
+let isRegisteringToken: string | null = null;
 let responseSubscription: Notifications.Subscription | null = null;
 let tokenSubscription: Notifications.Subscription | null = null;
 
@@ -59,10 +61,19 @@ export const PushNotificationManager = {
 
       currentFcmToken = token;
 
-      const deviceType = Platform.OS === "ios" ? "ios" : Platform.OS === "android" ? "android" : "web";
-      await registerDeviceToken(token, deviceType);
+      // Synchronously guard against duplicate or in-flight requests for the same token
+      if (token !== lastRegisteredToken && isRegisteringToken !== token) {
+        isRegisteringToken = token;
+        try {
+          const deviceType = Platform.OS === "ios" ? "ios" : Platform.OS === "android" ? "android" : "web";
+          await registerDeviceToken(token, deviceType);
+          lastRegisteredToken = token;
+          logger.info("[PushNotificationManager] FCM device token registered successfully");
+        } finally {
+          isRegisteringToken = null;
+        }
+      }
 
-      logger.info("[PushNotificationManager] FCM device token registered successfully");
       return token;
     } catch (error) {
       logger.error("[PushNotificationManager] Failed to register device push token:", error);
@@ -76,14 +87,21 @@ export const PushNotificationManager = {
   attachListeners(onNotificationReceived?: () => void) {
     this.removeListeners();
 
-    // Token refresh listener
+    // Token refresh listener (only registers if token changes and not in-flight)
     tokenSubscription = Notifications.addPushTokenListener(async (tokenData) => {
-      if (tokenData?.data) {
-        currentFcmToken = tokenData.data;
-        const deviceType = Platform.OS === "ios" ? "ios" : Platform.OS === "android" ? "android" : "web";
-        await registerDeviceToken(tokenData.data, deviceType).catch((err) =>
-          logger.error("[PushNotificationManager] Failed to update refreshed FCM token:", err)
-        );
+      if (tokenData?.data && tokenData.data !== lastRegisteredToken && isRegisteringToken !== tokenData.data) {
+        const newToken = tokenData.data;
+        currentFcmToken = newToken;
+        isRegisteringToken = newToken;
+        try {
+          const deviceType = Platform.OS === "ios" ? "ios" : Platform.OS === "android" ? "android" : "web";
+          await registerDeviceToken(newToken, deviceType);
+          lastRegisteredToken = newToken;
+        } catch (err) {
+          logger.error("[PushNotificationManager] Failed to update refreshed FCM token:", err);
+        } finally {
+          isRegisteringToken = null;
+        }
       }
     });
 
@@ -126,22 +144,28 @@ export const PushNotificationManager = {
   /**
    * Unregister FCM token on logout.
    */
-  async unregisterToken() {
-    if (currentFcmToken) {
+  async unregisterToken(accessTokenOverride?: string) {
+    const tokenToUnregister = currentFcmToken;
+    const { useAuthStore } = await import("../../store/useAuthStore");
+    const accessToken = accessTokenOverride || useAuthStore.getState().session?.accessToken;
+
+    currentFcmToken = null;
+    lastRegisteredToken = null;
+    isRegisteringToken = null;
+
+    if (tokenToUnregister) {
       try {
-        await unregisterDeviceToken(currentFcmToken);
+        await unregisterDeviceToken(tokenToUnregister, accessToken);
         logger.info("[PushNotificationManager] Unregistered FCM token on logout");
       } catch (error) {
-        logger.error("[PushNotificationManager] Failed to unregister token on logout:", error);
-      } finally {
-        currentFcmToken = null;
+        logger.warn("[PushNotificationManager] Failed to unregister token on logout:", error);
       }
     }
   },
 };
 
 // Register logout callback to unregister FCM token
-registerLogoutCallback(() => {
-  PushNotificationManager.unregisterToken();
+registerLogoutCallback(async () => {
+  await PushNotificationManager.unregisterToken();
   PushNotificationManager.removeListeners();
 });

@@ -12,7 +12,8 @@ import {
 import { useTranslation } from "react-i18next";
 import ContentLoader, { Rect } from "react-content-loader/native";
 import { useProfile } from "../../src/hooks/useProfile";
-import { resolveMediaUrl, getUserDisplayName } from "../../src/utils/format";
+import { Image as ExpoImage } from "expo-image";
+import { getUserAvatarUrl, getUserDisplayName } from "../../src/utils/format";
 
 import { useSharedScroll } from "../../src/hooks/useSharedScroll";
 import Animated, { useAnimatedScrollHandler } from "react-native-reanimated";
@@ -22,6 +23,8 @@ import {
 } from "../../src/components/event/EventCard";
 import { AnimatedCounter } from "../../src/components/ui/AnimatedCounter";
 import { EditProfileModal } from "../../src/components/modals/EditProfileModal";
+import { useUIStore } from "../../src/store/useUIStore";
+import { useAuthStore } from "../../src/store/useAuthStore";
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
@@ -42,7 +45,8 @@ export default function ProfileScreen() {
   
   const [isEditModalVisible, setIsEditModalVisible] = React.useState(false);
 
-  const user = userProfile || localUser;
+  const authUser = useAuthStore((state) => state.user);
+  const user = authUser || userProfile || localUser;
   const attendingEvents = user?.attendingEvents || [];
   const pastEvents = user?.pastEvents || [];
   const friendsCount = user?.friends_count || 0;
@@ -105,13 +109,12 @@ export default function ProfileScreen() {
             activeOpacity={0.7}
           >
             <View style={styles.avatarWrapper}>
-              {user?.profile_media_url ? (
-                <Avatar.Image
-                  size={80}
-                  style={{ borderRadius: 22 }}
-                  source={{
-                    uri: resolveMediaUrl(user.profile_media_url) || undefined,
-                  }}
+              {getUserAvatarUrl(user) ? (
+                <ExpoImage
+                  source={{ uri: getUserAvatarUrl(user)! }}
+                  style={{ width: 80, height: 80, borderRadius: 22 }}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
                 />
               ) : (
                 <Avatar.Text
@@ -120,7 +123,6 @@ export default function ProfileScreen() {
                   style={{ backgroundColor: theme.colors.primary, borderRadius: 22 }}
                   color="#ffffff"
                 />
-
               )}
               <TouchableRipple
                 onPress={() => setIsEditModalVisible(true)}

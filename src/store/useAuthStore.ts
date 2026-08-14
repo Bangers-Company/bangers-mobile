@@ -93,9 +93,14 @@ export const useAuthStore = create<AuthState>()(
             },
           };
         }),
-      logout: () => {
-        set({ session: null, user: null });
-        logoutCallbacks.forEach((cb) => cb());
+      logout: async () => {
+        try {
+          await Promise.allSettled(logoutCallbacks.map((cb) => Promise.resolve(cb())));
+        } catch {
+          // Ignore errors in logout callbacks
+        } finally {
+          set({ session: null, user: null });
+        }
       },
     }),
     {

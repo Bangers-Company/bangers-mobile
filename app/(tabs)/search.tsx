@@ -27,7 +27,8 @@ import {
 } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EventHorizontalCard } from "../../src/components/event/EventHorizontalCard";
-import { resolveMediaUrl, getUserDisplayName } from "../../src/utils/format";
+import { Image as ExpoImage } from "expo-image";
+import { resolveMediaUrl, getUserDisplayName, getUserAvatarUrl } from "../../src/utils/format";
 
 import { addAlpha } from "../../src/utils/theme";
 import { useSearch } from "../../src/hooks/useSearch";
@@ -146,12 +147,12 @@ export default function SearchScreen() {
                         { flexDirection: "row", alignItems: "center", gap: 16 },
                       ]}
                     >
-                      {resolveMediaUrl(item.profile_media_url) ? (
-                        <Avatar.Image
-                          size={40}
-                          source={{
-                            uri: resolveMediaUrl(item.profile_media_url)!,
-                          }}
+                      {getUserAvatarUrl(item) ? (
+                        <ExpoImage
+                          source={{ uri: getUserAvatarUrl(item)! }}
+                          style={{ width: 40, height: 40, borderRadius: 20 }}
+                          contentFit="cover"
+                          cachePolicy="memory-disk"
                         />
                       ) : (
                         <Avatar.Text

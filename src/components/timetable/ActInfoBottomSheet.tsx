@@ -17,7 +17,8 @@ import {
 import { useAppTheme } from "../../context/ThemeProvider";
 import { useTranslation } from "react-i18next";
 import { useEntryAttendance } from "../../hooks/useTimetables";
-import { resolveMediaUrl } from "../../utils/format";
+import { Image as ExpoImage } from "expo-image";
+import { resolveMediaUrl, getUserAvatarUrl, getUserDisplayName } from "../../utils/format";
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -196,13 +197,18 @@ export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
                            <View style={styles.avatarRow}>
                              {attendees.map((a: import("../../types/user").User) => (
                                <View key={a.id} style={styles.attendeeItem}>
-                                 <GluestackAvatar size="sm">
-                                   {a.profile_media_url ? (
-                                     <AvatarImage source={{ uri: resolveMediaUrl(a.profile_media_url) }} alt={a.username || "User"} />
-                                   ) : (
-                                     <AvatarFallbackText>{(a.first_name || a.username || "U").substring(0, 2).toUpperCase()}</AvatarFallbackText>
-                                   )}
-                                 </GluestackAvatar>
+                                  <GluestackAvatar size="sm" style={{ overflow: "hidden" }}>
+                                    {getUserAvatarUrl(a) ? (
+                                      <ExpoImage
+                                        source={{ uri: getUserAvatarUrl(a)! }}
+                                        style={{ width: "100%", height: "100%", borderRadius: 100 }}
+                                        contentFit="cover"
+                                        cachePolicy="memory-disk"
+                                      />
+                                    ) : (
+                                      <AvatarFallbackText>{getUserDisplayName(a).substring(0, 2).toUpperCase()}</AvatarFallbackText>
+                                    )}
+                                  </GluestackAvatar>
 
                                   <Text style={[styles.attendeeName, { color: theme.colors.onSurface }]} numberOfLines={1}>
                                     {a.name || a.username}

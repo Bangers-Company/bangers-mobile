@@ -38,7 +38,8 @@ import {
 } from "../../src/hooks/useFriendship";
 import { useUser } from "../../src/hooks/useUser";
 import { useAuthStore } from "../../src/store/useAuthStore";
-import { resolveMediaUrl, getUserDisplayName } from "../../src/utils/format";
+import { Image as ExpoImage } from "expo-image";
+import { resolveMediaUrl, getUserDisplayName, getUserAvatarUrl } from "../../src/utils/format";
 
 
 export default function PublicProfileScreen() {
@@ -149,15 +150,12 @@ export default function PublicProfileScreen() {
               activeOpacity={currentUser?.id === id ? 0.7 : 1}
             >
               <View style={styles.avatarWrapper}>
-                {profileUser.profile_media_url ? (
-                  <Avatar.Image
-                    style={[{ borderRadius: 28 }]}
-                    size={100}
-                    source={{
-                      uri:
-                        resolveMediaUrl(profileUser.profile_media_url) ||
-                        undefined,
-                    }}
+                {getUserAvatarUrl(profileUser) ? (
+                  <ExpoImage
+                    source={{ uri: getUserAvatarUrl(profileUser)! }}
+                    style={{ width: 100, height: 100, borderRadius: 28 }}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
                   />
                 ) : (
                   <Avatar.Text
@@ -169,7 +167,6 @@ export default function PublicProfileScreen() {
                     }}
                     color="#ffffff"
                   />
-
                 )}
                 {currentUser?.id === id && (
                   <TouchableRipple

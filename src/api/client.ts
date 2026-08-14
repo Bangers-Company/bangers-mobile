@@ -20,7 +20,11 @@ apiClient.interceptors.request.use(
   async (config) => {
     const session = useAuthStore.getState().session;
     if (session?.accessToken) {
-      config.headers.Authorization = `Bearer ${session.accessToken}`;
+      if (typeof (config.headers as any).set === "function") {
+        (config.headers as any).set("Authorization", `Bearer ${session.accessToken}`);
+      } else {
+        config.headers.Authorization = `Bearer ${session.accessToken}`;
+      }
     }
     return config;
   },
@@ -68,6 +72,11 @@ apiClient.interceptors.response.use(
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
+
+      // Do not trigger session refresh or recursive logout for device token deletion
+      if (originalRequest.url?.includes("/user/device-tokens") || !useAuthStore.getState().session) {
+        return Promise.reject(error);
+      }
 
       try {
         if (!refreshPromise) {

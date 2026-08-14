@@ -17,6 +17,7 @@ import { useFriendRequests } from "../src/hooks/useFriendship";
 import { useGroups, useAcceptInvitation, useRejectInvitation } from "../src/hooks/useTimetables";
 import { useNotifications, useMarkAllNotificationsRead, useMarkNotificationRead } from "../src/hooks/useNotifications";
 import { resolveMediaUrl, getUserDisplayName } from "../src/utils/format";
+import { addAlpha } from "../src/utils/theme";
 
 
 export default function NotificationsScreen() {
@@ -131,44 +132,58 @@ export default function NotificationsScreen() {
           {friendRequests.length === 0 ? (
             <Text style={[styles.emptyText, { color: theme.colors.onSurface }]}>{t("notifications.emptyFriends", "No pending friend requests")}</Text>
           ) : (
-            friendRequests.map((request) => (
-              <View key={request.id} style={styles.notificationCard}>
-                <View style={styles.userInfo}>
-                  <GluestackAvatar size="md" style={{ backgroundColor: theme.colors.primary }}>
-                    {resolveMediaUrl(request.requester?.profile_media_url) ? (
-                      <AvatarImage source={{ uri: resolveMediaUrl(request.requester?.profile_media_url)! }} alt="Requester Avatar" />
-                    ) : (
-                      <AvatarFallbackText style={{ color: "#ffffff" }}>
-                        {getUserDisplayName(request.requester).charAt(0).toUpperCase()}
-                      </AvatarFallbackText>
-                    )}
-                  </GluestackAvatar>
+            friendRequests.map((request) => {
+              const requester = request.requester || request.user || request.sender || request.from || request;
+              const displayName = getUserDisplayName(requester);
+              const username = requester?.username ? `@${requester.username}` : "";
+              const avatarUrl = resolveMediaUrl(
+                requester?.profile_media_url ||
+                requester?.profile_photo_url ||
+                requester?.avatar_url ||
+                requester?.avatar
+              );
+              const targetUserId = requester?.id || request.requester_id || request.user_id || request.id;
 
-                  <View style={styles.textContainer}>
-                    <Text style={[styles.name, { color: theme.colors.onSurface }]}>
-                      {request.requester?.first_name} {request.requester?.last_name}
-                    </Text>
-                    <Text style={[styles.subtitle, { color: theme.colors.onSurface }]}>
-                      {t("notifications.friendRequestSub", "sent you a friend request")}
-                    </Text>
+              return (
+                <View key={request.id} style={styles.notificationCard}>
+                  <View style={styles.userInfo}>
+                    <GluestackAvatar size="md" style={{ backgroundColor: theme.colors.primary }}>
+                      {avatarUrl ? (
+                        <AvatarImage source={{ uri: avatarUrl }} alt="Requester Avatar" />
+                      ) : (
+                        <AvatarFallbackText style={{ color: "#ffffff" }}>
+                          {displayName.charAt(0).toUpperCase()}
+                        </AvatarFallbackText>
+                      )}
+                    </GluestackAvatar>
+
+                    <View style={styles.textContainer}>
+                      <Text style={[styles.name, { color: theme.colors.onSurface }]}>
+                        {displayName}
+                      </Text>
+                      <Text style={[styles.subtitle, { color: theme.colors.onSurface }]}>
+                        {username ? `${username} • ` : ""}
+                        {t("notifications.friendRequestSub", "sent you a friend request")}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.actions}>
+                    <Pressable
+                      onPress={() => accept.mutate(targetUserId)}
+                      style={[styles.actionBtn, { backgroundColor: addAlpha(theme.colors.primary, 0.15) }]}
+                    >
+                      <Check size={20} color={theme.colors.primary} />
+                    </Pressable>
+                    <Pressable
+                      onPress={() => reject.mutate(targetUserId)}
+                      style={[styles.actionBtn, { backgroundColor: "rgba(255,82,82,0.15)" }]}
+                    >
+                      <X size={20} color="#ff5252" />
+                    </Pressable>
                   </View>
                 </View>
-                <View style={styles.actions}>
-                  <Pressable
-                    onPress={() => accept.mutate(request.requester?.id!)}
-                    style={[styles.actionBtn, { backgroundColor: addAlpha(theme.colors.primary, 0.15) }]}
-                  >
-                    <Check size={20} color={theme.colors.primary} />
-                  </Pressable>
-                  <Pressable
-                    onPress={() => reject.mutate(request.requester?.id!)}
-                    style={[styles.actionBtn, { backgroundColor: "rgba(255,82,82,0.15)" }]}
-                  >
-                    <X size={20} color="#ff5252" />
-                  </Pressable>
-                </View>
-              </View>
-            ))
+              );
+            })
           )}
         </View>
 

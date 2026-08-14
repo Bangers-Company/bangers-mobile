@@ -1,4 +1,4 @@
-import { Image } from "expo-image";
+import { Image as ExpoImage } from "expo-image";
 import { useRouter } from "expo-router";
 import {
   Bell,
@@ -33,7 +33,7 @@ import { useTranslation } from "react-i18next";
 import { useFriendRequests } from "../../hooks/useFriendship";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useTimetableStore } from "../../store/useTimetableStore";
-import { resolveMediaUrl, getUserDisplayName } from "../../utils/format";
+import { resolveMediaUrl, getUserDisplayName, getUserAvatarUrl } from "../../utils/format";
 
 import { addAlpha } from "../../utils/theme";
 
@@ -82,7 +82,7 @@ export const TopBar: React.FC = () => {
   return (
     <View style={[styles.container, { backgroundColor: "transparent" }]}>
       <View style={styles.content}>
-        <Image
+        <ExpoImage
           source={require("../../../assets/images/brand/logo.svg")}
           style={styles.logoImage}
           contentFit="contain"
@@ -116,9 +116,14 @@ export const TopBar: React.FC = () => {
                 onPress={() => setMenuVisible(true)}
                 style={styles.avatarWrapper}
               >
-                <GluestackAvatar size="md" style={{ backgroundColor: theme.colors.primary }}>
-                  {resolveMediaUrl(user?.profile_media_url) ? (
-                    <AvatarImage source={{ uri: resolveMediaUrl(user?.profile_media_url)! }} alt="User Avatar" />
+                <GluestackAvatar size="md" style={{ backgroundColor: theme.colors.primary, overflow: "hidden" }}>
+                  {getUserAvatarUrl(user) ? (
+                    <ExpoImage
+                      source={{ uri: getUserAvatarUrl(user)! }}
+                      style={{ width: "100%", height: "100%", borderRadius: 100 }}
+                      contentFit="cover"
+                      cachePolicy="memory-disk"
+                    />
                   ) : (
                     <AvatarFallbackText style={{ color: "#ffffff" }}>
                       {getUserDisplayName(user).charAt(0).toUpperCase()}

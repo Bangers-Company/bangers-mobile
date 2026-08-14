@@ -22,6 +22,16 @@ export const resolveMediaUrl = (url?: string | null) => {
   }
   
   let path = url.trim();
+
+  if (
+    path.startsWith("file:") ||
+    path.startsWith("content:") ||
+    path.startsWith("ph:") ||
+    path.startsWith("assets-library:") ||
+    path.startsWith("data:")
+  ) {
+    return path;
+  }
   
   if (path.startsWith("http")) {
     try {
@@ -58,6 +68,13 @@ export const formatDate = (dateString: string) => {
 export const getUserDisplayName = (user?: any): string => {
   if (!user) return "User";
 
+  const first = typeof user.first_name === "string" ? user.first_name.trim() : "";
+  const last = typeof user.last_name === "string" ? user.last_name.trim() : "";
+  const fullName = `${first} ${last}`.trim();
+  if (fullName !== "") {
+    return fullName;
+  }
+
   if (typeof user.full_name === "string" && user.full_name.trim() !== "") {
     return user.full_name.trim();
   }
@@ -68,17 +85,35 @@ export const getUserDisplayName = (user?: any): string => {
     return user.display_name.trim();
   }
 
-  const first = typeof user.first_name === "string" ? user.first_name.trim() : "";
-  const last = typeof user.last_name === "string" ? user.last_name.trim() : "";
-  const fullName = `${first} ${last}`.trim();
-  if (fullName !== "") {
-    return fullName;
-  }
-
   if (typeof user.username === "string" && user.username.trim() !== "") {
     return user.username.trim();
   }
 
+  if (typeof user.requester_name === "string" && user.requester_name.trim() !== "") {
+    return user.requester_name.trim();
+  }
+
+  if (typeof user.sender_name === "string" && user.sender_name.trim() !== "") {
+    return user.sender_name.trim();
+  }
+
   return "User";
 };
+
+export const getUserAvatarUrl = (user?: any): string | null => {
+  if (!user) return null;
+  if (typeof user === "string") return resolveMediaUrl(user);
+
+  const rawUrl =
+    user.profile_media_url ||
+    user.profile_media?.url ||
+    user.profile_photo_url ||
+    user.avatar_url ||
+    user.avatar ||
+    user.photo_url ||
+    null;
+
+  return resolveMediaUrl(rawUrl);
+};
+
 

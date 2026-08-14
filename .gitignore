@@ -50,3 +50,4 @@ app-example
 .env.local
 .env.*.local
 *.apk
+google-services.json
