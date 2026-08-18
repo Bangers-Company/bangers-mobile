@@ -1,45 +1,45 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { Image as ExpoImage } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    Calendar,
-    Clock,
-    History,
-    Pencil,
-    ShieldAlert,
-    ShieldCheck,
-    UserCheck,
-    UserPlus,
-    Users,
+  Calendar,
+  Clock,
+  History,
+  Pencil,
+  ShieldAlert,
+  ShieldCheck,
+  UserCheck,
+  UserPlus,
+  Users,
 } from "lucide-react-native";
 import React, { useCallback, useState } from "react";
 import {
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    TouchableOpacity,
-    View,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import {
-    ActivityIndicator,
-    Avatar,
-    Button,
-    IconButton,
-    Text,
-    TouchableRipple,
-    useTheme,
+  ActivityIndicator,
+  Avatar,
+  Button,
+  IconButton,
+  Text,
+  TouchableRipple,
+  useTheme,
 } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EventCard } from "../../src/components/event/EventCard";
 import { EditProfileModal } from "../../src/components/modals/EditProfileModal";
 import { PageContainer } from "../../src/components/PageContainer";
 import {
-    useFriendshipActions,
-    useFriendshipStatus,
+  useFriendshipActions,
+  useFriendshipStatus,
 } from "../../src/hooks/useFriendship";
 import { useUser } from "../../src/hooks/useUser";
 import { useAuthStore } from "../../src/store/useAuthStore";
-import { Image as ExpoImage } from "expo-image";
-import { resolveMediaUrl, getUserDisplayName, getUserAvatarUrl } from "../../src/utils/format";
+import { getUserAvatarUrl, getUserDisplayName } from "../../src/utils/format";
 
 
 export default function PublicProfileScreen() {
@@ -335,8 +335,8 @@ export default function PublicProfileScreen() {
         </View>
 
         {!profileUser.is_public &&
-        friendshipStatus !== "friends" &&
-        currentUser?.id !== id ? (
+          friendshipStatus !== "friends" &&
+          currentUser?.id !== id ? (
           <View style={styles.privateContainer}>
             <ShieldAlert
               size={48}
