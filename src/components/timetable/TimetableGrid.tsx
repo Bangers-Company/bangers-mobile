@@ -1,18 +1,15 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { Text, TouchableRipple, useTheme } from "react-native-paper";
+import { Text } from "@gluestack-ui/themed";
+import { useAppTheme } from "../../context/ThemeProvider";
 import { useTimetableStore } from "../../store/useTimetableStore";
 import { Timetable, TimetableEntry } from "../../types/timetable";
 import { addAlpha } from "../../utils/theme";
 import { TimetableHorizontalGrid } from "./TimetableHorizontalGrid";
 import { TimetableVerticalGrid } from "./TimetableVerticalGrid";
 import { ActInfoBottomSheet } from "./ActInfoBottomSheet";
-
-import { format, parseISO } from "date-fns";
-import { Calendar } from "lucide-react-native";
-import {
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { Calendar, Clock } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 
 interface TimetableGridProps {
   timetable: Timetable;
@@ -33,12 +30,15 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
   groupId,
   timetableId,
 }) => {
-  const theme = useTheme();
+  const { t } = useTranslation();
+  const theme = useAppTheme();
   const viewMode = useTimetableStore((state) => state.viewMode);
+  const storeSelectedDay = useTimetableStore((state) => state.selectedDay);
+  const setSelectedDayInStore = useTimetableStore((state) => state.setSelectedDay);
+  const setAvailableDaysInStore = useTimetableStore((state) => state.setAvailableDays);
+
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [selectedEntry, setSelectedEntry] = useState<TimetableEntry | null>(
-    null,
-  );
+  const [selectedEntry, setSelectedEntry] = useState<TimetableEntry | null>(null);
   const [infoVisible, setInfoVisible] = useState(false);
 
   // Update current time every minute
@@ -89,35 +89,53 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
     return Array.from(dayMap).sort();
   }, [timetable.entries, templateTimetable?.entries, getFestivalDate]);
 
-  const [selectedDay, setSelectedDay] = useState("");
+  const [localSelectedDay, setLocalSelectedDay] = useState("");
+
+  // Sync available days to store for smooth BottomNav morphing
+  useEffect(() => {
+    if (availableDays.length > 0) {
+      setAvailableDaysInStore(availableDays);
+    }
+  }, [availableDays, setAvailableDaysInStore]);
 
   useEffect(() => {
     if (availableDays.length > 0) {
-      if (!selectedDay || !availableDays.includes(selectedDay)) {
-        setSelectedDay(availableDays[0]);
+      if (!localSelectedDay || !availableDays.includes(localSelectedDay)) {
+        const initial = availableDays[0];
+        setLocalSelectedDay(initial);
+        if (!storeSelectedDay || !availableDays.includes(storeSelectedDay)) {
+          setSelectedDayInStore(initial);
+        }
       }
     }
-  }, [availableDays, selectedDay]);
+  }, [availableDays, localSelectedDay, storeSelectedDay, setSelectedDayInStore]);
+
+  const activeDay = (storeSelectedDay && availableDays.includes(storeSelectedDay))
+    ? storeSelectedDay 
+    : (localSelectedDay || availableDays[0] || "");
 
   // Optimistic timetable that only contains entries for the selected day
   const dailyTimetable = useMemo(() => {
-    if (!selectedDay || !timetable?.entries) return timetable;
+    if (!activeDay || !timetable?.entries) return timetable;
     return {
       ...timetable,
       entries: (timetable.entries as TimetableEntry[]).filter(
-        (e) => getFestivalDate(e.start_time) === selectedDay
+        (e) => getFestivalDate(e.start_time) === activeDay
       )
     };
-  }, [selectedDay, timetable, getFestivalDate]);
-
-  const insets = useSafeAreaInsets();
+  }, [activeDay, timetable, getFestivalDate]);
 
   if (availableDays.length === 0) {
     return (
       <View style={styles.emptyGrid}>
-        <Calendar size={48} color={theme.colors.outline} style={{ opacity: 0.3 }} />
-        <Text variant="titleMedium" style={{ marginTop: 16, opacity: 0.5 }}>
-          No timetable available yet
+        <View style={[styles.emptyIconWrapper, { backgroundColor: addAlpha(theme.colors.primary, 0.12), borderColor: addAlpha(theme.colors.primary, 0.3) }]}>
+          <Clock size={36} color={theme.colors.primary} />
+        </View>
+        <Text style={[styles.emptyTitle, { color: theme.colors.onSurface }]}>
+          {t("timetable.notYetAvailable") || "Not yet available"}
+        </Text>
+        <Text style={[styles.emptySub, { color: addAlpha(theme.colors.onSurface, 0.65) }]}>
+          {t("timetable.notYetAvailableSub") || "The official timetable for this festival has not been published yet. Check back soon!"}
         </Text>
       </View>
     );
@@ -125,12 +143,8 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
 
   return (
     <View style={styles.container}>
-      <View
-        style={{
-          flex: 1,
-          marginBottom: availableDays.length > 1 ? 70 + insets.bottom : 0,
-        }}
-      >
+      {/* Full-Screen Timetable Grid Viewport */}
+      <View style={{ flex: 1 }}>
         {viewMode === "vertical" ? (
           <TimetableVerticalGrid
             timetable={dailyTimetable}
@@ -158,54 +172,6 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
         )}
       </View>
 
-      {/* Day Selector (Custom Bottom Nav) */}
-      {availableDays.length > 1 && (
-        <View
-          style={[
-            styles.dayContainer,
-            {
-              backgroundColor: theme.colors.surface,
-              borderTopColor: theme.colors.outlineVariant,
-              shadowColor: theme.colors.shadow,
-            },
-          ]}
-        >
-          <View style={[styles.dayInner, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-            {availableDays.map((day: string, idx: number) => {
-              const isActive = selectedDay === day;
-              return (
-                <TouchableRipple
-                  key={day}
-                  onPress={() => setSelectedDay(day)}
-                  style={[
-                    styles.dayTab,
-                    isActive && {
-                      backgroundColor: addAlpha(theme.colors.primary, 0.1),
-                    },
-                  ]}
-                  rippleColor={addAlpha(theme.colors.primary, 0.2)}
-                >
-                  <Text
-                    variant="labelLarge"
-                    style={[
-                      styles.dayTabText,
-                      {
-                        color: isActive
-                          ? theme.colors.primary
-                          : theme.colors.outline,
-                      },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {format(parseISO(day), "EEEE")}
-                  </Text>
-                </TouchableRipple>
-              );
-            })}
-          </View>
-        </View>
-      )}
-
       <ActInfoBottomSheet
         visible={infoVisible}
         onDismiss={() => setInfoVisible(false)}
@@ -221,40 +187,42 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  dayContainer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    borderTopWidth: 1,
-    elevation: 8,
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-  },
-  dayInner: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    padding: 12,
-  },
-  dayTab: {
-    flex: 1,
-    paddingVertical: 12,
-    marginHorizontal: 4,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  dayTabText: {
-    fontWeight: "800",
-    textTransform: "uppercase",
-    fontSize: 12,
-    letterSpacing: 1,
+    position: "relative",
   },
   emptyGrid: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 32,
+    paddingHorizontal: 32,
+    paddingBottom: 40,
+    gap: 12,
+    width: "100%",
+  },
+  emptyIconWrapper: {
+    width: 68,
+    height: 68,
+    borderRadius: 22,
+    borderWidth: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
+    marginBottom: 4,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: "900",
+    letterSpacing: -0.4,
+    textAlign: "center",
+    alignSelf: "center",
+    width: "100%",
+  },
+  emptySub: {
+    fontSize: 14,
+    fontWeight: "500",
+    textAlign: "center",
+    alignSelf: "center",
+    maxWidth: 290,
+    lineHeight: 20,
+    width: "100%",
   },
 });

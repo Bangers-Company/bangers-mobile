@@ -1,44 +1,46 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { Image as ExpoImage } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    Calendar,
-    Clock,
-    History,
-    Pencil,
-    ShieldAlert,
-    ShieldCheck,
-    UserCheck,
-    UserPlus,
-    Users,
+  Calendar,
+  Clock,
+  History,
+  Pencil,
+  ShieldAlert,
+  ShieldCheck,
+  UserCheck,
+  UserPlus,
+  Users,
 } from "lucide-react-native";
 import React, { useCallback, useState } from "react";
 import {
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    TouchableOpacity,
-    View,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import {
-    ActivityIndicator,
-    Avatar,
-    Button,
-    IconButton,
-    Text,
-    TouchableRipple,
-    useTheme,
+  ActivityIndicator,
+  Avatar,
+  Button,
+  IconButton,
+  Text,
+  TouchableRipple,
+  useTheme,
 } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EventCard } from "../../src/components/event/EventCard";
 import { EditProfileModal } from "../../src/components/modals/EditProfileModal";
 import { PageContainer } from "../../src/components/PageContainer";
 import {
-    useFriendshipActions,
-    useFriendshipStatus,
+  useFriendshipActions,
+  useFriendshipStatus,
 } from "../../src/hooks/useFriendship";
 import { useUser } from "../../src/hooks/useUser";
 import { useAuthStore } from "../../src/store/useAuthStore";
-import { resolveMediaUrl } from "../../src/utils/format";
+import { getUserAvatarUrl, getUserDisplayName } from "../../src/utils/format";
+
 
 export default function PublicProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -148,24 +150,22 @@ export default function PublicProfileScreen() {
               activeOpacity={currentUser?.id === id ? 0.7 : 1}
             >
               <View style={styles.avatarWrapper}>
-                {profileUser.profile_media_url ? (
-                  <Avatar.Image
-                    style={[{ borderRadius: 28 }]}
-                    size={100}
-                    source={{
-                      uri:
-                        resolveMediaUrl(profileUser.profile_media_url) ||
-                        undefined,
-                    }}
+                {getUserAvatarUrl(profileUser) ? (
+                  <ExpoImage
+                    source={{ uri: getUserAvatarUrl(profileUser)! }}
+                    style={{ width: 100, height: 100, borderRadius: 28 }}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
                   />
                 ) : (
                   <Avatar.Text
                     size={100}
-                    label={profileUser.first_name?.charAt(0) || "U"}
+                    label={getUserDisplayName(profileUser).charAt(0).toUpperCase()}
                     style={{
                       backgroundColor: theme.colors.primary,
                       borderRadius: 28,
                     }}
+                    color="#ffffff"
                   />
                 )}
                 {currentUser?.id === id && (
@@ -186,68 +186,72 @@ export default function PublicProfileScreen() {
             <View style={styles.profileInfoContainer}>
               <View style={styles.profileInfo}>
                 <View
-                  style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    width: "100%",
+                  }}
                 >
-                  <Text variant="headlineMedium" style={styles.userName}>
-                    {profileUser.first_name} {profileUser.last_name}
-                  </Text>
-                  {profileUser.roles?.some((r: any) =>
-                    typeof r === "string"
-                      ? r === "admin"
-                      : (r as any).name === "admin",
-                  ) && <ShieldAlert size={24} color={theme.colors.error} />}
-                  {!profileUser.roles?.some((r: any) =>
-                    typeof r === "string"
-                      ? r === "admin"
-                      : (r as any).name === "admin",
-                  ) &&
-                    profileUser.roles?.some((r: any) =>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flex: 1, flexWrap: "wrap" }}>
+                    <Text variant="headlineMedium" style={[styles.userName, { color: theme.colors.onSurface }]}>
+                      {getUserDisplayName(profileUser)}
+                    </Text>
+
+                    {profileUser.roles?.some((r: any) =>
                       typeof r === "string"
-                        ? r === "moderator"
-                        : (r as any).name === "moderator",
-                    ) && <ShieldCheck size={24} color={theme.colors.primary} />}
+                        ? r === "admin"
+                        : (r as any).name === "admin",
+                    ) && <ShieldAlert size={24} color={theme.colors.error} />}
+                    {!profileUser.roles?.some((r: any) =>
+                      typeof r === "string"
+                        ? r === "admin"
+                        : (r as any).name === "admin",
+                    ) &&
+                      profileUser.roles?.some((r: any) =>
+                        typeof r === "string"
+                          ? r === "moderator"
+                          : (r as any).name === "moderator",
+                      ) && <ShieldCheck size={24} color={theme.colors.primary} />}
+                  </View>
+
+                  {!currentUser ? null : currentUser.id === id ? null : (
+                    <IconButton
+                      icon={
+                        friendshipStatus === "none"
+                          ? () => <UserPlus size={20} color="#ffffff" />
+                          : friendshipStatus === "friends"
+                            ? () => <UserCheck size={20} color={theme.colors.primary} />
+                            : friendshipStatus === "pending_received"
+                              ? () => <UserCheck size={20} color="#ffffff" />
+                              : () => <Clock size={20} color="#ffffff" />
+                      }
+                      mode={friendshipStatus === "friends" ? "outlined" : "contained"}
+                      containerColor={friendshipStatus === "friends" ? "transparent" : theme.colors.primary}
+                      iconColor={friendshipStatus === "friends" ? theme.colors.primary : "#ffffff"}
+                      size={22}
+                      onPress={handleFriendAction}
+                      loading={
+                        actionLoading ||
+                        sendRequest.isPending ||
+                        acceptRequest.isPending ||
+                        removeFriend.isPending
+                      }
+                      disabled={friendshipStatus === "pending_sent"}
+                      style={[
+                        styles.iconOnlyFriendButton,
+                        friendshipStatus === "friends" && { borderColor: theme.colors.primary, borderWidth: 1 },
+                      ]}
+                    />
+                  )}
                 </View>
+
                 <Text variant="titleMedium" style={styles.userEmail}>
                   @{profileUser.username}
                 </Text>
               </View>
-
-              {!currentUser ? null : currentUser.id === id ? null : (
-                <Button
-                  mode={
-                    friendshipStatus === "friends" ? "outlined" : "contained"
-                  }
-                  onPress={handleFriendAction}
-                  loading={
-                    actionLoading ||
-                    sendRequest.isPending ||
-                    acceptRequest.isPending ||
-                    removeFriend.isPending
-                  }
-                  disabled={friendshipStatus === "pending_sent"}
-                  icon={
-                    friendshipStatus === "none"
-                      ? () => <UserPlus size={18} color="white" />
-                      : friendshipStatus === "friends"
-                        ? () => (
-                            <UserCheck size={18} color={theme.colors.primary} />
-                          )
-                        : friendshipStatus === "pending_received"
-                          ? () => <UserCheck size={18} color="white" />
-                          : () => <Clock size={18} color="white" />
-                  }
-                  style={styles.friendButton}
-                >
-                  {friendshipStatus === "none"
-                    ? "Add Friend"
-                    : friendshipStatus === "friends"
-                      ? "Friends"
-                      : friendshipStatus === "pending_received"
-                        ? "Accept Request"
-                        : "Request Sent"}
-                </Button>
-              )}
             </View>
+
           </View>
 
           {profileUser.genres && profileUser.genres.length > 0 && (
@@ -331,8 +335,8 @@ export default function PublicProfileScreen() {
         </View>
 
         {!profileUser.is_public &&
-        friendshipStatus !== "friends" &&
-        currentUser?.id !== id ? (
+          friendshipStatus !== "friends" &&
+          currentUser?.id !== id ? (
           <View style={styles.privateContainer}>
             <ShieldAlert
               size={48}
@@ -445,6 +449,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   friendButton: { marginTop: 8, alignSelf: "flex-start", borderRadius: 8 },
+  iconOnlyFriendButton: { alignSelf: "flex-end", marginLeft: "auto", marginVertical: 0 },
+
   bioText: { marginTop: 12, opacity: 0.8, lineHeight: 22 },
   genresContainer: {
     marginTop: 16,

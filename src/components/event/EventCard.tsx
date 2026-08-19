@@ -3,14 +3,13 @@ import React from "react";
 import { StyleSheet, View, StyleProp, ViewStyle } from "react-native";
 import { Image } from "expo-image";
 import {
-  Card,
-  Surface,
+  Box,
   Text,
-  TouchableRipple,
-  useTheme,
-} from "react-native-paper";
+  Pressable,
+} from "@gluestack-ui/themed";
+import { useAppTheme } from "../../context/ThemeProvider";
 import { Event as AppEvent } from "../../types/event";
-import { resolveMediaUrl } from "../../utils/format";
+import { resolveMediaUrl, formatDateRange } from "../../utils/format";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -30,7 +29,7 @@ export const EventCardSkeleton: React.FC<{
   variant?: "featured" | "compact" | "horizontal";
   style?: StyleProp<ViewStyle>;
 }> = ({ variant = "compact", style }) => {
-  const theme = useTheme();
+  const theme = useAppTheme();
 
   const opacity = useRepeatTiming(0.4, 0.7, 1000);
   const scale = useRepeatTiming(0.98, 1, 1000);
@@ -104,26 +103,21 @@ export const EventCard: React.FC<EventCardProps> = ({
   variant = "compact",
   style,
 }) => {
-  const theme = useTheme();
+  const theme = useAppTheme();
   const bannerUrl = resolveMediaUrl(event.banner?.url);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    });
+  const formatDate = (startDateStr: string, endDateStr?: string) => {
+    return formatDateRange(startDateStr, endDateStr);
   };
 
   if (variant === "horizontal") {
     return (
       <View style={[styles.horizontalCard, style]}>
-        <TouchableRipple
+        <Pressable
           onPress={() => onPress?.(event)}
           style={StyleSheet.absoluteFill}
-          rippleColor="rgba(255, 255, 255, .2)"
         >
-          <Surface style={styles.horizontalSurface} elevation={1}>
+          <Box style={styles.horizontalSurface}>
             {bannerUrl ? (
               <Image
                 source={{ uri: bannerUrl }}
@@ -140,7 +134,6 @@ export const EventCard: React.FC<EventCardProps> = ({
             <View style={styles.overlay} />
             <View style={styles.horizontalContent}>
               <Text
-                variant="titleMedium"
                 style={styles.horizontalTitle}
                 numberOfLines={1}
               >
@@ -149,7 +142,6 @@ export const EventCard: React.FC<EventCardProps> = ({
               <View style={styles.locationRow}>
                 <MapPin size={12} color="rgba(255,255,255,0.9)" />
                 <Text
-                  variant="bodySmall"
                   style={styles.horizontalLocation}
                   numberOfLines={1}
                 >
@@ -157,20 +149,19 @@ export const EventCard: React.FC<EventCardProps> = ({
                 </Text>
               </View>
             </View>
-          </Surface>
-        </TouchableRipple>
+          </Box>
+        </Pressable>
       </View>
     );
   }
 
   if (variant === "featured") {
     return (
-      <TouchableRipple
+      <Pressable
         onPress={() => onPress?.(event)}
         style={[styles.featuredContainer, style]}
-        rippleColor="rgba(255, 255, 255, .2)"
       >
-        <Card style={styles.featuredCard}>
+        <Box style={styles.featuredCard}>
           <View style={styles.imageWrapper}>
             {bannerUrl ? (
               <Image source={{ uri: bannerUrl }} style={styles.featuredImage} />
@@ -185,16 +176,16 @@ export const EventCard: React.FC<EventCardProps> = ({
             <View style={styles.overlay} />
             <View style={styles.featuredContent}>
               <View style={styles.dateBadge}>
-                <Text variant="labelLarge" style={styles.dateText}>
-                  {formatDate(event.start_date)}
+                <Text style={styles.dateText}>
+                  {formatDate(event.start_date, event.end_date)}
                 </Text>
               </View>
-              <Text variant="headlineSmall" style={styles.featuredTitle}>
+              <Text style={styles.featuredTitle}>
                 {event.name}
               </Text>
               <View style={styles.locationRow}>
                 <MapPin size={14} color="rgba(255,255,255,0.8)" />
-                <Text variant="bodySmall" style={styles.featuredLocation}>
+                <Text style={styles.featuredLocation}>
                   {event.location}
                 </Text>
               </View>
@@ -202,35 +193,33 @@ export const EventCard: React.FC<EventCardProps> = ({
               {event.genres && event.genres.length > 0 && (
                 <View style={styles.genreContainer}>
                   {event.genres.slice(0, 2).map((genre) => (
-                    <Surface
+                    <Box
                       key={genre.id}
                       style={styles.featuredGenreBadge}
-                      elevation={0}
                     >
-                      <Text variant="labelSmall" style={styles.genreText}>
+                      <Text style={styles.genreText}>
                         {genre.name}
                       </Text>
-                    </Surface>
+                    </Box>
                   ))}
                 </View>
               )}
             </View>
           </View>
-        </Card>
-      </TouchableRipple>
+        </Box>
+      </Pressable>
     );
   }
 
   return (
-    <TouchableRipple
+    <Pressable
       onPress={() => onPress?.(event)}
       style={[styles.compactRipple, style]}
-      rippleColor="rgba(0, 0, 0, .05)"
     >
-      <Card
+      <Box
         style={[
           styles.compactCard,
-          { borderColor: theme.colors.outlineVariant },
+          { borderColor: theme.colors.surfaceVariant },
         ]}
       >
         <View style={styles.compactRow}>
@@ -246,8 +235,8 @@ export const EventCard: React.FC<EventCardProps> = ({
           )}
           <View style={styles.compactContent}>
             <Text
-              variant="titleMedium"
               style={styles.compactTitle}
+
               numberOfLines={1}
             >
               {event.name}
@@ -288,10 +277,11 @@ export const EventCard: React.FC<EventCardProps> = ({
           </View>
           <ChevronRight size={18} color={theme.colors.outline} />
         </View>
-      </Card>
-    </TouchableRipple>
+      </Box>
+    </Pressable>
   );
 };
+
 
 const styles = StyleSheet.create({
   featuredContainer: {

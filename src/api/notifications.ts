@@ -9,9 +9,14 @@ export const registerDeviceToken = async (token: string, deviceType: "ios" | "an
   return response.data;
 };
 
-export const unregisterDeviceToken = async (token: string) => {
+export const unregisterDeviceToken = async (token: string, accessToken?: string) => {
+  const headers: Record<string, string> = {};
+  if (accessToken) {
+    headers["Authorization"] = `Bearer ${accessToken}`;
+  }
   const response = await apiClient.delete("/user/device-tokens", {
     data: { token },
+    headers,
   });
   return response.data;
 };

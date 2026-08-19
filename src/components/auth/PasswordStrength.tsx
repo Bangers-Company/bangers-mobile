@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { StyleSheet, View } from "react-native";
-import { Text, useTheme } from "react-native-paper";
+import { Text } from "@gluestack-ui/themed";
+import { useAppTheme } from "../../context/ThemeProvider";
 import Animated, { useAnimatedStyle, withTiming } from "react-native-reanimated";
 
 interface PasswordStrengthProps {
@@ -8,7 +9,7 @@ interface PasswordStrengthProps {
 }
 
 export const PasswordStrength: React.FC<PasswordStrengthProps> = ({ password = "" }) => {
-  const theme = useTheme();
+  const theme = useAppTheme();
 
   const strength = useMemo(() => {
     if (!password) return 0;
@@ -26,9 +27,9 @@ export const PasswordStrength: React.FC<PasswordStrengthProps> = ({ password = "
       case 2: return "#ffd740"; // Yellow
       case 3: return "#4caf50"; // Green
       case 4: return theme.colors.primary; // Accent
-      default: return theme.colors.outlineVariant;
+      default: return "#888888";
     }
-  }, [strength, theme.colors.primary, theme.colors.outlineVariant]);
+  }, [strength, theme.colors.primary]);
 
   const strengthLabel = useMemo(() => {
     switch (strength) {
@@ -51,17 +52,17 @@ export const PasswordStrength: React.FC<PasswordStrengthProps> = ({ password = "
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text variant="labelSmall" style={styles.label}>
+        <Text style={styles.label}>
           Password Strength
         </Text>
-        <Text variant="labelSmall" style={[styles.status, { color: strengthColor }]}>
+        <Text style={[styles.status, { color: strengthColor }]}>
           {strengthLabel}
         </Text>
       </View>
-      <View style={[styles.track, { backgroundColor: theme.colors.outlineVariant + "30" }]}>
+      <View style={[styles.track, { backgroundColor: "rgba(150, 150, 150, 0.2)" }]}>
         <Animated.View style={[styles.bar, animatedStyle]} />
       </View>
-      <Text variant="bodySmall" style={styles.hint}>
+      <Text style={styles.hint}>
         Use at least 8 characters, a capital letter, a number and a symbol.
       </Text>
     </View>
@@ -79,9 +80,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   label: {
+    fontSize: 11,
     opacity: 0.6,
   },
   status: {
+    fontSize: 11,
     fontWeight: "800",
   },
   track: {
@@ -98,3 +101,4 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 });
+

@@ -1,31 +1,39 @@
 import axios from 'axios';
-import apiClient from '../client';
+import apiClient, { resetRefreshPromise } from '../client';
 import { useAuthStore } from '../../store/useAuthStore';
 
-// Mock everything needed
 jest.mock('axios', () => {
+    const mockPostFn = jest.fn();
     const mockAxiosInstance = {
         interceptors: {
             request: { use: jest.fn() },
             response: { use: jest.fn() },
         },
         create: jest.fn().mockReturnThis(),
+        post: mockPostFn,
     };
     return {
-        create: jest.fn(() => mockAxiosInstance),
-        post: jest.fn(),
-        default: {
+        __esModule: true,
+        default: Object.assign(jest.fn(() => mockAxiosInstance), {
             create: jest.fn(() => mockAxiosInstance),
-            post: jest.fn(),
-        }
+            post: mockPostFn,
+            isCancel: jest.fn(() => false),
+        }),
+        post: mockPostFn,
+        isCancel: jest.fn(() => false),
     };
 });
+
+
+
 
 jest.mock('../../store/useAuthStore', () => ({
     useAuthStore: {
         getState: jest.fn(),
     },
 }));
+
+
 
 describe('apiClient', () => {
     let requestInterceptor: any;
@@ -38,6 +46,11 @@ describe('apiClient', () => {
         requestInterceptor = (apiClient.interceptors.request.use as jest.Mock).mock.calls[0][0];
         responseInterceptorSuccess = (apiClient.interceptors.response.use as jest.Mock).mock.calls[0][0];
         responseInterceptorError = (apiClient.interceptors.response.use as jest.Mock).mock.calls[0][1];
+    });
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        resetRefreshPromise();
     });
 
     it('should add Authorization header when accessToken exists', async () => {
@@ -70,14 +83,24 @@ describe('apiClient', () => {
             logout: mockLogout
         });
 
-        (axios.post as jest.Mock).mockRejectedValueOnce(new Error('Refresh failed'));
+        const errorObj = new Error('Refresh failed');
+        (axios.post as jest.Mock).mockRejectedValue(errorObj);
+        if ((axios as any).default?.post) {
+            ((axios as any).default.post as jest.Mock).mockRejectedValue(errorObj);
+        }
 
         try {
             await responseInterceptorError(error);
-        } catch (e) {
+        } catch (e: any) {
             // expected
         }
 
         expect(mockLogout).toHaveBeenCalled();
     });
 });
+
+
+
+
+
+

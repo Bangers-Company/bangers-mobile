@@ -1,13 +1,13 @@
 import { Link } from "expo-router";
 import { StyleSheet, View } from "react-native";
-import { Text } from "react-native-paper";
+import { Text } from "@gluestack-ui/themed";
 
 export default function ModalScreen() {
   return (
     <View style={styles.container}>
-      <Text variant="headlineMedium">This is a modal</Text>
+      <Text style={{ fontSize: 22, fontWeight: "bold", color: "#fff" }}>This is a modal</Text>
       <Link href="/" dismissTo style={styles.link}>
-        <Text variant="bodyLarge" style={{ color: "#a60df2" }}>
+        <Text style={{ color: "#a60df2", fontSize: 16 }}>
           Go to home screen
         </Text>
       </Link>
@@ -28,3 +28,4 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
   },
 });
+

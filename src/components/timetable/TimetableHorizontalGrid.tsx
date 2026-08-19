@@ -1,8 +1,14 @@
 import React, { useRef, useEffect } from "react";
 import { StyleSheet, View } from "react-native";
-import { Text, useTheme } from "react-native-paper";
-import Animated, { useAnimatedScrollHandler, useSharedValue, useAnimatedStyle } from "react-native-reanimated";
+import { Text } from "@gluestack-ui/themed";
+import { useAppTheme } from "../../context/ThemeProvider";
+import Animated, {
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+} from "react-native-reanimated";
 import { Timetable, TimetableEntry } from "../../types/timetable";
+import { sortStages } from "../../utils/stageSort";
 import { addAlpha } from "../../utils/theme";
 import { TimetableActItem } from "./TimetableActItem";
 
@@ -17,7 +23,8 @@ interface HorizontalGridProps {
 
 const HOUR_WIDTH = 220;
 const STAGE_HEIGHT = 120;
-const STAGE_LABEL_WIDTH = 100;
+const TIME_HEADER_HEIGHT = 32;
+const STAGE_LABEL_WIDTH = 175;
 
 export const TimetableHorizontalGrid: React.FC<HorizontalGridProps> = ({
   timetable,
@@ -27,11 +34,12 @@ export const TimetableHorizontalGrid: React.FC<HorizontalGridProps> = ({
   isPersonal,
   currentTime,
 }) => {
-  const theme = useTheme();
+  const theme = useAppTheme();
+
   const scrollRef = useRef<Animated.ScrollView>(null);
   const horizontalScrollOffset = useSharedValue(0);
   const verticalScrollOffset = useSharedValue(0);
- 
+
   const horizontalScrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
       horizontalScrollOffset.value = event.contentOffset.x;
@@ -44,9 +52,15 @@ export const TimetableHorizontalGrid: React.FC<HorizontalGridProps> = ({
     },
   });
 
+  // Time header bar stays 100% sticky at top (0 elastic bounce) and slides UP off-screen only when scrolling down vertically (y > 0)
   const timeHeaderStyle = useAnimatedStyle(() => {
+    const clampedY = Math.max(0, verticalScrollOffset.value);
+    const translateY = -Math.min(TIME_HEADER_HEIGHT, clampedY);
+    const opacity = Math.max(0, 1 - clampedY / TIME_HEADER_HEIGHT);
     return {
-      opacity: 1,
+      opacity,
+      transform: [{ translateY }],
+      pointerEvents: opacity === 0 ? "none" : "auto",
     };
   });
 
@@ -55,8 +69,7 @@ export const TimetableHorizontalGrid: React.FC<HorizontalGridProps> = ({
     string,
     { id: string; name: string; entries: TimetableEntry[] }
   > = {};
-  
-  // If template exists, initialize all stages from it
+
   if (templateTimetable) {
     (templateTimetable?.entries || []).forEach((entry) => {
       if (!stageMap[entry.stage.id]) {
@@ -71,18 +84,18 @@ export const TimetableHorizontalGrid: React.FC<HorizontalGridProps> = ({
     }
     stageMap[entry.stage.id].entries.push(entry);
   });
-  const stages = Object.values(stageMap).filter((s) => s.entries.length > 0);
 
-  // 2. Festival hour calculation (6 AM is the start of a "new day")
+  const stages = sortStages(
+    Object.values(stageMap).filter((s) => s.entries.length > 0),
+  );
+
   const toFestivalHour = (date: Date) => {
     const h = date.getHours();
     return h < 6 ? h + 24 : h;
   };
 
-  // 3. Dynamic Time Range Calculation
-  // DEFAULT: 09:00 to 02:00 (26)
-  let min = 48; // Start with max value
-  let max = 0;  // Start with min value
+  let min = 48;
+  let max = 0;
 
   const entries = timetable?.entries || [];
   if (entries.length === 0) {
@@ -96,11 +109,9 @@ export const TimetableHorizontalGrid: React.FC<HorizontalGridProps> = ({
       if (end > max) max = end;
     });
 
-    // 1 hour before first act, 1 hour after last act
     min = Math.floor(min - 1);
     max = Math.ceil(max + 1);
 
-    // Safety bounds
     if (min < 0) min = 0;
     if (max > 48) max = 48;
     if (max <= min) max = min + 1;
@@ -108,26 +119,24 @@ export const TimetableHorizontalGrid: React.FC<HorizontalGridProps> = ({
 
   const timeRange = { start: min, end: max };
 
-  // 4. Auto-scroll to current time
   useEffect(() => {
     if (currentTime && scrollRef.current) {
       const currentPos = getPosition(currentTime.toISOString());
-      const isVisible = toFestivalHour(currentTime) >= timeRange.start && 
-                        toFestivalHour(currentTime) <= timeRange.end;
+      const isVisible =
+        toFestivalHour(currentTime) >= timeRange.start &&
+        toFestivalHour(currentTime) <= timeRange.end;
 
       if (isVisible) {
-        // Use a small timeout to ensure the layout is ready
         const timer = setTimeout(() => {
           scrollRef.current?.scrollTo({
-            x: Math.max(0, currentPos - 100), // Center it a bit better
+            x: Math.max(0, currentPos - 100),
             animated: true,
           });
         }, 100);
         return () => clearTimeout(timer);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timetable?.id, timeRange.start]); // Re-run if timetable changes or range shifts
+  }, [timetable?.id, timeRange.start]);
 
   const hours = Array.from(
     { length: Math.min(48, Math.max(0, timeRange.end - timeRange.start + 1)) },
@@ -149,28 +158,51 @@ export const TimetableHorizontalGrid: React.FC<HorizontalGridProps> = ({
 
   return (
     <View style={[styles.container]}>
-      <Animated.ScrollView 
+      {/* Outer Vertical ScrollView */}
+      <Animated.ScrollView
         style={{ flex: 1 }}
         onScroll={verticalScrollHandler}
         scrollEventThrottle={16}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={{ flexDirection: "row" }}>
-          {/* Stage Sidebar */}
-          <View style={[styles.stageSidebar]}>
-            <View style={styles.sidebarHeader} />
-            {stages.map((stage) => (
-              <View key={stage.id} style={styles.stageLabelContainer}>
-                <Text
-                  variant="labelMedium"
-                  style={styles.stageLabel}
-                  numberOfLines={2}
+        <View>
+          {/* Sticky Left Stage Header Sidebar */}
+          <View
+            style={[
+              styles.stickyStageSidebar,
+              { height: stages.length * STAGE_HEIGHT, paddingTop: TIME_HEADER_HEIGHT },
+            ]}
+          >
+            {stages.map((stage, sIdx) => (
+              <View
+                key={stage.id}
+                style={[
+                  styles.stageHeaderContainer,
+                  { height: STAGE_HEIGHT, top: sIdx * STAGE_HEIGHT + TIME_HEADER_HEIGHT },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.floatingStageBadge,
+                    {
+                      backgroundColor: addAlpha(theme.colors.surface, 0.94),
+                      borderColor: addAlpha(theme.colors.primary, 0.35),
+                    },
+                  ]}
                 >
-                  {stage.name}
-                </Text>
+                  <View style={[styles.stageDot, { backgroundColor: theme.colors.primary }]} />
+                  <Text
+                    style={[styles.floatingStageTitle, { color: theme.colors.onSurface }]}
+                    numberOfLines={1}
+                  >
+                    {stage.name}
+                  </Text>
+                </View>
               </View>
             ))}
           </View>
 
+          {/* Inner Horizontal ScrollView - Timestamps & Grid Content are in the EXACT SAME native ScrollView for 0ms hardware sync */}
           <Animated.ScrollView
             ref={scrollRef}
             horizontal
@@ -178,9 +210,18 @@ export const TimetableHorizontalGrid: React.FC<HorizontalGridProps> = ({
             scrollEventThrottle={16}
             showsHorizontalScrollIndicator={false}
           >
-            <View>
-              {/* Time Header - Fades during movement */}
-              <Animated.View style={[styles.timeHeader, timeHeaderStyle]}>
+            <View style={{ position: "relative" }}>
+              {/* Native Timestamps Header Bar - Clamped zero-bounce sticky positioning */}
+              <Animated.View
+                style={[
+                  styles.nativeTimeHeaderBar,
+                  {
+                    backgroundColor: addAlpha(theme.colors.surface, 0.92),
+                    borderBottomColor: addAlpha(theme.colors.outline, 0.15),
+                  },
+                  timeHeaderStyle,
+                ]}
+              >
                 {hours.map((hour) => {
                   const displayHour = hour >= 24 ? hour - 24 : hour;
                   const displayString = `${displayHour
@@ -191,7 +232,9 @@ export const TimetableHorizontalGrid: React.FC<HorizontalGridProps> = ({
                       key={hour}
                       style={[styles.timeSlot, { width: HOUR_WIDTH }]}
                     >
-                      <Text variant="labelSmall" style={styles.timeText}>
+                      <Text
+                        style={[styles.timeText, { color: addAlpha(theme.colors.onSurface, 0.65) }]}
+                      >
                         {displayString}
                       </Text>
                     </View>
@@ -199,129 +242,158 @@ export const TimetableHorizontalGrid: React.FC<HorizontalGridProps> = ({
                 })}
               </Animated.View>
 
-            {/* Grid Body */}
-            <View
-              style={[
-                styles.gridBody,
-                {
-                  width: hours.length * HOUR_WIDTH,
-                  height: stages.length * STAGE_HEIGHT,
-                },
-              ]}
-            >
-              {/* Vertical Grid Lines */}
-              {hours.map((hour) => (
-                <View
-                  key={hour}
-                  style={[
-                    styles.gridLine,
-                    {
-                      left: (hour - timeRange.start) * HOUR_WIDTH,
-                      height: stages.length * STAGE_HEIGHT,
-                      borderLeftColor: addAlpha(theme.colors.outline, 0.1),
-                    },
-                  ]}
-                />
-              ))}
-
-              {/* Stages Rows */}
-              {stages.map((stage, sIdx) => (
-                <View
-                  key={stage.id}
-                  style={[
-                    styles.stageRow,
-                    { height: STAGE_HEIGHT, top: sIdx * STAGE_HEIGHT },
-                  ]}
-                >
-                  {stage.entries.map((entry) => {
-                    const left = getPosition(entry.start_time);
-                    const width = getDurationWidth(
-                      entry.start_time,
-                      entry.end_time,
-                    );
-
-                    return (
-                      <TimetableActItem
-                        key={entry.id}
-                        entry={entry}
-                        isPersonal={isPersonal}
-                        onPress={onEntryPress}
-                        onLongPress={onEntryLongPress}
-                        style={{
-                          left,
-                          width: width - 4,
-                          // height is managed by stageRow container usually, but let's be explicit if needed
-                          top: 4,
-                          bottom: 4,
-                          position: 'absolute',
-                        }}
-                        variant="horizontal"
-                      />
-                    );
-                  })}
-                </View>
-              ))}
-
-              {/* Current Time Indicator */}
-              {currentTime &&
-                toFestivalHour(currentTime) >= timeRange.start &&
-                toFestivalHour(currentTime) <= timeRange.end && (
+              {/* Grid Body */}
+              <View
+                style={[
+                  styles.gridBody,
+                  {
+                    width: hours.length * HOUR_WIDTH,
+                    height: stages.length * STAGE_HEIGHT + TIME_HEADER_HEIGHT,
+                    paddingTop: TIME_HEADER_HEIGHT,
+                  },
+                ]}
+              >
+                {/* Vertical Grid Lines */}
+                {hours.map((hour) => (
                   <View
+                    key={hour}
                     style={[
-                      styles.currentTimeLine,
+                      styles.gridLine,
                       {
-                        left: getPosition(currentTime.toISOString()),
-                        height: stages.length * STAGE_HEIGHT,
-                        backgroundColor: theme.colors.error,
+                        left: (hour - timeRange.start) * HOUR_WIDTH,
+                        height: stages.length * STAGE_HEIGHT + TIME_HEADER_HEIGHT,
+                        borderLeftColor: addAlpha(theme.colors.outline, 0.1),
                       },
                     ]}
                   />
-                )}
+                ))}
+
+                {/* Stages Rows */}
+                {stages.map((stage, sIdx) => (
+                  <View
+                    key={stage.id}
+                    style={[
+                      styles.stageRow,
+                      { height: STAGE_HEIGHT, top: sIdx * STAGE_HEIGHT + TIME_HEADER_HEIGHT },
+                    ]}
+                  >
+                    {/* Act Cards - Full row height */}
+                    {stage.entries.map((entry) => {
+                      const left = getPosition(entry.start_time);
+                      const width = getDurationWidth(
+                        entry.start_time,
+                        entry.end_time,
+                      );
+
+                      return (
+                        <TimetableActItem
+                          key={entry.id}
+                          entry={entry}
+                          isPersonal={isPersonal}
+                          onPress={onEntryPress}
+                          onLongPress={onEntryLongPress}
+                          style={{
+                            left,
+                            width: width - 4,
+                            top: 4,
+                            bottom: 4,
+                            position: "absolute",
+                          }}
+                          variant="horizontal"
+                        />
+                      );
+                    })}
+                  </View>
+                ))}
+
+                {/* Current Time Indicator */}
+                {currentTime &&
+                  toFestivalHour(currentTime) >= timeRange.start &&
+                  toFestivalHour(currentTime) <= timeRange.end && (
+                    <View
+                      style={[
+                        styles.currentTimeLine,
+                        {
+                          left: getPosition(currentTime.toISOString()),
+                          height: stages.length * STAGE_HEIGHT + TIME_HEADER_HEIGHT,
+                          backgroundColor: theme.colors.error,
+                        },
+                      ]}
+                    />
+                  )}
+              </View>
             </View>
-          </View>
-        </Animated.ScrollView>
-      </View>
-    </Animated.ScrollView>
-  </View>
-);
+          </Animated.ScrollView>
+        </View>
+      </Animated.ScrollView>
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    flexDirection: "row",
     overflow: "hidden",
   },
-  stageSidebar: {
-    width: STAGE_LABEL_WIDTH,
-    zIndex: 5,
-    borderRightWidth: 1,
-    borderRightColor: "rgba(0,0,0,0.05)",
-  },
-  sidebarHeader: {
-    height: 30,
-  },
-  stageLabelContainer: {
-    height: STAGE_HEIGHT,
-    paddingHorizontal: 8,
-    justifyContent: "center",
-  },
-  stageLabel: {
-    fontWeight: "bold",
-    textTransform: "uppercase",
-    fontSize: 10,
-  },
-  timeHeader: {
+  nativeTimeHeaderBar: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
     flexDirection: "row",
-    height: 30,
+    height: TIME_HEADER_HEIGHT,
     alignItems: "center",
+    borderBottomWidth: 1,
+    zIndex: 150,
   },
   timeSlot: {
     alignItems: "flex-start",
-    paddingLeft: 2,
+    paddingLeft: 8,
   },
   timeText: {
-    opacity: 0.5,
+    fontWeight: "600",
+    fontSize: 11,
+  },
+  stickyStageSidebar: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: STAGE_LABEL_WIDTH,
+    zIndex: 100,
+  },
+  stageHeaderContainer: {
+    position: "absolute",
+    left: 6,
+    top: 4,
+    width: STAGE_LABEL_WIDTH - 10,
+    justifyContent: "flex-start",
+  },
+  floatingStageBadge: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    maxWidth: STAGE_LABEL_WIDTH - 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4.5,
+    borderRadius: 12,
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  stageDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  floatingStageTitle: {
+    fontWeight: "800",
+    textTransform: "uppercase",
+    fontSize: 9.5,
+    letterSpacing: 0.6,
   },
   gridBody: {
     flex: 1,
@@ -337,33 +409,11 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.02)",
-  },
-  entryCard: {
-    position: "absolute",
-    top: 4,
-    bottom: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    padding: 6,
-    overflow: "hidden",
-  },
-  entryContent: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  entryTitle: {
-    fontWeight: "bold",
-    fontSize: 11,
-    lineHeight: 12,
-  },
-  entryTime: {
-    fontSize: 9,
-    marginTop: 1,
+    borderBottomColor: "rgba(0,0,0,0.04)",
   },
   currentTimeLine: {
     position: "absolute",
     width: 2,
-    zIndex: 10,
+    zIndex: 15,
   },
 });

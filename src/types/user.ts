@@ -25,7 +25,9 @@ export interface User {
   username: string;
   first_name?: string | null;
   last_name?: string | null;
-  name?: string;
+  full_name?: string | null;
+  display_name?: string | null;
+  name?: string | null; // fallback if no full_name
   dob: string;
   bio?: string;
   last_login_at?: string | null;
@@ -35,6 +37,7 @@ export interface User {
   permissions: string[];
   profile_media?: Media | null;
   profile_media_url?: string | null;
+  profile_photo_url?: string | null;
   friends_count?: number;
   friend_requests?: import("../api/friends").Friendship[];
   stats?: UserStats;

@@ -1,182 +1,290 @@
 {
   "common": {
-    "next": "Weiter",
-    "back": "Zurück",
-    "save": "Änderungen speichern",
+    "save": "Speichern",
     "cancel": "Abbrechen",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "back": "Zurück",
+    "next": "Weiter",
+    "search": "Suchen",
     "loading": "Laden...",
     "error": "Fehler",
+    "errorTitle": "Fehler beim Laden",
     "success": "Erfolg",
-    "logout": "Abmelden",
     "confirm": "Bestätigen",
-    "delete": "Löschen",
-    "edit": "Bearbeiten",
-    "viewAll": "Alle anzeigen",
-    "search": "Suche",
-    "noResults": "Keine Ergebnisse gefunden",
-    "attending": "Teilnahme",
-    "attend": "Teilnehmen",
-    "going": "Gehe hin",
-    "remove": "Entfernen",
-    "join": "Beitreten",
     "accept": "Akzeptieren",
-    "reject": "Ablehnen"
+    "decline": "Ablehnen",
+    "offline": "Offline",
+    "offline_warning": "Du bist derzeit offline",
+    "someone": "Jemand",
+    "tryAgain": "Erneut versuchen",
+    "saving": "Speichern...",
+    "getStarted": "Loslegen",
+    "viewAll": "Alle anzeigen",
+    "attend": "Teilnehmen",
+    "going": "Nimmt teil",
+    "logout": "Abmelden"
+  },
+  "navigation": {
+    "home": "Home",
+    "events": "Festivals",
+    "schedule": "Zeitplan",
+    "timetable": "Zeitplan",
+    "lineup": "Line-up",
+    "visitors": "Besucher",
+    "friends": "Freunde",
+    "profile": "Profil",
+    "settings": "Einstellungen",
+    "groups": "Gruppen",
+    "notifications": "Benachrichtigungen",
+    "info": "Info"
   },
   "auth": {
     "login": {
       "title": "Willkommen zurück",
-      "subtitle": "Geben Sie Ihre Zugangsdaten ein, um fortzufahren",
+      "subtitle": "Melde dich an, um deine Festivals und Freunde zu verfolgen.",
       "email": "E-Mail-Adresse",
       "password": "Passwort",
-      "signIn": "Anmelden",
+      "emailPlaceholder": "raver@bangers.app",
+      "passwordPlaceholder": "••••••••",
+      "submit": "Anmelden",
+      "noAccount": "Noch kein Konto?",
       "newHere": "Neu hier?",
       "createAccount": "Konto erstellen",
-      "invalidCredentials": "Ungültige E-Mail oder Passwort"
+      "registerLink": "Konto erstellen",
+      "invalidCredentials": "Ungültige E-Mail oder Passwort",
+      "forgotPassword": "Passwort vergessen?"
     },
     "register": {
+      "title": "Konto erstellen",
+      "subtitle": "Tritt Bangers bei für personalisierte Zeitpläne und Updates.",
+      "emailPlaceholder": "raver@bangers.app",
+      "usernamePlaceholder": "EinzigartigerRaver123",
+      "passwordPlaceholder": "••••••••",
+      "register": "Registrieren",
+      "emailTaken": "E-Mail wird bereits verwendet",
+      "usernameTaken": "Benutzername bereits vergeben",
+      "ageRestriction": "Du musst 18 Jahre oder älter sein.",
+      "policyAgreement": "Ich stimme den Nutzungsbedingungen und Datenschutzbestimmungen zu.",
       "steps": {
         "email": {
-          "title": "E-Mail eingeben",
-          "subtitle": "Wir senden Ihnen Updates und die Verifizierung."
+          "title": "Wie lautet deine E-Mail?",
+          "subtitle": "Wir nutzen diese für Kontowiederherstellung und Benachrichtigungen."
         },
         "username": {
-          "title": "Benutzernamen wählen",
-          "subtitle": "So werden Sie von anderen gesehen."
+          "title": "Wähle einen Benutzernamen",
+          "subtitle": "So finden dich deine Freunde auf Bangers."
         },
         "password": {
-          "title": "Konto sichern",
-          "subtitle": "Wählen Sie ein starkes Passwort."
+          "title": "Sichere dein Konto",
+          "subtitle": "Wähle ein starkes Passwort."
         },
         "birthday": {
-          "title": "Wann haben Sie Geburtstag?",
-          "subtitle": "Sie müssen 18+ sein, um dem Rave beizutreten."
+          "title": "Wann hast du Geburtstag?",
+          "subtitle": "Du musst 18+ sein, um dem Rave beizutreten.",
+          "placeholder": "Geburtsdatum auswählen"
         },
         "policies": {
-          "title": "Letzte Details",
-          "subtitle": "Stimmen Sie unseren Geschäftsbedingungen zu."
+          "title": "Letzte Schritte",
+          "subtitle": "Stimme unseren Bedingungen zu."
         }
-      },
-      "usernamePlaceholder": "EinzigartigerRaver123",
-      "register": "Registrieren",
-      "emailTaken": "E-Mail bereits vergeben",
-      "usernameTaken": "Benutzername bereits vergeben",
-      "ageRestriction": "Sie müssen 18 oder älter sein, um beizutreten.",
-      "policyAgreement": "Ich stimme den Nutzungsbedingungen und der Datenschutzrichtlinie zu."
+      }
     }
   },
-  "onboarding": {
-    "welcome": {
-      "title": "Willkommen zum Rave!",
-      "description": "Wir freuen uns, Sie in der Bangers-Community zu haben. Lassen Sie uns Ihr Erlebnis personalisieren."
-    },
-    "identity": {
-      "title": "Wer sind Sie?",
-      "subtitle": "Wie sollen Ihre Freunde Sie finden?",
-      "firstName": "Vorname",
-      "lastName": "Nachname"
-    },
-    "genres": {
-      "title": "Ihre Vibe",
-      "subtitle": "Wählen Sie die Musikgenres aus, für die Sie leben."
-    },
-    "bio": {
-      "title": "Erzählen Sie Ihre Geschichte",
-      "subtitle": "Ein wenig über Sie (optional).",
-      "placeholder": "Hardstyle-Enthusiast, Festival-Gänger..."
-    },
-    "finish": {
-      "title": "Alles bereit!",
-      "feature1": "Erstellen Sie Ihren perfekten Festival-Zeitplan",
-      "feature2": "Bleiben Sie mit den Standorten Ihrer Freunde synchron",
-      "feature3": "Erhalten Sie personalisierte Act-Empfehlungen",
-      "ready": "Bereit zum Loslegen!"
-    }
+  "dashboard": {
+    "myEvents": "Meine Festivals",
+    "maybeInterested": "Kommende Events",
+    "suggested": "Für dich empfohlen",
+    "noEvents": "Keine Events gefunden",
+    "seeAll": "Alle anzeigen"
+  },
+  "events": {
+    "details": "Festival-Details",
+    "location": "Ort",
+    "date": "Datum",
+    "attendees": "Teilnehmer",
+    "interested": "Interessiert",
+    "attending": "Nimmt teil",
+    "notAttending": "Nimmt nicht teil",
+    "lineup": "Line-up",
+    "stages": "Bühnen",
+    "acts": "Acts",
+    "searchPlaceholder": "Acts oder Bühnen suchen..."
   },
   "profile": {
+    "title": "Profil",
+    "editProfile": "Profil bearbeiten",
+    "bio": "Bio",
+    "genres": "Lieblings-Genres",
+    "mySchedule": "Mein Zeitplan",
+    "stats": {
+      "events": "Festivals",
+      "acts": "Acts",
+      "friends": "Freunde",
+      "past": "Vergangene Festivals"
+    },
+    "sections": {
+      "about": "Über",
+      "date": "Datum",
+      "location": "Ort",
+      "lineup": "Line-up",
+      "viewLineup": "Vollständiges Line-up anzeigen",
+      "upcoming": "Kommende Festivals",
+      "past": "Vergangene Festivals"
+    },
     "edit": {
       "title": "Profil bearbeiten",
       "firstName": "Vorname",
       "lastName": "Nachname",
-      "bio": "Bio",
       "dob": "Geburtsdatum",
+      "bio": "Bio / Über dich",
+      "isPublic": "Öffentliches Profil",
       "publicProfile": "Öffentliches Profil",
-      "publicProfileSub": "Erlauben Sie anderen zu sehen, welche Events Sie besuchen"
-    },
-    "stats": {
-      "events": "Events",
-      "past": "Vergangen",
-      "friends": "Freunde"
-    },
-    "sections": {
-      "past": "Vergangene Events",
-      "noEvents": "Keine Events gefunden",
-      "noUpcoming": "Keine anstehenden Events",
-      "noPast": "Keine vergangenen Events aufgezeichnet",
-      "about": "Über",
-      "lineup": "Line-up",
-      "viewLineup": "Vollständiges Line-up anzeigen",
-      "location": "Ort",
-      "dates": "Daten"
+      "publicProfileSub": "Erlaube allen, deine Zeitpläne zu sehen",
+      "save": "Änderungen speichern",
+      "permissionRequired": "Berechtigung erforderlich",
+      "cameraPermissionMsg": "Kamerazugriff wird für Profilbild benötigt",
+      "libraryPermissionMsg": "Galeriezugriff wird für Profilbild benötigt"
     }
-  },
-  "dashboard": {
-    "myEvents": "Meine Events",
-    "maybeInterested": "Vielleicht interessiert an",
-    "suggested": "Für Sie vorgeschlagen"
   },
   "notifications": {
     "title": "Benachrichtigungen",
+    "recentActivity": "Letzte Aktivitäten",
     "friends": "Freundschaftsanfragen",
     "groups": "Gruppeneinladungen",
-    "emptyFriends": "Keine ausstehenden Freundschaftsanfragen",
-    "emptyGroups": "Keine ausstehenden Gruppeneinladungen",
-    "friendRequestSub": "möchte Ihr Freund sein",
-    "groupInviteSub": "hat Sie in seine Gruppe eingeladen"
+    "emptyFriends": "Keine ausstehenden Anfragen",
+    "emptyGroups": "Keine ausstehenden Einladungen",
+    "friendRequestSub": "möchte sich verbinden"
   },
-  "navigation": {
-    "home": "Home",
-    "events": "Events",
-    "profile": "Profil",
-    "map": "Karte",
-    "timetable": "Zeitplan",
-    "settings": "Einstellungen",
-    "notifications": "Benachrichtigungen"
+  "onboarding": {
+    "welcome": {
+      "title": "Willkommen bei Bangers!",
+      "description": "Dein ultimativer Festivalbegleiter ist bereit. Lass uns dein Erlebnis personalisieren!"
+    },
+    "identity": {
+      "title": "Wie heißt du?",
+      "subtitle": "Lass deine Crew wissen, wer du bist",
+      "firstName": "Vorname",
+      "lastName": "Nachname"
+    },
+    "genres": {
+      "title": "Lieblings-Musikstile",
+      "subtitle": "Wähle Genres für individuelle Bühnen-Empfehlungen."
+    },
+    "ready": {
+      "title": "Alles bereit!",
+      "description": "Entdecke Zeitpläne, füge Acts hinzu und feiere mit Freunden!",
+      "feature1": "Erstelle deinen perfekten Festival-Zeitplan",
+      "feature2": "Bleibe mit deinen Freunden synchronisiert",
+      "feature3": "Erhalte Benachrichtigungen für deine Lieblings-Acts",
+      "ready": "Loslegen"
+    },
+    "bio": {
+      "title": "Erzähle deine Geschichte",
+      "subtitle": "Zeige, was für ein Raver du bist.",
+      "placeholder": "Hardstyle-Fan, Festival-Gänger..."
+    }
+  },
+  "timetable": {
+    "selectTimetable": "Zeitplan auswählen",
+    "days": "Tage",
+    "stages": "Bühnen",
+    "nowPlaying": "Läuft jetzt",
+    "upNext": "Als Nächstes",
+    "addToSchedule": "Zum Zeitplan hinzufügen",
+    "removeFromSchedule": "Vom Zeitplan entfernen",
+    "mySchedule": "Mein persönlicher Zeitplan",
+    "groupSchedule": "Gruppen-Zeitplan",
+    "clashes": "Überschneidungen erkannt",
+    "sections": {
+      "official": "Offizieller Zeitplan",
+      "officialSubtitle": "Vollständiger Bühnenplan",
+      "groups": "Gruppen-Zeitpläne",
+      "invitations": "Ausstehende Einladungen"
+    },
+    "empty": {
+      "title": "Keine Acts geplant",
+      "description": "Füge Acts zu deinem Zeitplan hinzu, um sie hier zu sehen"
+    },
+    "notYetAvailable": "Noch nicht verfügbar",
+    "notYetAvailableSub": "Der offizielle Zeitplan für dieses Festival wurde noch nicht veröffentlicht. Schau bald wieder vorbei!",
+    "actInfo": {
+      "about": "Über den Künstler",
+      "date": "Datum",
+      "time": "Uhrzeit",
+      "stage": "Bühne",
+      "whosGoing": "Wer geht mit",
+      "fromGroup": "Aus Gruppe",
+      "noAttendees": "Noch keine Freunde dabei",
+      "loadingAttendees": "Lade Teilnehmer...",
+      "gotIt": "Verstanden"
+    },
+    "groups": {
+      "create": "Gruppen-Zeitplan erstellen",
+      "createFirst": "Erstelle deine erste Gruppe",
+      "createAnother": "Erstelle eine weitere Gruppe",
+      "memberCount": "Mitglieder",
+      "invitedBy": "Eingeladen von",
+      "createModal": {
+        "stepIndicator": "Schritt {{step}} von {{total}}",
+        "titleStep1": "Gruppenname",
+        "titleStep2": "Freunde einladen",
+        "namePlaceholder": "z.B. Defqon Crew 2026",
+        "searchPlaceholder": "Freunde suchen...",
+        "noFriends": "Keine Freunde zum Einladen gefunden",
+        "createWithCount": "Gruppe erstellen ({{count}} eingeladen)"
+      },
+      "deleteModal": {
+        "titleDelete": "Gruppe löschen",
+        "titleLeave": "Gruppe verlassen",
+        "messageDelete": "Bist du sicher, dass du diesen Gruppen-Zeitplan löschen möchtest?",
+        "messageLeave": "Bist du sicher, dass du diese Gruppe verlassen möchtest?",
+        "confirmDelete": "Gruppe löschen",
+        "confirmLeave": "Gruppe verlassen"
+      }
+    }
   },
   "settings": {
     "title": "Einstellungen",
+    "account": {
+      "title": "Konto-Einstellungen",
+      "description": "Verwalte dein Profil & Sicherheit"
+    },
+    "appearance": {
+      "themeTitle": "App-Design",
+      "themeSubtitle": "Wähle dein bevorzugtes Aussehen",
+      "accentTitle": "Akzentfarbe",
+      "amoledTitle": "AMOLED Dunkelmodus",
+      "amoledSubtitle": "Reines Schwarz für OLED-Displays"
+    },
     "general": {
-      "title": "Allgemein",
+      "title": "Sprache & Region",
       "language": "Sprache",
       "english": "Englisch",
       "dutch": "Niederländisch",
-      "french": "Französisch",
       "german": "Deutsch",
       "spanish": "Spanisch",
+      "french": "Französisch",
       "italian": "Italienisch"
     },
-    "appearance": {
-      "title": "Erscheinungsbild",
-      "themeTitle": "Themen-Modus",
-      "themeSubtitle": "Wählen Sie Ihren bevorzugten Look",
-      "system": "System",
-      "light": "Hell",
-      "dark": "Dunkel",
-      "amoledTitle": "AMOLED-Modus",
-      "amoledSubtitle": "Echtes Schwarz für OLED-Bildschirme",
-      "accentTitle": "Akzentfarbe"
-    },
     "notifications": {
-      "title": "Benachrichtigungen",
-      "description": "Verwalten Sie Ihre Alarme, Push-Benachrichtigungen und E-Mail-Einstellungen.",
-      "joinSuccess": "Erfolgreich der Gruppe beigetreten!"
-    },
-    "account": {
-      "title": "Konto",
-      "description": "Aktualisieren Sie Ihre E-Mail, Ihr Passwort und Ihre Abonnementdetails."
+      "title": "Bühnen-Benachrichtigungen",
+      "enabled": "Act-Erinnerungen",
+      "enabledSubtitle": "Erhalte Erinnerungen vor deinen Lieblings-Acts",
+      "minutesBefore": "Vorlaufzeit",
+      "minutesBeforeSubtitle": "Benachrichtige mich {{minutes}} Minuten vor dem Set",
+      "minutes": "{{count}} Minuten"
     },
     "privacy": {
       "title": "Datenschutz",
-      "description": "Kontrollieren Sie Ihre Sichtbarkeit und Sicherheitseinstellungen."
-    }
+      "description": "Steuere, wer deine Zeitpläne sieht"
+    },
+    "language": "Sprache",
+    "theme": "Design",
+    "dark": "Dunkelmodus",
+    "light": "Hellmodus",
+    "system": "Systemstandard",
+    "logout": "Abmelden",
+    "version": "App-Version"
   }
 }

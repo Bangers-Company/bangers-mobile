@@ -6,17 +6,19 @@ import {
   Platform,
   ScrollView,
   KeyboardAvoidingView,
+  TextInput as RNTextInput,
+  LayoutChangeEvent,
 } from "react-native";
 import {
   Modal,
-  Portal,
+  ModalBackdrop,
+  ModalContent,
   Text,
   Button,
-  TextInput,
-  Chip,
-  useTheme,
-  IconButton,
-} from "react-native-paper";
+  ButtonText,
+  Pressable,
+} from "@gluestack-ui/themed";
+import { useAppTheme } from "../../context/ThemeProvider";
 import { useTranslation } from "react-i18next";
 import { BlurView } from "expo-blur";
 import Animated, {
@@ -24,19 +26,13 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   Easing,
-  FadeIn,
-  FadeOut,
 } from "react-native-reanimated";
 import { User, Genre } from "../../types/user";
 import { userApi } from "../../api/user";
 import { genreApi } from "../../api/genres";
 import { useAuthStore } from "../../store/useAuthStore";
-import { Music, User as UserIcon, BookOpen, PartyPopper, CheckCircle } from "lucide-react-native";
-
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const MODAL_MARGIN = 20;
-const LAYOUT_PADDING = 24;
-const PAGE_WIDTH = SCREEN_WIDTH - (MODAL_MARGIN * 2) - (LAYOUT_PADDING * 2);
+import { Music, User as UserIcon, PartyPopper, CheckCircle } from "lucide-react-native";
+import { addAlpha } from "../../utils/theme";
 
 interface OnboardingModalProps {
   visible: boolean;
@@ -50,18 +46,20 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   onComplete,
 }) => {
   const { t } = useTranslation();
-  const theme = useTheme();
+  const theme = useAppTheme();
   const setUser = useAuthStore((state) => state.setUser);
-  
+  const setIsJustRegistered = useAuthStore((state) => state.setIsJustRegistered);
+
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [availableGenres, setAvailableGenres] = useState<Genre[]>([]);
-  
+  const [contentWidth, setContentWidth] = useState(300);
+
   // Form State
-  const [firstName, setFirstName] = useState(user.first_name || "");
-  const [lastName, setLastName] = useState(user.last_name || "");
+  const [firstName, setFirstName] = useState(user?.first_name || "");
+  const [lastName, setLastName] = useState(user?.last_name || "");
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
-  const [bio, setBio] = useState(user.bio || "");
+  const [bio, setBio] = useState(user?.bio || "");
 
   // Animation
   const slideAnim = useSharedValue(0);
@@ -81,23 +79,31 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
     }
   };
 
-  const handleNext = () => {
-    if (step < 4) {
-      setStep(step + 1);
-      slideAnim.value = withTiming(-(step + 1) * PAGE_WIDTH, {
-        duration: 400,
-        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
-      });
-    } else {
-      handleSubmit();
+  const handleLayout = (e: LayoutChangeEvent) => {
+    const { width } = e.nativeEvent.layout;
+    if (width > 0 && width !== contentWidth) {
+      setContentWidth(width);
+      slideAnim.value = -step * width;
     }
   };
 
-  const handleBack = () => {
+  const handleNext = () => {
+    if (step < 3) {
+      const nextStep = step + 1;
+      setStep(nextStep);
+      slideAnim.value = withTiming(-nextStep * contentWidth, {
+        duration: 300,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      });
+    }
+  };
+
+  const handlePrev = () => {
     if (step > 0) {
-      setStep(step - 1);
-      slideAnim.value = withTiming(-(step - 1) * PAGE_WIDTH, {
-        duration: 400,
+      const prevStep = step - 1;
+      setStep(prevStep);
+      slideAnim.value = withTiming(-prevStep * contentWidth, {
+        duration: 300,
         easing: Easing.bezier(0.25, 0.1, 0.25, 1),
       });
     }
@@ -114,9 +120,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
       } as any);
 
       setUser(response.data);
+      setIsJustRegistered(false);
       onComplete();
     } catch (err) {
       console.error("Failed to complete onboarding", err);
+      setIsJustRegistered(false);
+      onComplete();
     } finally {
       setLoading(false);
     }
@@ -134,338 +143,356 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
   const renderStep = () => {
     return (
-      <Animated.View style={[styles.stepsContainer, animatedStyle]}>
-        {/* STEP 0: Welcome */}
-        <View style={styles.stepPage}>
-           <PartyPopper size={64} color={theme.colors.primary} style={styles.icon} />
-           <Text variant="headlineLarge" style={styles.title}>{t("onboarding.welcome.title")}</Text>
-           <Text variant="bodyLarge" style={styles.description}>
-             {t("onboarding.welcome.description")}
-           </Text>
+      <Animated.View style={[styles.stepsContainer, { width: contentWidth * 4 }, animatedStyle]}>
+        {/* STEP 0: Welcome Greeting */}
+        <View style={[styles.stepPage, { width: contentWidth }]}>
+          <View style={[styles.iconContainer, { backgroundColor: addAlpha(theme.colors.primary, 0.15) }]}>
+            <PartyPopper size={44} color={theme.colors.primary} />
+          </View>
+          <Text style={[styles.title, { color: theme.colors.onSurface }]}>
+            {t("onboarding.welcome.title") || "Welcome to Bangers!"}
+          </Text>
+          <Text style={[styles.description, { color: addAlpha(theme.colors.onSurface, 0.7) }]}>
+            {t("onboarding.welcome.description") || "Your ultimate festival companion is ready. Let's personalize your festival experience in a few quick steps!"}
+          </Text>
         </View>
 
         {/* STEP 1: Identity */}
-        <View style={styles.stepPage}>
-           <UserIcon size={48} color={theme.colors.primary} style={styles.icon} />
-           <Text variant="headlineMedium" style={styles.stepTitle}>{t("onboarding.identity.title")}</Text>
-           <Text variant="bodyMedium" style={styles.stepSub}>{t("onboarding.identity.subtitle")}</Text>
-           <View style={styles.form}>
+        <View style={[styles.stepPage, { width: contentWidth }]}>
+          <View style={[styles.iconContainer, { backgroundColor: addAlpha(theme.colors.primary, 0.15) }]}>
+            <UserIcon size={38} color={theme.colors.primary} />
+          </View>
+          <Text style={[styles.stepTitle, { color: theme.colors.onSurface }]}>
+            {t("onboarding.identity.title") || "What's your name?"}
+          </Text>
+          <Text style={[styles.stepSub, { color: addAlpha(theme.colors.onSurface, 0.6) }]}>
+            {t("onboarding.identity.subtitle") || "Let your festival crew know who you are"}
+          </Text>
+          <View style={styles.form}>
             <View style={styles.nameRow}>
-              <TextInput
-                label={t("onboarding.identity.firstName")}
-                value={firstName}
-                onChangeText={setFirstName}
-                mode="outlined"
-                style={[styles.pillInput, { flex: 1 }]}
-                outlineStyle={styles.pillOutline}
-              />
-              <TextInput
-                label={t("onboarding.identity.lastName")}
-                value={lastName}
-                onChangeText={setLastName}
-                mode="outlined"
-                style={[styles.pillInput, { flex: 1 }]}
-                outlineStyle={styles.pillOutline}
-              />
+              <View
+                style={[
+                  styles.inputRow,
+                  {
+                    flex: 1,
+                    backgroundColor: addAlpha(theme.colors.surface, 0.8),
+                    borderColor: addAlpha(theme.colors.outline, 0.15),
+                  },
+                ]}
+              >
+                <RNTextInput
+                  placeholder={t("onboarding.identity.firstName") || "First Name"}
+                  placeholderTextColor="#888"
+                  value={firstName}
+                  onChangeText={setFirstName}
+                  style={[styles.rnInput, { color: theme.colors.onSurface }]}
+                />
+              </View>
+              <View
+                style={[
+                  styles.inputRow,
+                  {
+                    flex: 1,
+                    backgroundColor: addAlpha(theme.colors.surface, 0.8),
+                    borderColor: addAlpha(theme.colors.outline, 0.15),
+                  },
+                ]}
+              >
+                <RNTextInput
+                  placeholder={t("onboarding.identity.lastName") || "Last Name"}
+                  placeholderTextColor="#888"
+                  value={lastName}
+                  onChangeText={setLastName}
+                  style={[styles.rnInput, { color: theme.colors.onSurface }]}
+                />
+              </View>
             </View>
-           </View>
+          </View>
         </View>
 
         {/* STEP 2: Genres */}
-        <View style={styles.stepPage}>
-           <Music size={48} color={theme.colors.primary} style={styles.icon} />
-           <Text variant="headlineMedium" style={styles.stepTitle}>{t("onboarding.genres.title")}</Text>
-           <Text variant="bodyMedium" style={styles.stepSub}>{t("onboarding.genres.subtitle")}</Text>
-           <ScrollView contentContainerStyle={styles.genresList}>
-             <View style={styles.chipGrid}>
-               {availableGenres.map((genre) => (
-                  <Chip
-                    key={genre.id}
-                    selected={selectedGenres.includes(genre.id)}
-                    onPress={() => toggleGenre(genre.id)}
+        <View style={[styles.stepPage, { width: contentWidth }]}>
+          <View style={[styles.iconContainer, { backgroundColor: addAlpha(theme.colors.primary, 0.15) }]}>
+            <Music size={38} color={theme.colors.primary} />
+          </View>
+          <Text style={[styles.stepTitle, { color: theme.colors.onSurface }]}>
+            {t("onboarding.genres.title") || "Favorite Music Styles"}
+          </Text>
+          <Text style={[styles.stepSub, { color: addAlpha(theme.colors.onSurface, 0.6) }]}>
+            {t("onboarding.genres.subtitle") || "Pick genres to get tailored stage suggestions"}
+          </Text>
+          <ScrollView
+            style={styles.genresScroll}
+            contentContainerStyle={styles.genresGrid}
+            showsVerticalScrollIndicator={false}
+          >
+            {availableGenres.map((genre) => {
+              const isSelected = selectedGenres.includes(genre.id);
+              return (
+                <Pressable
+                  key={genre.id}
+                  onPress={() => toggleGenre(genre.id)}
+                  style={[
+                    styles.genreBadge,
+                    isSelected
+                      ? {
+                          backgroundColor: addAlpha(theme.colors.primary, 0.2),
+                          borderColor: theme.colors.primary,
+                        }
+                      : {
+                          backgroundColor: addAlpha(theme.colors.surface, 0.6),
+                          borderColor: addAlpha(theme.colors.outline, 0.12),
+                        },
+                  ]}
+                >
+                  <Text
                     style={[
-                      styles.chip,
-                      selectedGenres.includes(genre.id) && {
-                        backgroundColor: theme.colors.primary,
-                        shadowColor: theme.colors.primary,
-                        shadowOffset: { width: 0, height: 0 },
-                        shadowOpacity: 0.8,
-                        shadowRadius: 10,
-                        elevation: 10,
-                      }
+                      styles.genreText,
+                      {
+                        color: isSelected
+                          ? theme.colors.primary
+                          : addAlpha(theme.colors.onSurface, 0.8),
+                      },
                     ]}
-                    selectedColor={selectedGenres.includes(genre.id) ? "white" : undefined}
-                    showSelectedCheck
                   >
-                   {genre.name}
-                 </Chip>
-               ))}
-             </View>
-           </ScrollView>
+                    {genre.name}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
         </View>
 
-        {/* STEP 3: Bio */}
-        <View style={styles.stepPage}>
-           <BookOpen size={48} color={theme.colors.primary} style={styles.icon} />
-           <Text variant="headlineMedium" style={styles.stepTitle}>{t("onboarding.bio.title")}</Text>
-           <Text variant="bodyMedium" style={styles.stepSub}>{t("onboarding.bio.subtitle")}</Text>
-            <TextInput
-              label={t("onboarding.bio.title")}
-              value={bio}
-              onChangeText={setBio}
-              mode="outlined"
-              multiline
-              numberOfLines={6}
-              style={styles.pillTextArea}
-              outlineStyle={styles.pillOutline}
-              placeholder={t("onboarding.bio.placeholder")}
-            />
-        </View>
-
-        {/* STEP 4: Features */}
-        <View style={styles.stepPage}>
-           <CheckCircle size={64} color={theme.colors.primary} style={styles.icon} />
-           <Text variant="headlineMedium" style={styles.stepTitle}>{t("onboarding.finish.title")}</Text>
-           <View style={styles.featureList}>
-             <View style={styles.featureItem}>
-               <PartyPopper size={20} color={theme.colors.secondary} />
-               <Text variant="bodyMedium" style={styles.featureText}>{t("onboarding.finish.feature1")}</Text>
-             </View>
-             <View style={styles.featureItem}>
-               <UserIcon size={20} color={theme.colors.secondary} />
-               <Text variant="bodyMedium" style={styles.featureText}>{t("onboarding.finish.feature2")}</Text>
-             </View>
-             <View style={styles.featureItem}>
-               <Music size={20} color={theme.colors.secondary} />
-               <Text variant="bodyMedium" style={styles.featureText}>{t("onboarding.finish.feature3")}</Text>
-             </View>
-           </View>
+        {/* STEP 3: Ready */}
+        <View style={[styles.stepPage, { width: contentWidth }]}>
+          <View style={[styles.iconContainer, { backgroundColor: addAlpha(theme.colors.primary, 0.15) }]}>
+            <CheckCircle size={44} color={theme.colors.primary} />
+          </View>
+          <Text style={[styles.title, { color: theme.colors.onSurface }]}>
+            {t("onboarding.ready.title") || "You're all set!"}
+          </Text>
+          <Text style={[styles.description, { color: addAlpha(theme.colors.onSurface, 0.7) }]}>
+            {t("onboarding.ready.description") || "Explore lineup timetables, add acts to your schedule, and dance with friends!"}
+          </Text>
         </View>
       </Animated.View>
     );
   };
 
   return (
-    <Portal>
-      {visible && (
-        <Animated.View 
-          entering={FadeIn} 
-          exiting={FadeOut}
-          style={StyleSheet.absoluteFill}
-        >
-          <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
-        </Animated.View>
-      )}
-      <Modal
-        visible={visible}
-        dismissable={false}
-        contentContainerStyle={styles.modalContent}
-        theme={{ colors: { backdrop: "transparent" } }}
+    <Modal isOpen={visible} onClose={onComplete}>
+      <ModalBackdrop style={styles.backdrop} />
+      <ModalContent
+        style={[
+          styles.modalContent,
+          {
+            backgroundColor: addAlpha(theme.colors.surface, 0.95),
+            borderColor: addAlpha(theme.colors.primary, 0.3),
+          },
+        ]}
       >
-        <BlurView intensity={100} tint="dark" style={styles.blurContainer}>
-          <BlurView intensity={100} tint="dark" style={StyleSheet.absoluteFill} />
+        <BlurView intensity={Platform.OS === "ios" ? 40 : 100} tint="dark" style={styles.blurContainer}>
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
-            keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
-            style={styles.layout}
+            style={styles.avoidingView}
           >
-            <View style={styles.header}>
-              <View style={styles.headerColumn}>
-                {step > 0 && (
-                  <IconButton
-                    icon="chevron-left"
-                    onPress={handleBack}
-                    size={24}
-                  />
-                )}
-              </View>
-              
-              <View style={styles.progressContainer}>
-                {[0, 1, 2, 3, 4].map((i) => (
-                  <View
-                    key={i}
-                    style={[
-                      styles.progressDot,
-                      {
-                        backgroundColor:
-                          i <= step
-                            ? theme.colors.primary
-                            : theme.colors.surfaceVariant,
-                        shadowColor: i <= step ? theme.colors.primary : "transparent",
-                      },
-                    ]}
-                  />
-                ))}
-              </View>
-
-              <View style={styles.headerColumn} />
+            {/* Step Indicators */}
+            <View style={styles.indicatorContainer}>
+              {[0, 1, 2, 3].map((i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.indicator,
+                    {
+                      backgroundColor:
+                        i === step
+                          ? theme.colors.primary
+                          : addAlpha(theme.colors.onSurface, 0.18),
+                      width: i === step ? 24 : 8,
+                    },
+                  ]}
+                />
+              ))}
             </View>
 
-            <View style={styles.contentWrapper}>
+            {/* Dynamic Measurement Window */}
+            <View style={styles.sliderWindow} onLayout={handleLayout}>
               {renderStep()}
             </View>
 
-            <View style={styles.footer}>
-              <Button
-                mode="contained"
-                onPress={handleNext}
-                loading={loading}
-                disabled={loading || (step === 1 && (!firstName || !lastName))}
-                style={styles.nextButton}
-                contentStyle={styles.buttonContent}
-              >
-                {step === 4 ? t("onboarding.finish.ready") : t("common.next")}
-              </Button>
+            {/* Controls */}
+            <View style={styles.controlsRow}>
+              {step > 0 ? (
+                <Button
+                  variant="outline"
+                  onPress={handlePrev}
+                  style={[
+                    styles.navBtn,
+                    { borderColor: addAlpha(theme.colors.outline, 0.2) },
+                  ]}
+                >
+                  <ButtonText style={{ color: theme.colors.onSurface }}>
+                    {t("common.back") || "Back"}
+                  </ButtonText>
+                </Button>
+              ) : (
+                <View style={{ width: 80 }} />
+              )}
+
+              {step < 3 ? (
+                <Button
+                  onPress={handleNext}
+                  style={[styles.navBtn, { backgroundColor: theme.colors.primary }]}
+                >
+                  <ButtonText style={{ color: "#ffffff", fontWeight: "800" }}>
+                    {t("common.next") || "Next"}
+                  </ButtonText>
+                </Button>
+              ) : (
+                <Button
+                  onPress={handleSubmit}
+                  isDisabled={loading}
+                  style={[styles.navBtn, { backgroundColor: theme.colors.primary }]}
+                >
+                  <ButtonText style={{ color: "#ffffff", fontWeight: "900" }}>
+                    {loading ? t("common.saving") || "Saving..." : t("common.getStarted") || "Get Started"}
+                  </ButtonText>
+                </Button>
+              )}
             </View>
           </KeyboardAvoidingView>
         </BlurView>
-      </Modal>
-    </Portal>
+      </ModalContent>
+    </Modal>
   );
 };
 
 const styles = StyleSheet.create({
+  backdrop: {
+    backgroundColor: "rgba(0, 0, 0, 0.75)",
+  },
   modalContent: {
-    margin: MODAL_MARGIN,
-    borderRadius: 24,
+    width: "88%",
+    maxWidth: 440,
+    alignSelf: "center",
+    borderRadius: 26,
+    borderWidth: 1,
     overflow: "hidden",
     height: "65%",
-    backgroundColor: "transparent",
+    maxHeight: 520,
   },
   blurContainer: {
     flex: 1,
-    borderRadius: 24,
-    backgroundColor: "rgba(10, 10, 15, 0.8)",
+    padding: 20,
   },
-  layout: {
+  avoidingView: {
     flex: 1,
-    padding: LAYOUT_PADDING,
-    paddingBottom: 32, // More room for bottom button
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 20,
-    height: 48,
   },
-  headerColumn: {
-    width: 48,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  progressContainer: {
+  indicatorContainer: {
     flexDirection: "row",
-    gap: 12,
-    flex: 1,
     justifyContent: "center",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 12,
   },
-  progressDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 4,
-    elevation: 4,
+  indicator: {
+    height: 6,
+    borderRadius: 3,
   },
-  contentWrapper: {
+  sliderWindow: {
     flex: 1,
     overflow: "hidden",
+    width: "100%",
   },
   stepsContainer: {
     flexDirection: "row",
-    width: PAGE_WIDTH * 5,
-    flex: 1,
+    height: "100%",
   },
   stepPage: {
-    width: PAGE_WIDTH,
-    flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: 6,
   },
-  icon: {
-    marginBottom: 24,
+  iconContainer: {
+    width: 72,
+    height: 72,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 14,
   },
   title: {
+    fontSize: 22,
+    fontWeight: "900",
     textAlign: "center",
-    fontWeight: "bold",
-    marginBottom: 16,
-  },
-  description: {
-    textAlign: "center",
-    opacity: 0.7,
-    lineHeight: 24,
-  },
-  stepTitle: {
-    fontWeight: "bold",
     marginBottom: 8,
   },
+  stepTitle: {
+    fontSize: 19,
+    fontWeight: "800",
+    textAlign: "center",
+    marginBottom: 4,
+  },
   stepSub: {
-    opacity: 0.6,
-    marginBottom: 32,
+    fontSize: 12,
+    textAlign: "center",
+    marginBottom: 14,
+  },
+  description: {
+    fontSize: 13,
+    textAlign: "center",
+    lineHeight: 19,
+    paddingHorizontal: 8,
   },
   form: {
     width: "100%",
-    gap: 16,
+    marginTop: 10,
   },
   nameRow: {
     flexDirection: "row",
-    gap: 12,
-    width: "100%",
+    gap: 10,
   },
-  input: {
-    backgroundColor: "transparent",
-  },
-  pillInput: {
-    backgroundColor: "transparent",
-  },
-  pillOutline: {
+  inputRow: {
+    height: 48,
     borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    justifyContent: "center",
   },
-  genresList: {
-    flexGrow: 1,
+  rnInput: {
+    fontSize: 14,
+    fontWeight: "600",
   },
-  chipGrid: {
+  genresScroll: {
+    width: "100%",
+    maxHeight: 180,
+  },
+  genresGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
     justifyContent: "center",
-    paddingBottom: 20,
+    gap: 8,
   },
-  chip: {
-    marginBottom: 4,
-  },
-  textArea: {
-    width: "100%",
-    backgroundColor: "transparent",
-    minHeight: 140,
-  },
-  pillTextArea: {
-    width: "100%",
-    backgroundColor: "transparent",
-    minHeight: 140,
-  },
-  featureList: {
-    gap: 20,
-    marginTop: 20,
-    width: "100%",
-  },
-  featureItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  featureText: {
-    opacity: 0.8,
-  },
-  footer: {
-    marginTop: 24,
-  },
-  nextButton: {
+  genreBadge: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     borderRadius: 12,
+    borderWidth: 1,
   },
-  buttonContent: {
-    height: 52,
+  genreText: {
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  controlsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingTop: 10,
+  },
+  navBtn: {
+    minWidth: 90,
+    height: 44,
+    borderRadius: 14,
   },
 });

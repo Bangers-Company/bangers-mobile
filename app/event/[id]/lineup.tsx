@@ -7,9 +7,13 @@ import {
   FlatList,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  ScrollView,
   StyleSheet,
+  TouchableOpacity,
   View,
 } from "react-native";
+
+
 import {
   Button,
   IconButton,
@@ -18,15 +22,18 @@ import {
   TouchableRipple,
   useTheme,
 } from "react-native-paper";
+import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PageContainer } from "../../../src/components/PageContainer";
 import { useEvent } from "../../../src/hooks/useEvent";
 import { Act, Stage } from "../../../src/types/event";
+import { sortStages } from "../../../src/utils/stageSort";
 import { addAlpha } from "../../../src/utils/theme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export default function LineupScreen() {
+  const { i18n } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useTheme();
   const router = useRouter();
@@ -41,6 +48,9 @@ export default function LineupScreen() {
 
   const [selectedDateIndex, setSelectedDateIndex] = useState<number>(0);
   const [activeTabIndex, setActiveTabIndex] = useState(0);
+  const activeTabIndexRef = useRef(0);
+  activeTabIndexRef.current = activeTabIndex;
+
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -49,7 +59,8 @@ export default function LineupScreen() {
   }, []);
 
   const horizontalListRef = useRef<FlatList>(null);
-  const tabListRef = useRef<FlatList>(null);
+  const tabListRef = useRef<ScrollView>(null);
+  const tabLayouts = useRef<{ [key: number]: { x: number; width: number } }>({});
   const isTappingTab = useRef(false);
 
   if (error && !event) {
@@ -172,7 +183,7 @@ export default function LineupScreen() {
   const groupedActs: { id: string; name: string; acts: Act[] }[] = [];
 
   if (stages.length > 0) {
-    stages.forEach((stage) => {
+    sortStages(stages).forEach((stage) => {
       const stageActs = currentDayActs.filter((a) => a.stage_id === stage.id);
       if (stageActs.length > 0) {
         groupedActs.push({
@@ -207,50 +218,74 @@ export default function LineupScreen() {
     });
   }
 
+  const syncTabScroll = (newIndex: number) => {
+    if (newIndex >= 0 && newIndex < groupedActs.length) {
+      activeTabIndexRef.current = newIndex;
+      setActiveTabIndex(newIndex);
+      const layout = tabLayouts.current[newIndex];
+      if (layout && tabListRef.current) {
+        const centerOffset = layout.x + layout.width / 2 - SCREEN_WIDTH / 2;
+        tabListRef.current.scrollTo({
+          x: Math.max(0, centerOffset),
+          animated: true,
+        });
+      }
+    }
+  };
+
   const handleDaySelect = (index: number) => {
     setSelectedDateIndex(index);
+    activeTabIndexRef.current = 0;
     setActiveTabIndex(0);
     setTimeout(() => {
       horizontalListRef.current?.scrollToIndex({ index: 0, animated: false });
-      tabListRef.current?.scrollToIndex({
-        index: 0,
-        animated: false,
-        viewPosition: 0.5,
-      });
+      tabListRef.current?.scrollTo({ x: 0, animated: false });
     }, 100);
   };
 
+
   const handleTabPress = (index: number) => {
     isTappingTab.current = true;
-    setActiveTabIndex(index);
-    horizontalListRef.current?.scrollToIndex({ index, animated: true });
-    tabListRef.current?.scrollToIndex({
-      index,
-      animated: true,
-      viewPosition: 0.5,
-    });
+    syncTabScroll(index);
+    try {
+      horizontalListRef.current?.scrollToOffset({
+        offset: index * SCREEN_WIDTH,
+        animated: true,
+      });
+    } catch (e) {
+      horizontalListRef.current?.scrollToIndex({ index, animated: true });
+    }
     setTimeout(() => {
       isTappingTab.current = false;
-    }, 500);
+    }, 600);
   };
+
 
   const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (isTappingTab.current) return;
     const offsetX = e.nativeEvent.contentOffset.x;
     const newIndex = Math.round(offsetX / SCREEN_WIDTH);
     if (
-      newIndex !== activeTabIndex &&
+      newIndex !== activeTabIndexRef.current &&
       newIndex >= 0 &&
       newIndex < groupedActs.length
     ) {
-      setActiveTabIndex(newIndex);
-      tabListRef.current?.scrollToIndex({
-        index: newIndex,
-        animated: true,
-        viewPosition: 0.5,
-      });
+      syncTabScroll(newIndex);
     }
   };
+
+  const handleMomentumScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    isTappingTab.current = false;
+    const offsetX = e.nativeEvent.contentOffset.x;
+    const newIndex = Math.round(offsetX / SCREEN_WIDTH);
+    if (
+      newIndex >= 0 &&
+      newIndex < groupedActs.length
+    ) {
+      syncTabScroll(newIndex);
+    }
+  };
+
 
   const isActLive = (act: Act) => {
     if (!act.date || !act.start_time || !act.end_time) return false;
@@ -325,20 +360,26 @@ export default function LineupScreen() {
 
   return (
     <PageContainer withPadding={false} withSafeArea={false}>
-      <View style={[styles.header, { paddingTop: top / 4, paddingBottom: 10 }]}>
+      <View style={[styles.header, { paddingTop: Math.max(top + 8, 16) }]}>
         <View style={styles.headerRow}>
-          <IconButton icon="chevron-left" onPress={() => router.back()} />
+          <IconButton
+            icon="chevron-left"
+            iconColor={theme.colors.onSurface}
+            size={24}
+            style={styles.backButton}
+            onPress={() => router.navigate(`/event/${id}` as any)}
+          />
           <View style={{ flex: 1 }}>
             <Text
               variant="titleLarge"
-              style={styles.headerTitle}
+              style={[styles.headerTitle, { color: theme.colors.onSurface }]}
               numberOfLines={1}
             >
               Line-up
             </Text>
             <Text
               variant="bodySmall"
-              style={styles.headerSubtitle}
+              style={[styles.headerSubtitle, { color: theme.colors.onSurface }]}
               numberOfLines={1}
             >
               {event.name}
@@ -346,10 +387,77 @@ export default function LineupScreen() {
           </View>
         </View>
 
-        {uniqueDates.length > 0 && (
+        {uniqueDates.length === 1 && (
+          <View style={styles.dayContainerSingle}>
+            <TouchableRipple
+              onPress={() => handleDaySelect(0)}
+              style={[
+                styles.dayItemSingle,
+                { borderBottomColor: theme.colors.primary, borderBottomWidth: 2 },
+              ]}
+              rippleColor="rgba(0,0,0,0.1)"
+            >
+              <Text variant="titleMedium" style={{ color: theme.colors.primary, fontWeight: "bold", textAlign: "center" }}>
+                {(() => {
+                  const d = new Date(uniqueDates[0]);
+                  return isNaN(d.getTime())
+                    ? uniqueDates[0]
+                    : d.toLocaleDateString(i18n.language || "nl-NL", {
+                        weekday: "short",
+                        month: "long",
+                        day: "numeric",
+                      });
+                })()}
+              </Text>
+            </TouchableRipple>
+          </View>
+        )}
+
+        {uniqueDates.length > 1 && uniqueDates.length <= 4 && (
+          <View style={styles.dayContainerRow}>
+            {uniqueDates.map((item, index) => (
+              <TouchableRipple
+                key={item}
+                onPress={() => handleDaySelect(index)}
+                style={[
+                  styles.dayItemFlex,
+                  selectedDateIndex === index && {
+                    borderBottomColor: theme.colors.primary,
+                    borderBottomWidth: 2,
+                  },
+                ]}
+                rippleColor="rgba(0,0,0,0.1)"
+              >
+                <Text
+                  variant="titleMedium"
+                  style={[
+                    selectedDateIndex === index
+                      ? { color: theme.colors.primary, fontWeight: "bold" }
+                      : { color: theme.colors.onSurface, opacity: 0.6 },
+                    { textAlign: "center" },
+                  ]}
+                >
+                  {(() => {
+                    const d = new Date(item);
+                    return isNaN(d.getTime())
+                      ? item
+                      : d.toLocaleDateString(i18n.language || "nl-NL", {
+                          weekday: "short",
+                          month: "long",
+                          day: "numeric",
+                        });
+                  })()}
+                </Text>
+              </TouchableRipple>
+            ))}
+          </View>
+        )}
+
+        {uniqueDates.length > 4 && (
           <View style={styles.dayContainer}>
             <FlatList
               data={uniqueDates}
+              extraData={selectedDateIndex}
               horizontal
               showsHorizontalScrollIndicator={false}
               keyExtractor={(item) => item}
@@ -378,7 +486,7 @@ export default function LineupScreen() {
                       const d = new Date(item);
                       return isNaN(d.getTime())
                         ? item
-                        : d.toLocaleDateString("en-US", {
+                        : d.toLocaleDateString(i18n.language || "nl-NL", {
                             weekday: "short",
                             month: "long",
                             day: "numeric",
@@ -393,45 +501,55 @@ export default function LineupScreen() {
 
         {groupedActs.length > 0 && (
           <View style={styles.tabContainer}>
-            <FlatList
+            <ScrollView
               ref={tabListRef}
-              data={groupedActs}
               horizontal
               showsHorizontalScrollIndicator={false}
-              keyExtractor={(item) => item.id}
               contentContainerStyle={styles.tabListContent}
-              renderItem={({ item, index }) => (
-                <TouchableRipple
+            >
+              {groupedActs.map((item, index) => (
+                <TouchableOpacity
+                  key={item.id}
+                  onLayout={(e) => {
+                    tabLayouts.current[index] = {
+                      x: e.nativeEvent.layout.x,
+                      width: e.nativeEvent.layout.width,
+                    };
+                  }}
                   onPress={() => handleTabPress(index)}
+                  activeOpacity={0.8}
                   style={[
                     styles.tabItem,
-                    activeTabIndex === index
-                      ? { backgroundColor: theme.colors.primary }
-                      : {
-                          backgroundColor: addAlpha(
-                            theme.colors.onSurface,
-                            0.05,
-                          ),
-                        },
+                    {
+                      backgroundColor:
+                        activeTabIndex === index
+                          ? theme.colors.primary
+                          : addAlpha(theme.colors.onSurface, 0.08),
+                    },
                   ]}
-                  rippleColor="rgba(255,255,255,0.2)"
                 >
                   <Text
                     variant="labelLarge"
                     style={[
                       styles.tabText,
-                      activeTabIndex === index
-                        ? { color: theme.colors.onPrimary }
-                        : { color: theme.colors.onSurface },
+                      {
+                        color:
+                          activeTabIndex === index
+                            ? "#ffffff"
+                            : theme.colors.onSurface,
+                        fontWeight: activeTabIndex === index ? "800" : "500",
+                      },
                     ]}
                   >
                     {item.name}
                   </Text>
-                </TouchableRipple>
-              )}
-            />
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
         )}
+
+
       </View>
 
       {groupedActs.length > 0 ? (
@@ -441,12 +559,15 @@ export default function LineupScreen() {
           data={groupedActs}
           horizontal
           pagingEnabled
+
           snapToInterval={SCREEN_WIDTH}
           snapToAlignment="start"
           decelerationRate="fast"
           showsHorizontalScrollIndicator={false}
           onScroll={handleScroll}
+          onMomentumScrollEnd={handleMomentumScrollEnd}
           scrollEventThrottle={16}
+
           keyExtractor={(item) => item.id}
           getItemLayout={(data, index) => ({
             length: SCREEN_WIDTH,
@@ -494,24 +615,52 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   header: {
+    paddingHorizontal: 16,
+    paddingBottom: 10,
     backgroundColor: "transparent",
     zIndex: 10,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
-  headerRow: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
-  headerTitle: { fontWeight: "900" },
-  headerSubtitle: { opacity: 0.6 },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  backButton: {
+    margin: 0,
+  },
+  headerTitle: { fontWeight: "800", fontSize: 18 },
+  headerSubtitle: { fontSize: 12, fontWeight: "500", marginTop: 1, opacity: 0.65 },
   dayContainer: {
     borderBottomWidth: 1,
     borderBottomColor: "rgba(0,0,0,0.05)",
     marginBottom: 8,
   },
+  dayContainerSingle: {
+    width: "100%",
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.05)",
+    marginBottom: 8,
+  },
+  dayItemSingle: {
+    width: "100%",
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  dayContainerRow: {
+    flexDirection: "row",
+    width: "100%",
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.05)",
+    marginBottom: 8,
+  },
+  dayItemFlex: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
   dayListContent: { paddingHorizontal: 16, gap: 24 },
   dayItem: { paddingVertical: 12, paddingHorizontal: 4 },
+
   tabContainer: { height: 48 },
   tabListContent: { paddingHorizontal: 16, gap: 8, alignItems: "center" },
   tabItem: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 24 },

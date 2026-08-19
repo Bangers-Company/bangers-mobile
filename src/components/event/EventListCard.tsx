@@ -1,16 +1,13 @@
-import { MapPin, Users } from "lucide-react-native";
+import { MapPin, Users, UserCheck, Calendar } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, View, StyleProp, ViewStyle } from "react-native";
-import { Image } from "expo-image";
-import {
-  Card,
-  Surface,
-  Text,
-  TouchableRipple,
-  useTheme,
-} from "react-native-paper";
+import { Image as ExpoImage } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
+import { Box, Text, Pressable } from "@gluestack-ui/themed";
+import { useAppTheme } from "../../context/ThemeProvider";
 import { Event } from "../../types/event";
-import { resolveMediaUrl } from "../../utils/format";
+import { resolveMediaUrl, formatDateRange } from "../../utils/format";
+import { addAlpha } from "../../utils/theme";
 
 interface EventListCardProps {
   event: Event;
@@ -25,206 +22,173 @@ export const EventListCard: React.FC<EventListCardProps> = ({
   style,
   variant = "default",
 }) => {
-  const theme = useTheme();
+  const theme = useAppTheme();
   const bannerUrl = resolveMediaUrl(event.banner?.url);
+  const dateFormatted = formatDateRange(event.start_date, event.end_date);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
+  const friendsCount = (event as any).friends_count ?? (event as any).friends_attending_count ?? 0;
+  const attendeesCount = event.attendee_count ?? 0;
 
   return (
-    <Card
+    <Box
       style={[
-        styles.card,
-        { backgroundColor: theme.colors.surface },
-        variant === "compact" && styles.compactCard,
+        styles.cardContainer,
+        {
+          backgroundColor: theme.colors.surface,
+          borderColor: addAlpha(theme.colors.onSurface, 0.12),
+        },
         style,
       ]}
-      elevation={variant === "compact" ? 1 : 2}
     >
-      <TouchableRipple
-        onPress={() => onPress?.(event)}
-        rippleColor="rgba(0,0,0,0.1)"
-        style={styles.ripple}
-      >
-        <View style={variant === "compact" ? styles.horizontalContainer : null}>
-          {/* Banner Image with Date Overlay */}
-          <View
-            style={[
-              styles.imageContainer,
-              variant === "compact" && styles.compactImageContainer,
-            ]}
-          >
+      <Pressable onPress={() => onPress?.(event)} style={styles.pressable}>
+        <View style={styles.cardInner}>
+          {/* Banner Image */}
+          <View style={styles.imageWrapper}>
             {bannerUrl ? (
-              <Image source={{ uri: bannerUrl }} style={styles.image} />
+              <ExpoImage
+                source={{ uri: bannerUrl }}
+                style={styles.image}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+              />
             ) : (
               <View
                 style={[
                   styles.image,
-                  { backgroundColor: theme.colors.surfaceVariant },
+                  { backgroundColor: addAlpha(theme.colors.primary, 0.25) },
                 ]}
               />
             )}
-            <View style={styles.overlay} />
-            <Surface
-              style={[
-                styles.dateBadge,
-                variant === "compact" && styles.compactDateBadge,
-              ]}
-              elevation={4}
-            >
-              <Text
-                variant={variant === "compact" ? "labelSmall" : "labelMedium"}
-                style={styles.dateText}
+            <LinearGradient
+              colors={["rgba(0,0,0,0.3)", "transparent", "rgba(0,0,0,0.7)"]}
+              style={styles.gradientOverlay}
+            />
+
+            {/* Date Range Badge */}
+            <View style={styles.topBadgeRow}>
+              <View
+                style={[
+                  styles.datePill,
+                  {
+                    backgroundColor: "rgba(18, 18, 20, 0.75)",
+                    borderColor: addAlpha("#ffffff", 0.2),
+                  },
+                ]}
               >
-                {formatDate(event.start_date)}
-              </Text>
-            </Surface>
+                <Calendar size={12} color="#ffffff" />
+                <Text style={styles.datePillText}>{dateFormatted}</Text>
+              </View>
+            </View>
           </View>
 
-          {/* Content Section */}
-          <View
-            style={[
-              styles.content,
-              variant === "compact" && styles.compactContent,
-            ]}
-          >
-            <Text
-              variant={variant === "compact" ? "titleMedium" : "titleLarge"}
-              style={[
-                styles.title,
-                variant === "compact" && styles.compactTitle,
-              ]}
-              numberOfLines={1}
-            >
+          {/* Content Body */}
+          <View style={styles.contentBody}>
+            <Text style={[styles.title, { color: theme.colors.onSurface }]} numberOfLines={1}>
               {event.name}
             </Text>
 
-            <View
-              style={[
-                styles.metaRow,
-                variant === "compact" && styles.compactMetaRow,
-              ]}
-            >
+            <View style={styles.metaRow}>
+              {event.location && (
+                <View style={styles.metaItem}>
+                  <MapPin size={13} color={theme.colors.primary} />
+                  <Text style={[styles.metaText, { color: addAlpha(theme.colors.onSurface, 0.7) }]} numberOfLines={1}>
+                    {event.location}
+                  </Text>
+                </View>
+              )}
+
               <View style={styles.metaItem}>
-                <MapPin size={14} color={theme.colors.primary} />
-                <Text
-                  variant="bodySmall"
-                  style={styles.metaText}
-                  numberOfLines={1}
-                >
-                  {event.location}
+                <Users size={13} color={theme.colors.primary} />
+                <Text style={[styles.metaText, { color: addAlpha(theme.colors.onSurface, 0.7) }]}>
+                  {attendeesCount} attending
                 </Text>
               </View>
 
               <View style={styles.metaItem}>
-                <Users size={14} color={theme.colors.primary} />
-                <Text variant="bodySmall" style={styles.metaText}>
-                  {variant === "compact"
-                    ? (event.attendee_count ?? 0)
-                    : `${event.attendee_count ?? 0} attending`}
+                <UserCheck size={13} color={theme.colors.primary} />
+                <Text style={[styles.metaText, { color: theme.colors.primary, fontWeight: "700" }]}>
+                  {friendsCount > 0 ? `${friendsCount} friends` : "0 friends"}
                 </Text>
               </View>
             </View>
           </View>
         </View>
-      </TouchableRipple>
-    </Card>
+      </Pressable>
+    </Box>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    borderRadius: 24,
-    marginVertical: 8,
+  cardContainer: {
+    borderRadius: 22,
+    borderWidth: 1,
+    marginVertical: 6,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  pressable: {
+    borderRadius: 22,
+  },
+  cardInner: {
     overflow: "hidden",
   },
-  ripple: {
-    borderRadius: 24,
-  },
-  imageContainer: {
+  imageWrapper: {
     width: "100%",
-    height: 180,
+    height: 160,
     position: "relative",
   },
   image: {
     width: "100%",
     height: "100%",
   },
-  overlay: {
+  gradientOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.2)",
   },
-  dateBadge: {
+  topBadgeRow: {
     position: "absolute",
-    top: 16,
-    right: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    backgroundColor: "rgba(0,0,0,0.6)",
+    top: 12,
+    right: 12,
   },
-  dateText: {
-    color: "white",
-    fontWeight: "bold",
+  datePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 100,
+    borderWidth: 1,
   },
-  content: {
-    padding: 20,
+  datePillText: {
+    color: "#ffffff",
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  contentBody: {
+    padding: 14,
+    gap: 6,
   },
   title: {
+    fontSize: 18,
     fontWeight: "900",
-    marginBottom: 8,
-    letterSpacing: -0.5,
+    letterSpacing: -0.4,
   },
   metaRow: {
     flexDirection: "row",
-    gap: 16,
     alignItems: "center",
+    flexWrap: "wrap",
+    gap: 12,
   },
   metaItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 4,
   },
   metaText: {
-    opacity: 0.7,
+    fontSize: 12,
     fontWeight: "600",
-  },
-  compactCard: {
-    borderRadius: 16,
-    marginVertical: 4,
-  },
-  compactImageContainer: {
-    height: 100,
-    width: 100,
-  },
-  compactDateBadge: {
-    top: 6,
-    right: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  compactContent: {
-    padding: 12,
-    flex: 1,
-    justifyContent: "center",
-  },
-  compactTitle: {
-    fontSize: 16,
-    marginBottom: 4,
-  },
-  horizontalContainer: {
-    flexDirection: "row",
-  },
-  compactMetaRow: {
-    flexDirection: "column",
-    gap: 4,
-    alignItems: "flex-start",
   },
 });

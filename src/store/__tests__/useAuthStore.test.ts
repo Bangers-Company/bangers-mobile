@@ -49,7 +49,7 @@ describe('useAuthStore', () => {
         expect(useAuthStore.getState().user?.friends_count).toBe(6);
     });
 
-    it('should handle logout and trigger callbacks', () => {
+    it('should handle logout and trigger callbacks', async () => {
         const callback = jest.fn();
         registerLogoutCallback(callback);
 
@@ -58,7 +58,7 @@ describe('useAuthStore', () => {
             user: { id: '1' } as any
         });
 
-        useAuthStore.getState().logout();
+        await useAuthStore.getState().logout();
 
         const state = useAuthStore.getState();
         expect(state.session).toBeNull();

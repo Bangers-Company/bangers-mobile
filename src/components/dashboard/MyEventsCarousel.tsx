@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View, useWindowDimensions } from "react-native";
-import { Text } from "react-native-paper";
+import { Text } from "@gluestack-ui/themed";
 import Animated, {
   useAnimatedScrollHandler,
   useSharedValue,
@@ -41,25 +41,28 @@ export const MyEventsCarousel: React.FC<MyEventsCarouselProps> = ({
 
   return (
     <View style={styles.container}>
-      <Text variant="headlineSmall" style={styles.title}>
+      <Text style={styles.title}>
         {title}
       </Text>
       <Animated.ScrollView
         horizontal
+        directionalLockEnabled={true}
+        nestedScrollEnabled={true}
         showsHorizontalScrollIndicator={false}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
         snapToOffsets={snapOffsets}
         snapToAlignment="center"
-        decelerationRate={0.9}
+        decelerationRate="fast"
         disableIntervalMomentum={true}
         pagingEnabled={false}
         contentContainerStyle={{
           paddingHorizontal: (windowWidth - snapToInterval) / 2,
+          paddingTop: 6,
+          paddingBottom: 18,
         }}
         style={{
-          // @ts-ignore - Web only
-          scrollSnapType: "x mandatory",
+          overflow: "visible",
         }}
       >
         {loading ? (
@@ -93,6 +96,7 @@ const styles = StyleSheet.create({
   title: {
     marginLeft: 16,
     marginBottom: 16,
+    fontSize: 22,
     fontWeight: "800",
     letterSpacing: -0.5,
   },
@@ -158,3 +162,4 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
+

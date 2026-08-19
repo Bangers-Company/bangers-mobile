@@ -1,12 +1,12 @@
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
-import { Calendar, Heart, MapPin, Users } from "lucide-react-native";
+import { Calendar, Heart, MapPin, Users, Share2, Sparkles, ChevronRight, Check, Plus, ChevronLeft } from "lucide-react-native";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import ContentLoader, { Rect } from "react-content-loader/native";
-import { Dimensions, Image, RefreshControl, StyleSheet, View, ScrollView } from "react-native";
+import { Dimensions, Image, RefreshControl, StyleSheet, View, ScrollView, Pressable as RNPressable, Platform } from "react-native";
+import { BlurView } from "expo-blur";
 import { Button, IconButton, Surface, Text, useTheme } from "react-native-paper";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { eventsApi } from "../../../src/api/events";
 import { Droplet } from "../../../src/components/ui/Droplet";
 import { useDashboardData } from "../../../src/hooks/useDashboardData";
 import { useAuthStore } from "../../../src/store/useAuthStore";
@@ -19,6 +19,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEvent, useAttendees } from "../../../src/hooks/useEvent";
 import { useAttendance } from "../../../src/hooks/useAttendance";
 import { Act } from "../../../src/types/act";
+import { Pressable } from "@gluestack-ui/themed";
 
 export default function EventDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -84,19 +85,17 @@ export default function EventDetailsScreen() {
   const toggleAttendance = async (status: "going" | "interested") => {
     if (!event || !currentUser) return;
 
-    if (status === "going") {
-      try {
-        setActionLoading(true);
-        if (event.user_status === "going") {
-          await removeAttendanceMutation.mutateAsync();
-        } else {
-          await updateAttendanceMutation.mutateAsync();
-        }
-      } catch (err) {
-        console.error("Failed to toggle attendance", err);
-      } finally {
-        setActionLoading(false);
+    try {
+      setActionLoading(true);
+      if (event.user_status === status) {
+        await removeAttendanceMutation.mutateAsync();
+      } else {
+        await updateAttendanceMutation.mutateAsync(status);
       }
+    } catch (err) {
+      console.error("Failed to toggle attendance", err);
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -110,7 +109,10 @@ export default function EventDetailsScreen() {
         </Text>
         <Button
           mode="contained"
-          onPress={() => router.back()}
+          onPress={() => {
+            if (router.canGoBack()) router.back();
+            else router.push("/(tabs)");
+          }}
           style={{ marginTop: 16 }}
         >
           Go Back
@@ -130,13 +132,11 @@ export default function EventDetailsScreen() {
           backgroundColor="rgba(128,128,128,0.2)"
           foregroundColor="rgba(128,128,128,0.4)"
         >
-          <Rect x="0" y="0" rx="0" ry="0" width={width} height="300" />
-          <Rect x="24" y="324" rx="8" ry="8" width={width * 0.6} height="32" />
-          <Rect x="24" y="368" rx="4" ry="4" width={width * 0.4} height="20" />
-          <Rect x="24" y="412" rx="4" ry="4" width={width - 48} height="16" />
-          <Rect x="24" y="436" rx="4" ry="4" width={width - 48} height="16" />
-          <Rect x="24" y="460" rx="4" ry="4" width={width * 0.8} height="16" />
-          <Rect x="24" y="520" rx="16" ry="16" width={width - 48} height="80" />
+          <Rect x="0" y="0" rx="0" ry="0" width={width} height="350" />
+          <Rect x="20" y="370" rx="16" ry="16" width={width - 40} height="40" />
+          <Rect x="20" y="425" rx="16" ry="16" width={width - 40} height="70" />
+          <Rect x="20" y="510" rx="16" ry="16" width={width - 40} height="70" />
+          <Rect x="20" y="595" rx="16" ry="16" width={width - 40} height="120" />
         </ContentLoader>
       </View>
     );
@@ -154,50 +154,19 @@ export default function EventDetailsScreen() {
   const previewActs = acts.slice(0, 4);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Droplet
         visible={showDroplet}
         onPress={scrollToTop}
         position="top"
         topOffset={insets.top + 8}
       />
-      <View style={[styles.eventHeader, { top: insets.top / 4 }]}>
-        <IconButton
-          icon="chevron-left"
-          size={24}
-          containerColor="rgba(0,0,0,0.5)"
-          iconColor="white"
-          onPress={() => router.back()}
-        />
-        <View style={styles.headerRight}>
-          <IconButton
-            icon={() => (
-              <Heart
-                size={20}
-                color={isInterested ? theme.colors.error : "white"}
-                fill={isInterested ? theme.colors.error : "transparent"}
-              />
-            )}
-            size={24}
-            containerColor="rgba(0,0,0,0.5)"
-            onPress={() => toggleAttendance("interested")}
-            loading={actionLoading}
-          />
-          <IconButton
-            icon="share-variant"
-            size={24}
-            containerColor="rgba(0,0,0,0.5)"
-            iconColor="white"
-            onPress={() => {}}
-          />
-        </View>
-      </View>
 
       <Animated.ScrollView
         ref={scrollRef as any}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: insets.bottom + 100 },
+          { paddingBottom: insets.bottom + 90 },
         ]}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
@@ -212,182 +181,327 @@ export default function EventDetailsScreen() {
           />
         }
       >
-        <View style={styles.bannerWrapper}>
+        {/* Parallax Hero Banner */}
+        <View style={styles.heroBannerContainer}>
           {bannerUrl ? (
-            <Image source={{ uri: bannerUrl }} style={styles.bannerImage} />
+            <Image source={{ uri: bannerUrl }} style={styles.heroBannerImage} />
           ) : (
             <View
               style={[
-                styles.bannerImage,
+                styles.heroBannerImage,
                 { backgroundColor: theme.colors.surfaceVariant },
               ]}
             />
           )}
-          <View style={styles.bannerOverlay} />
-        </View>
+          <View style={styles.heroGradientOverlay} />
 
-        <View style={styles.content}>
-          <View style={styles.titleSection}>
-            <Text variant="displaySmall" style={styles.eventName}>
+          {/* Hero Banner Floating Title */}
+          <View style={styles.heroTitleContainer}>
+            {event.genres && event.genres.length > 0 && (
+              <View style={[styles.heroTagBadge, { backgroundColor: addAlpha(theme.colors.primary, 0.25), borderColor: theme.colors.primary }]}>
+                <Sparkles size={12} color={theme.colors.primary} />
+                <Text style={[styles.heroTagText, { color: theme.colors.primary }]}>
+                  {event.genres[0].name}
+                </Text>
+              </View>
+            )}
+            <Text style={styles.heroEventTitle} numberOfLines={2}>
               {event.name}
             </Text>
           </View>
+        </View>
 
-          <View style={styles.metaSection}>
-            <View style={styles.metaRow}>
+        {/* Content Section Cards */}
+        <View style={styles.contentBody}>
+          {/* Glass Date & Location Card */}
+          <View
+            style={[
+              styles.infoCard,
+              {
+                backgroundColor: addAlpha(theme.colors.surface, 0.88),
+                borderColor: addAlpha(theme.colors.outline, 0.15),
+              },
+            ]}
+          >
+            <View style={styles.infoCardRow}>
               <View
                 style={[
                   styles.iconBox,
-                  { backgroundColor: addAlpha(theme.colors.primary, 0.1) },
+                  { backgroundColor: addAlpha(theme.colors.primary, 0.12) },
                 ]}
               >
-                <Calendar size={20} color={theme.colors.primary} />
+                <Calendar size={22} color={theme.colors.primary} />
               </View>
-              <View style={styles.metaTexts}>
-                <Text variant="bodyLarge" style={styles.metaTitle}>
+              <View style={styles.infoTexts}>
+                <Text style={[styles.infoTitle, { color: theme.colors.onSurface }]}>
                   {startEndMerged}
                 </Text>
-                <Text variant="bodyMedium" style={styles.metaSubtitle}>
-                  {t("profile.sections.dates")}
+                <Text style={[styles.infoSubtitle, { color: addAlpha(theme.colors.onSurface, 0.6) }]}>
+                  {t("profile.sections.date") || "Festival Dates"}
                 </Text>
               </View>
             </View>
 
-            <View style={styles.metaRow}>
+            <View style={[styles.divider, { backgroundColor: addAlpha(theme.colors.outline, 0.1) }]} />
+
+            <View style={styles.infoCardRow}>
               <View
                 style={[
                   styles.iconBox,
-                  { backgroundColor: addAlpha(theme.colors.primary, 0.1) },
+                  { backgroundColor: addAlpha(theme.colors.primary, 0.12) },
                 ]}
               >
-                <MapPin size={20} color={theme.colors.primary} />
+                <MapPin size={22} color={theme.colors.primary} />
               </View>
-              <View style={styles.metaTexts}>
-                <Text variant="bodyLarge" style={styles.metaTitle}>
+              <View style={styles.infoTexts}>
+                <Text style={[styles.infoTitle, { color: theme.colors.onSurface }]}>
                   {event.location}
                 </Text>
-                <Text variant="bodyMedium" style={styles.metaSubtitle}>
-                  {t("profile.sections.location")}
+                <Text style={[styles.infoSubtitle, { color: addAlpha(theme.colors.onSurface, 0.6) }]}>
+                  {t("profile.sections.location") || "Location"}
                 </Text>
               </View>
-            </View>
-
-            <View style={styles.metaRow}>
-              <View
-                style={[
-                  styles.iconBox,
-                  { backgroundColor: addAlpha(theme.colors.primary, 0.1) },
-                ]}
-              >
-                <Users size={20} color={theme.colors.primary} />
-              </View>
-              <View style={styles.metaTexts}>
-                <AnimatedCounter
-                  value={event.attendee_count ?? attendees.length}
-                  variant="bodyLarge"
-                  textStyle={styles.metaTitle}
-                />
-                <Text variant="bodyMedium" style={styles.metaSubtitle}>
-                  {t("common.going")}
-                </Text>
-              </View>
-
-              <Button
-                mode={isGoing ? "outlined" : "contained"}
-                loading={actionLoading}
-                onPress={() => toggleAttendance("going")}
-                labelStyle={{ fontWeight: "800" }}
-                style={styles.attendButton}
-              >
-                {isGoing ? t("common.going") : t("common.attend")}
-              </Button>
             </View>
           </View>
 
+          {/* Social Attendance Card */}
+          <View
+            style={[
+              styles.infoCard,
+              {
+                backgroundColor: addAlpha(theme.colors.surface, 0.88),
+                borderColor: addAlpha(theme.colors.outline, 0.15),
+              },
+            ]}
+          >
+            <View style={styles.socialCardRow}>
+              <View
+                style={[
+                  styles.iconBox,
+                  { backgroundColor: addAlpha(theme.colors.primary, 0.12) },
+                ]}
+              >
+                <Users size={22} color={theme.colors.primary} />
+              </View>
+              <View style={styles.infoTexts}>
+                <View style={styles.attendeeCountRow}>
+                  <AnimatedCounter
+                    value={event.attendee_count ?? attendees.length}
+                    variant="titleLarge"
+                    textStyle={[styles.counterText, { color: theme.colors.onSurface }]}
+                  />
+                  <Text style={[styles.counterLabel, { color: addAlpha(theme.colors.onSurface, 0.6) }]}>
+                    {t("common.going") || "Attending"}
+                  </Text>
+                </View>
+                <Text style={[styles.infoSubtitle, { color: addAlpha(theme.colors.onSurface, 0.5) }]}>
+                  {isGoing ? "You are attending this festival" : "Join party squad"}
+                </Text>
+              </View>
+
+              <Pressable
+                onPress={() => toggleAttendance("going")}
+                disabled={actionLoading}
+                style={[
+                  styles.attendActionButton,
+                  isGoing
+                    ? {
+                        backgroundColor: addAlpha(theme.colors.primary, 0.16),
+                        borderColor: theme.colors.primary,
+                      }
+                    : {
+                        backgroundColor: theme.colors.primary,
+                        borderColor: theme.colors.primary,
+                      },
+                ]}
+              >
+                {isGoing ? (
+                  <Check size={18} color={theme.colors.primary} />
+                ) : (
+                  <Plus size={18} color="#ffffff" />
+                )}
+                <Text
+                  style={[
+                    styles.attendActionText,
+                    { color: isGoing ? theme.colors.primary : "#ffffff" },
+                  ]}
+                >
+                  {isGoing ? t("common.going") : t("common.attend")}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+
+          {/* Genres Section */}
           {event.genres && event.genres.length > 0 && (
-            <View style={styles.genresSection}>
+            <View style={styles.genresContainer}>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.genresScroll}
               >
                 {event.genres.map((genre) => (
-                  <Surface
+                  <View
                     key={genre.id}
                     style={[
-                      styles.genreBadgeDetail,
-                      { backgroundColor: addAlpha(theme.colors.primary, 0.1) },
+                      styles.genrePill,
+                      {
+                        backgroundColor: addAlpha(theme.colors.surface, 0.8),
+                        borderColor: addAlpha(theme.colors.primary, 0.3),
+                      },
                     ]}
-                    elevation={0}
                   >
-                    <Text
-                      variant="labelLarge"
-                      style={{ color: theme.colors.primary, fontWeight: "bold" }}
-                    >
+                    <Text style={[styles.genreText, { color: theme.colors.primary }]}>
                       {genre.name}
                     </Text>
-                  </Surface>
+                  </View>
                 ))}
               </ScrollView>
             </View>
           )}
 
+          {/* About Section */}
           {event.description && (
-            <View style={styles.descriptionSection}>
-              <Text variant="titleMedium" style={styles.sectionTitle}>
-                {t("profile.sections.about")}
+            <View
+              style={[
+                styles.infoCard,
+                {
+                  backgroundColor: addAlpha(theme.colors.surface, 0.88),
+                  borderColor: addAlpha(theme.colors.outline, 0.15),
+                },
+              ]}
+            >
+              <Text style={[styles.sectionHeading, { color: theme.colors.onSurface }]}>
+                {t("profile.sections.about") || "About Event"}
               </Text>
-              <Text variant="bodyMedium" style={styles.descriptionText}>
+              <Text style={[styles.descriptionBody, { color: addAlpha(theme.colors.onSurface, 0.8) }]}>
                 {event.description}
               </Text>
             </View>
           )}
 
-          <View style={styles.lineupSection}>
-            <Text variant="titleMedium" style={styles.sectionTitle}>
-              {t("profile.sections.lineup")}
-            </Text>
+          {/* Lineup Highlights Section */}
+          <View
+            style={[
+              styles.infoCard,
+              {
+                backgroundColor: addAlpha(theme.colors.surface, 0.88),
+                borderColor: addAlpha(theme.colors.outline, 0.15),
+              },
+            ]}
+          >
+            <View style={styles.sectionHeaderRow}>
+              <Text style={[styles.sectionHeading, { color: theme.colors.onSurface }]}>
+                {t("profile.sections.lineup") || "Lineup Highlights"}
+              </Text>
+              <Pressable
+                onPress={() => router.navigate(`/event/${id}/lineup` as any)}
+                style={styles.seeAllBtn}
+              >
+                <Text style={[styles.seeAllText, { color: theme.colors.primary }]}>
+                  {t("profile.sections.viewLineup") || "View All"}
+                </Text>
+                <ChevronRight size={16} color={theme.colors.primary} />
+              </Pressable>
+            </View>
+
             {acts.length > 0 ? (
-              <>
-                <View style={styles.actGrid}>
-                  {previewActs.map((act: Act) => (
-                    <Surface key={act.id} style={styles.actCard} elevation={1}>
-                      <Text
-                        variant="bodyLarge"
-                        style={styles.actName}
-                        numberOfLines={2}
-                      >
-                        {act.artists && act.artists.length > 0
-                          ? act.artists[0].name
-                          : act.name}
-                      </Text>
-                    </Surface>
-                  ))}
-                </View>
-                <Button
-                  mode="text"
-                  onPress={() => router.push(`/event/${id}/lineup` as any)}
-                  style={styles.viewFullButton}
-                >
-                  {t("profile.sections.viewLineup")}
-                </Button>
-              </>
+              <View style={styles.actGrid}>
+                {previewActs.map((act: Act) => (
+                  <View
+                    key={act.id}
+                    style={[
+                      styles.actTile,
+                      {
+                        backgroundColor: addAlpha(theme.colors.surfaceVariant, 0.4),
+                        borderColor: addAlpha(theme.colors.outline, 0.12),
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[styles.actTileTitle, { color: theme.colors.onSurface }]}
+                      numberOfLines={2}
+                    >
+                      {act.artists && act.artists.length > 0
+                        ? act.artists[0].name
+                        : act.name}
+                    </Text>
+                  </View>
+                ))}
+              </View>
             ) : (
-              <Surface style={styles.noLineup} elevation={0}>
-                <Text variant="bodyMedium" style={{ opacity: 0.6 }}>
+              <View style={styles.noLineupBox}>
+                <Text style={{ color: addAlpha(theme.colors.onSurface, 0.6), fontSize: 13 }}>
                   Line-up hasn&apos;t been announced yet.
                 </Text>
-                <Button
-                  mode="text"
-                  onPress={() => router.push(`/event/${id}/lineup` as any)}
-                >
-                  Check anyway
-                </Button>
-              </Surface>
+              </View>
             )}
           </View>
         </View>
       </Animated.ScrollView>
+
+      {/* Floating Glass Header Bar */}
+      <View
+        pointerEvents="box-none"
+        style={[styles.floatingHeader, { top: Math.max(insets.top + 8, 16), zIndex: 9999, elevation: 20 }]}
+      >
+        <RNPressable
+          hitSlop={10}
+          style={({ pressed }) => [
+            styles.headerIconBtn,
+            {
+              backgroundColor: addAlpha(theme.colors.surface, 0.85),
+              borderColor: addAlpha(theme.colors.outline, 0.2),
+              opacity: pressed ? 0.7 : 1,
+            },
+          ]}
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.push("/(tabs)");
+            }
+          }}
+        >
+          <ChevronLeft size={22} color={theme.colors.onSurface} />
+        </RNPressable>
+
+        <View style={styles.headerRightActions} pointerEvents="box-none">
+          <RNPressable
+            hitSlop={10}
+            style={({ pressed }) => [
+              styles.headerIconBtn,
+              {
+                backgroundColor: addAlpha(theme.colors.surface, 0.85),
+                borderColor: addAlpha(theme.colors.outline, 0.2),
+                opacity: pressed ? 0.7 : 1,
+              },
+            ]}
+            onPress={() => toggleAttendance("interested")}
+          >
+            <Heart
+              size={20}
+              color={isInterested ? theme.colors.error : theme.colors.onSurface}
+              fill={isInterested ? theme.colors.error : "transparent"}
+            />
+          </RNPressable>
+
+          <RNPressable
+            hitSlop={10}
+            style={({ pressed }) => [
+              styles.headerIconBtn,
+              {
+                backgroundColor: addAlpha(theme.colors.surface, 0.85),
+                borderColor: addAlpha(theme.colors.outline, 0.2),
+                opacity: pressed ? 0.7 : 1,
+              },
+            ]}
+            onPress={() => {}}
+          >
+            <Share2 size={19} color={theme.colors.onSurface} />
+          </RNPressable>
+        </View>
+      </View>
     </View>
   );
 }
@@ -399,131 +513,221 @@ const styles = StyleSheet.create({
   center: {
     justifyContent: "center",
     alignItems: "center",
+    padding: 24,
   },
-  eventHeader: {
+  floatingHeader: {
     position: "absolute",
     left: 16,
     right: 16,
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
     zIndex: 100,
   },
-  headerRight: {
+  headerRightActions: {
     flexDirection: "row",
-    gap: 8,
+    gap: 10,
   },
-  bannerWrapper: {
+  headerIconBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    borderWidth: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  scrollContent: {
+    paddingTop: 0,
+  },
+  heroBannerContainer: {
     width: "100%",
-    height: 350,
+    height: 380,
     position: "relative",
   },
-  bannerImage: {
+  heroBannerImage: {
     ...StyleSheet.absoluteFillObject,
   },
-  bannerOverlay: {
+  heroGradientOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.3)",
+    backgroundColor: "rgba(0,0,0,0.45)",
   },
-  content: {
-    padding: 24,
-    marginTop: -40,
-    backgroundColor: "transparent",
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
+  heroTitleContainer: {
+    position: "absolute",
+    bottom: 24,
+    left: 20,
+    right: 20,
   },
-  titleSection: {
-    paddingBottom: 24,
+  heroTagBadge: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 10,
   },
-  eventName: {
+  heroTagText: {
+    fontSize: 11,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+  },
+  heroEventTitle: {
+    fontSize: 28,
     fontWeight: "900",
-    letterSpacing: -1,
-    lineHeight: 40,
-    textShadowColor: "rgba(0, 0, 0, 0.5)",
+    color: "#ffffff",
+    letterSpacing: -0.5,
+    lineHeight: 34,
+    textShadowColor: "rgba(0, 0, 0, 0.75)",
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 8,
   },
-  metaSection: {
-    gap: 16,
-    marginBottom: 32,
+  contentBody: {
+    paddingHorizontal: 16,
+    marginTop: -20,
+    gap: 14,
   },
-  metaRow: {
+  infoCard: {
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+    gap: 12,
+  },
+  infoCardRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 16,
+    gap: 14,
   },
   iconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
   },
-  metaTexts: {
+  infoTexts: {
     flex: 1,
   },
-  metaTitle: {
-    fontWeight: "bold",
+  infoTitle: {
+    fontWeight: "800",
+    fontSize: 15,
   },
-  metaSubtitle: {
-    opacity: 0.6,
+  infoSubtitle: {
+    fontSize: 12,
+    fontWeight: "500",
+    marginTop: 1,
   },
-  attendButton: {
-    borderRadius: 12,
+  divider: {
+    height: 1,
+    width: "100%",
   },
-  descriptionSection: {
-    marginBottom: 32,
-  },
-  sectionTitle: {
-    fontWeight: "bold",
-    marginBottom: 16,
-    opacity: 0.8,
-  },
-  descriptionText: {
-    lineHeight: 22,
-    opacity: 0.8,
-  },
-  lineupSection: {
-    marginBottom: 32,
-  },
-  actGrid: {
+  socialCardRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 16,
-  },
-  actCard: {
-    flexBasis: "47%",
-    padding: 16,
-    borderRadius: 16,
-    justifyContent: "center",
     alignItems: "center",
-    minHeight: 80,
-    backgroundColor: "rgba(255,255,255,0.05)",
+    gap: 12,
   },
-  actName: {
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  viewFullButton: {
-    marginTop: 16,
-  },
-  noLineup: {
-    padding: 24,
-    borderRadius: 16,
+  attendeeCountRow: {
+    flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.1)",
+    gap: 6,
   },
-  genresSection: {
-    marginBottom: 24,
+  counterText: {
+    fontWeight: "900",
+    fontSize: 17,
+  },
+  counterLabel: {
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  attendActionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  attendActionText: {
+    fontWeight: "800",
+    fontSize: 12,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  genresContainer: {
+    marginVertical: 2,
   },
   genresScroll: {
     gap: 8,
   },
-  genreBadgeDetail: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+  genrePill: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     borderRadius: 12,
+    borderWidth: 1,
   },
-  scrollContent: {
-    paddingTop: 16,
+  genreText: {
+    fontWeight: "800",
+    fontSize: 11,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  sectionHeading: {
+    fontWeight: "800",
+    fontSize: 16,
+  },
+  descriptionBody: {
+    fontSize: 13.5,
+    lineHeight: 21,
+  },
+  sectionHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  seeAllBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+  },
+  seeAllText: {
+    fontWeight: "800",
+    fontSize: 12,
+  },
+  actGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginTop: 4,
+  },
+  actTile: {
+    flexBasis: "48%",
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    minHeight: 70,
+  },
+  actTileTitle: {
+    fontWeight: "800",
+    fontSize: 13,
+    textAlign: "center",
+  },
+  noLineupBox: {
+    paddingVertical: 12,
+    alignItems: "center",
   },
 });

@@ -1,6 +1,5 @@
 import { Tabs } from "expo-router";
 import React from "react";
-import { StyleSheet } from "react-native";
 import { BottomNav } from "../../src/components/navigation/BottomNav";
 import { ScrollResetHandler } from "../../src/components/navigation/ScrollResetHandler";
 import { TopBar } from "../../src/components/navigation/TopBar";
@@ -17,7 +16,8 @@ export default function TabLayout() {
         screenOptions={{
           headerShown: false,
           tabBarStyle: { display: "none" },
-          animation: "shift",
+          animation: "none",
+          freezeOnBlur: true,
         }}
       >
         <Tabs.Screen name="index" options={{ title: t("navigation.home") }} />
@@ -28,4 +28,3 @@ export default function TabLayout() {
     </PageContainer>
   );
 }
-

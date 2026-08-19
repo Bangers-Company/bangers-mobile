@@ -44,6 +44,11 @@ export const unstable_settings = {
   initialRouteName: "(auth)",
 };
 
+function PushNotificationInitializer() {
+  usePushNotifications();
+  return null;
+}
+
 export default function RootLayout() {
   const session = useAuthStore((state) => state.session);
   const accessToken = session?.accessToken;
@@ -256,10 +261,15 @@ export default function RootLayout() {
                 screenOptions={{
                   animation: "slide_from_right",
                   headerShown: false,
+                  contentStyle: { backgroundColor: "#0f0f14" },
                 }}
               >
                 <Stack.Screen name="(auth)" options={{ animation: "fade" }} />
                 <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
+                <Stack.Screen
+                  name="event/[id]"
+                  options={{ animation: "slide_from_right" }}
+                />
                 <Stack.Screen
                   name="modal"
                   options={{ presentation: "modal", title: "Modal" }}

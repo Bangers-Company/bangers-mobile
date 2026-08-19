@@ -17,6 +17,7 @@
         "backgroundColor": "#111115",
         "foregroundImage": "./assets/images/adaptive-icon.png"
       },
+      "googleServicesFile": "./google-services.json",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.Bangers.BangersMobile",

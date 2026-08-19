@@ -19,9 +19,12 @@ interface AuthSession {
 interface AuthState {
   session: AuthSession | null;
   user: User | null;
+  isJustRegistered: boolean;
+  setIsJustRegistered: (val: boolean) => void;
   setAuth: (session: AuthSession, user: User) => void;
   setUser: (user: Partial<User>) => void;
   updateSession: (session: AuthSession) => void;
+  updateAccessToken: (token: string) => void;
   updateFriendsCount: (delta: number) => void;
   logout: () => void;
 }
@@ -66,6 +69,8 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       session: null,
       user: null,
+      isJustRegistered: false,
+      setIsJustRegistered: (isJustRegistered) => set({ isJustRegistered }),
       setAuth: (session, user) => set({ session, user }),
       setUser: (user) =>
         set((state) => ({
@@ -75,6 +80,13 @@ export const useAuthStore = create<AuthState>()(
         set((state) => ({
           session: state.session ? { ...state.session, ...session } : session,
         })),
+      updateAccessToken: (accessToken) =>
+        set((state) => ({
+          session: state.session
+            ? { ...state.session, accessToken }
+            : { accessToken, refreshToken: "" },
+        })),
+
       updateFriendsCount: (delta) =>
         set((state) => {
           if (!state.user) return state;
@@ -85,9 +97,14 @@ export const useAuthStore = create<AuthState>()(
             },
           };
         }),
-      logout: () => {
-        set({ session: null, user: null });
-        logoutCallbacks.forEach((cb) => cb());
+      logout: async () => {
+        try {
+          await Promise.allSettled(logoutCallbacks.map((cb) => Promise.resolve(cb())));
+        } catch {
+          // Ignore errors in logout callbacks
+        } finally {
+          set({ session: null, user: null });
+        }
       },
     }),
     {

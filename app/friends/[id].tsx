@@ -4,6 +4,7 @@ import React, { useState, useRef, useMemo } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, View, KeyboardAvoidingView, Platform, Animated } from "react-native";
 import {
     Avatar,
+    Surface,
     Text,
     TouchableRipple,
     useTheme,
@@ -12,7 +13,10 @@ import {
 } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { User } from "../../src/types/user";
-import { resolveMediaUrl } from "../../src/utils/format";
+import { resolveMediaUrl, getUserDisplayName } from "../../src/utils/format";
+import { addAlpha } from "../../src/utils/theme";
+
+
 import { PageContainer } from "../../src/components/PageContainer";
 import { useFriends } from "../../src/hooks/useFriends";
 
@@ -88,43 +92,59 @@ export default function FriendsListScreen() {
     }, [friends, searchQuery]);
 
     const renderFriend = ({ item }: { item: User }) => {
+        const isAdmin = item.roles?.some((r: any) =>
+            typeof r === "string" ? r === "admin" : r?.name === "admin",
+        );
+        const isModerator =
+            !isAdmin &&
+            item.roles?.some((r: any) =>
+                typeof r === "string" ? r === "moderator" : r?.name === "moderator",
+            );
+
         return (
-            <TouchableRipple
-                onPress={() => router.push(`/user/${item.id}` as any)}
-                style={styles.friendCardRipple}
+            <Surface
+                style={[styles.friendCardSurface, { backgroundColor: theme.colors.surface }]}
+                elevation={1}
             >
-                <View style={styles.friendCard}>
-                    {item.profile_media_url ? (
-                        <Avatar.Image
-                            size={48}
-                            source={{ uri: resolveMediaUrl(item.profile_media_url) || undefined }}
-                        />
-                    ) : (
-                        <Avatar.Text
-                            size={48}
-                            label={item.first_name?.charAt(0) || "U"}
-                            style={{ backgroundColor: theme.colors.primary }}
-                        />
-                    )}
-                    <View style={styles.friendInfo}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                            <Text variant="titleMedium" style={styles.friendName}>
-                                {item.first_name || "Unknown"} {item.last_name || ""}
-                            </Text>
-                            {item.roles?.some((r: any) => (typeof r === 'string' ? r === 'admin' : r?.name === 'admin')) && (
-                                <ShieldAlert size={16} color={theme.colors.error} />
+                <TouchableRipple
+                    onPress={() => router.push(`/user/${item.id}` as any)}
+                    style={styles.friendCardRipple}
+                    rippleColor="rgba(0,0,0,0.05)"
+                >
+                    <View style={styles.friendCardContent}>
+                        {resolveMediaUrl(item.profile_media_url) ? (
+                            <Avatar.Image
+                                size={48}
+                                source={{
+                                    uri: resolveMediaUrl(item.profile_media_url)!,
+                                }}
+                            />
+                        ) : (
+                            <Avatar.Text
+                                size={48}
+                                label={getUserDisplayName(item).charAt(0).toUpperCase()}
+                                style={{ backgroundColor: theme.colors.primary }}
+                                color="#ffffff"
+                            />
+                        )}
+
+                        <View style={styles.friendInfo}>
+                            <View style={styles.nameRow}>
+                                <Text variant="titleMedium" style={[styles.friendName, { color: theme.colors.onSurface }]}>
+                                    {getUserDisplayName(item)}
+                                </Text>
+                                {isAdmin && <ShieldAlert size={16} color={theme.colors.error} />}
+                                {isModerator && <ShieldCheck size={16} color={theme.colors.primary} />}
+                            </View>
+                            {item.username && (
+                                <Text variant="bodySmall" style={[styles.friendUsername, { color: theme.colors.onSurface, opacity: 0.6 }]}>
+                                    @{item.username}
+                                </Text>
                             )}
-                            {!item.roles?.some((r: any) => (typeof r === 'string' ? r === 'admin' : r?.name === 'admin')) &&
-                                item.roles?.some((r: any) => (typeof r === 'string' ? r === 'moderator' : r?.name === 'moderator')) && (
-                                    <ShieldCheck size={16} color={theme.colors.primary} />
-                                )}
                         </View>
-                        <Text variant="bodyMedium" style={{ opacity: 0.6 }}>
-                            @{item.username}
-                        </Text>
                     </View>
-                </View>
-            </TouchableRipple>
+                </TouchableRipple>
+            </Surface>
         );
     };
 
@@ -133,15 +153,16 @@ export default function FriendsListScreen() {
             style={{ flex: 1 }}
             behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
-            <PageContainer withPadding={false} style={styles.container}>
+            <PageContainer withPadding={false} withSafeArea={false} style={styles.container}>
                 <View style={[styles.header, { paddingTop: insets.top }]}>
                     <View style={styles.headerTop}>
                         <IconButton
                             icon="arrow-left"
+                            iconColor={theme.colors.onSurface}
                             onPress={() => router.back()}
                             style={styles.backButton}
                         />
-                        <Text variant="titleLarge" style={styles.title}>
+                        <Text variant="titleLarge" style={[styles.title, { color: theme.colors.onSurface }]}>
                             Friends
                         </Text>
                     </View>
@@ -183,12 +204,13 @@ export default function FriendsListScreen() {
                                 style={[
                                     styles.searchBar,
                                     {
-                                        backgroundColor: isFocused ? theme.colors.surface : "rgba(0,0,0,0.04)",
-                                        borderColor: isFocused ? theme.colors.primary : "transparent",
+                                        backgroundColor: theme.colors.surface,
+                                        borderColor: isFocused ? theme.colors.primary : addAlpha(theme.colors.onSurface, 0.15),
                                         borderWidth: 1,
                                     }
                                 ]}
                                 inputStyle={styles.searchInput}
+
                                 elevation={0}
                             />
                         </Animated.View>
@@ -219,9 +241,13 @@ const styles = StyleSheet.create({
     backButton: { marginRight: 8 },
     title: { fontWeight: "bold" },
     center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 24 },
-    listContainer: { paddingVertical: 16 },
-    friendCardRipple: { paddingHorizontal: 16, paddingVertical: 12 },
-    friendCard: { flexDirection: "row", alignItems: "center", gap: 16 },
+    listContainer: { padding: 16 },
+    friendCardSurface: { borderRadius: 16, overflow: "hidden", marginBottom: 16 },
+    friendCardRipple: { padding: 16 },
+    friendCardContent: { flexDirection: "row", alignItems: "center", gap: 16 },
     friendInfo: { flex: 1 },
-    friendName: { fontWeight: "bold" },
+    nameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+    friendName: { fontWeight: "800" },
+    friendUsername: { opacity: 0.6 },
 });
+

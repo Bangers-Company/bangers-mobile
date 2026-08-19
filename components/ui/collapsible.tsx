@@ -1,6 +1,6 @@
 import { PropsWithChildren, useState } from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
-import { Text } from "react-native-paper";
+import { Text } from "@gluestack-ui/themed";
 import { ChevronRight } from "lucide-react-native";
 import Animated, {
   useAnimatedStyle,
@@ -30,7 +30,7 @@ export function Collapsible({
           <ChevronRight size={18} color="#a60df2" />
         </Animated.View>
 
-        <Text variant="titleMedium" style={styles.title}>
+        <Text style={styles.title}>
           {title}
         </Text>
       </TouchableOpacity>
@@ -51,9 +51,11 @@ const styles = StyleSheet.create({
   },
   title: {
     fontWeight: "600",
+    fontSize: 16,
   },
   content: {
     marginTop: 6,
     marginLeft: 30,
   },
 });
+

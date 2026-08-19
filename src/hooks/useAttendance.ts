@@ -5,8 +5,9 @@ export const useAttendance = (eventId: string) => {
   const queryClient = useQueryClient();
 
   const updateAttendance = useMutation({
-    mutationFn: () => eventsApi.updateAttendance(eventId, "going"),
-    onMutate: async () => {
+    mutationFn: (status: "going" | "interested" = "going") =>
+      eventsApi.updateAttendance(eventId, status),
+    onMutate: async (status = "going") => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: ["event", eventId] });
       await queryClient.cancelQueries({ queryKey: ["profile"] });
@@ -17,10 +18,14 @@ export const useAttendance = (eventId: string) => {
 
       // Optimistically update event
       if (previousEvent) {
+        const wasGoing = previousEvent.user_status === "going";
+        const isGoing = status === "going";
+        const countDiff = isGoing && !wasGoing ? 1 : !isGoing && wasGoing ? -1 : 0;
+
         queryClient.setQueryData(["event", eventId], {
           ...previousEvent,
-          user_status: "going",
-          attendee_count: (previousEvent.attendee_count || 0) + 1,
+          user_status: status,
+          attendee_count: Math.max(0, (previousEvent.attendee_count || 0) + countDiff),
         });
       }
 
@@ -30,7 +35,7 @@ export const useAttendance = (eventId: string) => {
           ...previousProfile,
           stats: {
             ...previousProfile.stats,
-            upcoming_count: (previousProfile.stats?.upcoming_count || 0) + 1,
+            upcoming_count: (previousProfile.stats?.upcoming_count || 0) + (status === "going" ? 1 : 0),
           },
           attendingEvents: [...(previousProfile.attendingEvents || []), previousEvent],
         });
@@ -64,10 +69,11 @@ export const useAttendance = (eventId: string) => {
       const previousProfile = queryClient.getQueryData<any>(["profile"]);
 
       if (previousEvent) {
+        const wasGoing = previousEvent.user_status === "going";
         queryClient.setQueryData(["event", eventId], {
           ...previousEvent,
           user_status: null,
-          attendee_count: Math.max(0, (previousEvent.attendee_count || 0) - 1),
+          attendee_count: wasGoing ? Math.max(0, (previousEvent.attendee_count || 0) - 1) : previousEvent.attendee_count,
         });
       }
 

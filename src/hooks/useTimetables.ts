@@ -27,19 +27,21 @@ export const useOfficialTimetable = (eventId: string) => {
     queryFn: async () => {
       try {
         const res = await timetablesApi.getOfficial(eventId);
-        if (res.data) {
-          await timetablesRepository.upsert(res.data);
+        if (res?.data) {
+          timetablesRepository.upsert(res.data).catch(err => console.warn('Failed background sqlite cache:', err));
         }
-        return res.data;
-      } catch (err) {
+        return res?.data || null;
+      } catch (err: any) {
         console.warn(`Failed to fetch official timetable for ${eventId}, trying local DB:`, err);
-        const localTimetables = await timetablesRepository.getByEventId(eventId);
+        const localTimetables = await timetablesRepository.getByEventId(eventId).catch(() => []);
         const official = localTimetables.find(t => t.is_official);
         if (official) return official;
-        throw err;
+        return null;
       }
     },
     enabled: !!eventId,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 };
 
@@ -52,6 +54,7 @@ export const useGroupTimetables = (groupId: string) => {
       return Array.isArray(list) ? list[0] : list;
     },
     enabled: !!groupId,
+    staleTime: 5 * 60 * 1000,
   });
 };
 
@@ -62,19 +65,22 @@ export const useGroupTimetable = (groupId: string | null, timetableId: string | 
       if (!groupId || !timetableId) return null;
       try {
         const res = await timetablesApi.getGroupTimetable(groupId, timetableId);
-        if (res.data) {
-          // Cache locally for offline fallback (passes group_id through the API response)
-          await groupTimetablesRepository.upsert({ ...res.data, group_id: groupId });
+        if (res?.data) {
+          // Cache locally in background for offline fallback without blocking UI
+          groupTimetablesRepository.upsert({ ...res.data, group_id: groupId })
+            .catch(err => console.warn('Failed background sqlite cache:', err));
         }
-        return res.data;
+        return res?.data || null;
       } catch (err) {
         console.warn(`Failed to fetch group timetable ${timetableId}, trying local DB:`, err);
-        const localTimetable = await groupTimetablesRepository.getById(timetableId);
+        const localTimetable = await groupTimetablesRepository.getById(timetableId).catch(() => null);
         if (localTimetable) return localTimetable;
-        throw err;
+        return null;
       }
     },
     enabled: !!groupId && !!timetableId,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 };
 
@@ -84,24 +90,26 @@ export const useGroups = (eventId?: string) => {
     queryFn: async () => {
       try {
         const res = await timetablesApi.getGroups(eventId);
-        let data = res.data;
+        let data = res?.data;
         if (Array.isArray(data)) {
           // Filter data to only include groups for this event if eventId is provided
           if (eventId) {
             data = data.filter((g: any) => String(g.event_id) === String(eventId));
           }
-          for (const group of data) {
-            await groupsRepository.upsert(group);
-          }
+          // Non-blocking background cache upsert
+          Promise.all(data.map((g: any) => groupsRepository.upsert(g)))
+            .catch(err => console.warn('Failed background sqlite cache:', err));
         }
-        return data;
+        return data || [];
       } catch (err) {
         console.warn('Failed to fetch groups, trying local DB:', err);
-        const localGroups = await groupsRepository.getAll(eventId);
+        const localGroups = await groupsRepository.getAll(eventId).catch(() => []);
         if (localGroups.length > 0) return localGroups;
-        throw err;
+        return [];
       }
     },
+    staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 };
 
@@ -301,12 +309,13 @@ export const useToggleAttendance = () => {
       }
     },
     onSettled: (data, error, variables) => {
-      const queryKey = getTimetableQueryKey(variables.type, variables.targetId, variables.id);
-
-      queryClient.invalidateQueries({ queryKey });
-      if (variables.type === 'group') {
-        queryClient.invalidateQueries({ queryKey: ['groups'] });
-        queryClient.invalidateQueries({ queryKey: ['attendance', variables.targetId, variables.id, variables.entryId] });
+      // Only refetch on error — onSuccess already handles optimistic cache updates
+      if (error) {
+        const queryKey = getTimetableQueryKey(variables.type, variables.targetId, variables.id);
+        queryClient.invalidateQueries({ queryKey });
+        if (variables.type === 'group') {
+          queryClient.invalidateQueries({ queryKey: ['groups'] });
+        }
       }
     },
   });

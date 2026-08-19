@@ -1,25 +1,24 @@
+import { Text } from '@gluestack-ui/themed';
 import React, { useEffect } from 'react';
-import { StyleSheet, View, StyleProp, ViewStyle } from 'react-native';
-import { Text } from 'react-native-paper';
-import Animated, { 
-  useAnimatedStyle, 
-  useSharedValue, 
-  withSpring, 
-  withSequence,
+import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
+import Animated, {
   FadeIn,
-  FadeOut
+  FadeOut,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring
 } from 'react-native-reanimated';
 
 interface AnimatedCounterProps {
   value: string | number;
-  variant?: 'displayLarge' | 'displayMedium' | 'displaySmall' | 'headlineLarge' | 'headlineMedium' | 'headlineSmall' | 'titleLarge' | 'titleMedium' | 'titleSmall' | 'bodyLarge' | 'bodyMedium' | 'bodySmall' | 'labelLarge' | 'labelMedium' | 'labelSmall';
+  variant?: string;
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<import('react-native').TextStyle>;
 }
 
-export const AnimatedCounter: React.FC<AnimatedCounterProps> = ({ 
-  value, 
-  variant = 'titleMedium',
+export const AnimatedCounter: React.FC<AnimatedCounterProps> = ({
+  value,
   style,
   textStyle
 }) => {
@@ -39,14 +38,14 @@ export const AnimatedCounter: React.FC<AnimatedCounterProps> = ({
   });
 
   return (
-    <View 
+    <View
       style={[styles.container, style]}
       accessibilityLabel={`Counter value: ${value}`}
       accessibilityLiveRegion="polite"
     >
       <Animated.View style={animatedStyle} key={value}>
         <Animated.View entering={FadeIn} exiting={FadeOut}>
-          <Text variant={variant} style={[styles.text, textStyle]}>
+          <Text style={[styles.text, textStyle]}>
             {value}
           </Text>
         </Animated.View>
@@ -64,3 +63,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+

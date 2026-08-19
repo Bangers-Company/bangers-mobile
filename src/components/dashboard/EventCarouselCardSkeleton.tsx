@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, View, useWindowDimensions } from 'react-native';
-import { Card, useTheme } from 'react-native-paper';
+import { StyleSheet, View } from 'react-native';
+import { Box } from '@gluestack-ui/themed';
+import { useAppTheme } from '../../context/ThemeProvider';
 import { Skeleton } from '../ui/Skeleton';
 
 interface EventCarouselCardSkeletonProps {
@@ -12,13 +13,12 @@ export const EventCarouselCardSkeleton: React.FC<EventCarouselCardSkeletonProps>
   cardWidth,
   cardMargin,
 }) => {
-  const theme = useTheme();
+  const theme = useAppTheme();
 
   return (
     <View style={{ width: cardWidth, marginHorizontal: cardMargin }}>
-      <Card
+      <Box
         style={[styles.card, { backgroundColor: theme.colors.surface }]}
-        elevation={2}
       >
         <View style={styles.imageContainer}>
           <Skeleton width="100%" height="100%" borderRadius={0} />
@@ -33,7 +33,7 @@ export const EventCarouselCardSkeleton: React.FC<EventCarouselCardSkeletonProps>
             <Skeleton width={80} height={16} borderRadius={4} />
           </View>
         </View>
-      </Card>
+      </Box>
     </View>
   );
 };
@@ -61,3 +61,4 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 });
+

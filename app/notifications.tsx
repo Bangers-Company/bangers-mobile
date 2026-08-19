@@ -1,24 +1,28 @@
 import { useRouter } from "expo-router";
-import { ArrowLeft, Users, Check, X, BellCheck, Bell } from "lucide-react-native";
+import { ArrowLeft, Users, Check, X, BellRing, Bell } from "lucide-react-native";
 import React from "react";
-import { StyleSheet, View, ScrollView, RefreshControl, TouchableOpacity } from "react-native";
+import { StyleSheet, View, ScrollView, RefreshControl } from "react-native";
 import {
-  Avatar,
-  IconButton,
+  Avatar as GluestackAvatar,
+  AvatarFallbackText,
+  AvatarImage,
   Text,
-  useTheme,
   Divider,
-} from "react-native-paper";
+  Pressable,
+} from "@gluestack-ui/themed";
+import { useAppTheme } from "../src/context/ThemeProvider";
 import { useTranslation } from "react-i18next";
 import { PageContainer } from "../src/components/PageContainer";
 import { useFriendRequests } from "../src/hooks/useFriendship";
 import { useGroups, useAcceptInvitation, useRejectInvitation } from "../src/hooks/useTimetables";
 import { useNotifications, useMarkAllNotificationsRead, useMarkNotificationRead } from "../src/hooks/useNotifications";
-import { resolveMediaUrl } from "../src/utils/format";
+import { resolveMediaUrl, getUserDisplayName } from "../src/utils/format";
+import { addAlpha } from "../src/utils/theme";
+
 
 export default function NotificationsScreen() {
   const { t } = useTranslation();
-  const theme = useTheme();
+  const theme = useAppTheme();
   const router = useRouter();
 
   const { data: friendRequests = [], isLoading: friendLoading, refetch: refetchFriends, accept, reject } = useFriendRequests();
@@ -30,7 +34,7 @@ export default function NotificationsScreen() {
   const acceptGroup = useAcceptInvitation();
   const rejectGroup = useRejectInvitation();
 
-  const groupInvites = groups.filter((g) => g.pivot?.invitation_status === "pending");
+  const groupInvites = groups.filter((g: any) => g.pivot?.invitation_status === "pending");
   const isLoading = friendLoading || groupsLoading || notifLoading;
 
   const onRefresh = async () => {
@@ -43,21 +47,18 @@ export default function NotificationsScreen() {
   return (
     <PageContainer withPadding={false}>
       <View style={styles.header}>
-        <IconButton
-          icon={() => <ArrowLeft size={24} color={theme.colors.onSurface} />}
-          onPress={() => router.back()}
-        />
-        <Text variant="titleLarge" style={styles.headerTitle}>
+        <Pressable onPress={() => router.back()} style={{ padding: 8 }}>
+          <ArrowLeft size={24} color={theme.colors.onSurface} />
+        </Pressable>
+        <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>
           {t("notifications.title", "Notifications")}
         </Text>
         {unreadCount > 0 ? (
-          <IconButton
-            icon={() => <BellCheck size={22} color={theme.colors.primary} />}
-            onPress={() => markAllRead.mutate()}
-            disabled={markAllRead.isPending}
-          />
+          <Pressable onPress={() => markAllRead.mutate()} style={{ padding: 8 }}>
+            <BellRing size={22} color={theme.colors.primary} />
+          </Pressable>
         ) : (
-          <View style={{ width: 48 }} />
+          <View style={{ width: 40 }} />
         )}
       </View>
 
@@ -72,7 +73,7 @@ export default function NotificationsScreen() {
           <>
             <View style={styles.section}>
               <View style={styles.sectionHeaderRow}>
-                <Text variant="labelLarge" style={styles.sectionLabel}>
+                <Text style={[styles.sectionLabel, { color: theme.colors.onSurface }]}>
                   {t("notifications.recentActivity", "Recent Activity")}
                 </Text>
                 {unreadCount > 0 && (
@@ -85,9 +86,8 @@ export default function NotificationsScreen() {
               {notificationsList.map((item) => {
                 const isUnread = !item.read_at;
                 return (
-                  <TouchableOpacity
+                  <Pressable
                     key={item.id}
-                    activeOpacity={0.8}
                     onPress={() => {
                       if (isUnread) {
                         markRead.mutate(item.id);
@@ -108,15 +108,15 @@ export default function NotificationsScreen() {
                         <Bell size={22} color={theme.colors.primary} />
                       </View>
                       <View style={styles.textContainer}>
-                        <Text variant="titleMedium" style={styles.name}>
+                        <Text style={[styles.name, { color: theme.colors.onSurface }]}>
                           {item.data?.title || "Notification"}
                         </Text>
-                        <Text variant="bodySmall" style={styles.subtitle}>
+                        <Text style={[styles.subtitle, { color: theme.colors.onSurface }]}>
                           {item.data?.message || ""}
                         </Text>
                       </View>
                     </View>
-                  </TouchableOpacity>
+                  </Pressable>
                 );
               })}
             </View>
@@ -126,53 +126,64 @@ export default function NotificationsScreen() {
 
         {/* Friend Requests Section */}
         <View style={styles.section}>
-          <Text variant="labelLarge" style={styles.sectionLabel}>
+          <Text style={[styles.sectionLabel, { color: theme.colors.onSurface }]}>
             {t("notifications.friends", "Friend Requests")} ({friendRequests.length})
           </Text>
           {friendRequests.length === 0 ? (
-            <Text style={styles.emptyText}>{t("notifications.emptyFriends", "No pending friend requests")}</Text>
+            <Text style={[styles.emptyText, { color: theme.colors.onSurface }]}>{t("notifications.emptyFriends", "No pending friend requests")}</Text>
           ) : (
-            friendRequests.map((request) => (
-              <View key={request.id} style={styles.notificationCard}>
-                <View style={styles.userInfo}>
-                  {request.requester?.profile_media_url ? (
-                    <Avatar.Image
-                      size={48}
-                      source={{ uri: resolveMediaUrl(request.requester.profile_media_url) || "" }}
-                      style={{ borderRadius: 14 }}
-                    />
-                  ) : (
-                    <Avatar.Text
-                      size={48}
-                      label={request.requester?.first_name?.charAt(0) || "U"}
-                      style={{ borderRadius: 14 }}
-                    />
-                  )}
-                  <View style={styles.textContainer}>
-                    <Text variant="titleMedium" style={styles.name}>
-                      {request.requester?.first_name} {request.requester?.last_name}
-                    </Text>
-                    <Text variant="bodySmall" style={styles.subtitle}>
-                      {t("notifications.friendRequestSub", "sent you a friend request")}
-                    </Text>
+            friendRequests.map((request) => {
+              const requester: any = request.requester || request.user1 || request.user2 || request.user || request.sender || request.from || request;
+              const displayName = getUserDisplayName(requester);
+              const username = requester?.username ? `@${requester.username}` : "";
+              const avatarUrl = resolveMediaUrl(
+                requester?.profile_media_url ||
+                requester?.profile_photo_url ||
+                requester?.avatar_url ||
+                requester?.avatar
+              );
+              const targetUserId = requester?.id || request.requester_id || request.user_id_1 || request.user_id || request.id;
+
+              return (
+                <View key={request.id} style={styles.notificationCard}>
+                  <View style={styles.userInfo}>
+                    <GluestackAvatar size="md" style={{ backgroundColor: theme.colors.primary }}>
+                      {avatarUrl ? (
+                        <AvatarImage source={{ uri: avatarUrl }} alt="Requester Avatar" />
+                      ) : (
+                        <AvatarFallbackText style={{ color: "#ffffff" }}>
+                          {displayName.charAt(0).toUpperCase()}
+                        </AvatarFallbackText>
+                      )}
+                    </GluestackAvatar>
+
+                    <View style={styles.textContainer}>
+                      <Text style={[styles.name, { color: theme.colors.onSurface }]}>
+                        {displayName}
+                      </Text>
+                      <Text style={[styles.subtitle, { color: theme.colors.onSurface }]}>
+                        {username ? `${username} • ` : ""}
+                        {t("notifications.friendRequestSub", "sent you a friend request")}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.actions}>
+                    <Pressable
+                      onPress={() => accept.mutate(targetUserId)}
+                      style={[styles.actionBtn, { backgroundColor: addAlpha(theme.colors.primary, 0.15) }]}
+                    >
+                      <Check size={20} color={theme.colors.primary} />
+                    </Pressable>
+                    <Pressable
+                      onPress={() => reject.mutate(targetUserId)}
+                      style={[styles.actionBtn, { backgroundColor: "rgba(255,82,82,0.15)" }]}
+                    >
+                      <X size={20} color="#ff5252" />
+                    </Pressable>
                   </View>
                 </View>
-                <View style={styles.actions}>
-                  <IconButton
-                    icon={() => <Check size={20} color={theme.colors.primary} />}
-                    mode="contained-tonal"
-                    onPress={() => accept.mutate(request.requester?.id!)}
-                    loading={accept.isPending}
-                  />
-                  <IconButton
-                    icon={() => <X size={20} color={theme.colors.error} />}
-                    mode="contained-tonal"
-                    onPress={() => reject.mutate(request.requester?.id!)}
-                    loading={reject.isPending}
-                  />
-                </View>
-              </View>
-            ))
+              );
+            })
           )}
         </View>
 
@@ -180,23 +191,23 @@ export default function NotificationsScreen() {
 
         {/* Group Invitations Section */}
         <View style={styles.section}>
-          <Text variant="labelLarge" style={styles.sectionLabel}>
+          <Text style={[styles.sectionLabel, { color: theme.colors.onSurface }]}>
             {t("notifications.groups", "Group Invitations")} ({groupInvites.length})
           </Text>
           {groupInvites.length === 0 ? (
-            <Text style={styles.emptyText}>{t("notifications.emptyGroups", "No pending group invitations")}</Text>
+            <Text style={[styles.emptyText, { color: theme.colors.onSurface }]}>{t("notifications.emptyGroups", "No pending group invitations")}</Text>
           ) : (
-            groupInvites.map((group) => (
+            groupInvites.map((group: any) => (
               <View key={group.id} style={styles.notificationCard}>
                 <View style={styles.userInfo}>
                   <View style={[styles.groupIcon, { backgroundColor: theme.colors.surfaceVariant }]}>
                     <Users size={24} color={theme.colors.primary} />
                   </View>
                   <View style={styles.textContainer}>
-                    <Text variant="titleMedium" style={styles.name}>
+                    <Text style={[styles.name, { color: theme.colors.onSurface }]}>
                       {group.name}
                     </Text>
-                    <Text variant="bodySmall" style={styles.subtitle}>
+                    <Text style={[styles.subtitle, { color: theme.colors.onSurface }]}>
                       {t("timetable.groups.invitedBy", {
                         name:
                           group.owner?.name ||
@@ -208,18 +219,18 @@ export default function NotificationsScreen() {
                   </View>
                 </View>
                 <View style={styles.actions}>
-                  <IconButton
-                    icon={() => <Check size={20} color={theme.colors.primary} />}
-                    mode="contained-tonal"
+                  <Pressable
                     onPress={() => acceptGroup.mutate(group.id)}
-                    loading={acceptGroup.isPending}
-                  />
-                  <IconButton
-                    icon={() => <X size={20} color={theme.colors.error} />}
-                    mode="contained-tonal"
+                    style={[styles.actionBtn, { backgroundColor: addAlpha(theme.colors.primary, 0.15) }]}
+                  >
+                    <Check size={20} color={theme.colors.primary} />
+                  </Pressable>
+                  <Pressable
                     onPress={() => rejectGroup.mutate(group.id)}
-                    loading={rejectGroup.isPending}
-                  />
+                    style={[styles.actionBtn, { backgroundColor: "rgba(255,82,82,0.15)" }]}
+                  >
+                    <X size={20} color="#ff5252" />
+                  </Pressable>
                 </View>
               </View>
             ))
@@ -238,10 +249,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 8,
+    paddingHorizontal: 12,
     paddingVertical: 12,
   },
   headerTitle: {
+    fontSize: 18,
     fontWeight: "800",
   },
   section: {
@@ -254,9 +266,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionLabel: {
+    fontSize: 12,
     opacity: 0.6,
     textTransform: "uppercase",
     letterSpacing: 1,
+    fontWeight: "bold",
   },
   unreadBadge: {
     paddingHorizontal: 8,
@@ -287,14 +301,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   name: {
+    fontSize: 15,
     fontWeight: "bold",
   },
   subtitle: {
+    fontSize: 13,
     opacity: 0.6,
   },
   actions: {
     flexDirection: "row",
     gap: 8,
+  },
+  actionBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
   },
   emptyText: {
     opacity: 0.4,
@@ -314,3 +337,4 @@ const styles = StyleSheet.create({
     opacity: 0.1,
   },
 });
+

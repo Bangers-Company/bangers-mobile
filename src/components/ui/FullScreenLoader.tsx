@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, StyleSheet, Modal, ActivityIndicator } from 'react-native';
-import { Text, useTheme } from 'react-native-paper';
+import { View, StyleSheet, Modal } from 'react-native';
+import { Text, Spinner } from '@gluestack-ui/themed';
+import { useAppTheme } from '../../context/ThemeProvider';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 
@@ -10,7 +11,7 @@ interface FullScreenLoaderProps {
 }
 
 export const FullScreenLoader: React.FC<FullScreenLoaderProps> = ({ visible, message }) => {
-  const theme = useTheme();
+  const theme = useAppTheme();
 
   if (!visible) return null;
 
@@ -23,9 +24,9 @@ export const FullScreenLoader: React.FC<FullScreenLoaderProps> = ({ visible, mes
           exiting={FadeOut}
           style={[styles.content, { backgroundColor: theme.colors.surface }]}
         >
-          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Spinner size="large" color={theme.colors.primary} />
           {message && (
-            <Text variant="titleMedium" style={styles.text}>
+            <Text style={[styles.text, { color: theme.colors.onSurface }]}>
               {message}
             </Text>
           )}
@@ -59,3 +60,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+

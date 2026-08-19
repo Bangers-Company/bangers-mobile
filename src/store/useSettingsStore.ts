@@ -2,7 +2,6 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import i18n from "../i18n";
-import { NotificationService } from "../services/notifications/NotificationService";
 
 interface SettingsState {
   language: string;
@@ -25,11 +24,15 @@ export const useSettingsStore = create<SettingsState>()(
       },
       setNotificationsEnabled: (enabled) => {
         set({ notificationsEnabled: enabled });
-        NotificationService.rescheduleAll();
+        import("../services/notifications/NotificationService").then(({ NotificationService }) => {
+          NotificationService.rescheduleAll();
+        });
       },
       setNotificationMinutesBefore: (minutes) => {
         set({ notificationMinutesBefore: minutes });
-        NotificationService.rescheduleAll();
+        import("../services/notifications/NotificationService").then(({ NotificationService }) => {
+          NotificationService.rescheduleAll();
+        });
       },
     }),
     {

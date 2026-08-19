@@ -1,11 +1,29 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, View, ScrollView, TouchableOpacity } from "react-native";
-import { Modal, Portal, Text, TextInput, Button, useTheme, Avatar, Checkbox, ActivityIndicator } from "react-native-paper";
-import { Search, ChevronRight } from "lucide-react-native";
+import { StyleSheet, View, ScrollView, TextInput as RNTextInput } from "react-native";
+import {
+  Modal,
+  ModalBackdrop,
+  ModalContent,
+  Text,
+  Button,
+  ButtonText,
+  Checkbox,
+  CheckboxIndicator,
+  CheckboxIcon,
+  CheckIcon,
+  Avatar as GluestackAvatar,
+  AvatarFallbackText,
+  Spinner,
+  Pressable,
+} from "@gluestack-ui/themed";
+import { useAppTheme } from "../../context/ThemeProvider";
+import { Search } from "lucide-react-native";
 import { friendsApi } from "../../api/friends";
 import { User } from "../../types/user";
-import { addAlpha } from "../../utils/theme";
 import { useTranslation } from "react-i18next";
+import { Image as ExpoImage } from "expo-image";
+import { addAlpha } from "../../utils/theme";
+import { getUserAvatarUrl, getUserDisplayName } from "../../utils/format";
 
 interface CreateGroupModalProps {
   visible: boolean;
@@ -26,7 +44,9 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
   const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [loadingFriends, setLoadingFriends] = useState(false);
-  const theme = useTheme();
+  const [nameFocused, setNameFocused] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
+  const theme = useAppTheme();
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -61,204 +81,323 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
   const handleConfirm = () => {
     if (name.trim()) {
       onConfirm(name, selectedFriends);
-      // Reset state on success happens in parent usually, but we can reset internal
     }
   };
 
-  // Reset when closing
   useEffect(() => {
     if (!visible) {
       setStep(1);
       setName("");
       setSelectedFriends([]);
       setSearch("");
+      setNameFocused(false);
+      setSearchFocused(false);
     }
   }, [visible]);
 
   const toggleFriend = (id: string) => {
-    setSelectedFriends(prev => 
-      prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]
+    setSelectedFriends((prev) =>
+      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
     );
   };
 
-  const filteredFriends = friends.filter(f => 
-    f.username.toLowerCase().includes(search.toLowerCase()) || 
-    `${f.first_name} ${f.last_name}`.toLowerCase().includes(search.toLowerCase())
+  const filteredFriends = friends.filter(
+    (f) =>
+      f.username.toLowerCase().includes(search.toLowerCase()) ||
+      `${f.first_name} ${f.last_name}`.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <Portal>
-      <Modal 
-        visible={visible} 
-        onDismiss={onDismiss} 
-        contentContainerStyle={[styles.container, { backgroundColor: theme.colors.surface }]}
-      >
+    <Modal isOpen={visible} onClose={onDismiss}>
+      <ModalBackdrop />
+      <ModalContent style={[styles.container, { backgroundColor: theme.colors.surface }]}>
         <View style={styles.header}>
-          <Text variant="headlineSmall" style={styles.title}>
-            {step === 1 ? t("timetable.groups.createModal.titleStep1") : t("timetable.groups.createModal.titleStep2")}
+          <Text style={[styles.title, { color: theme.colors.onSurface }]}>
+            {step === 1
+              ? t("timetable.groups.createModal.titleStep1")
+              : t("timetable.groups.createModal.titleStep2")}
           </Text>
-          <Text variant="bodySmall" style={styles.stepIndicator}>
+          <Text style={styles.stepIndicator}>
             {t("timetable.groups.createModal.stepIndicator", { current: step, total: 2 })}
           </Text>
         </View>
 
         {step === 1 ? (
-          <View>
-            <Text variant="bodyMedium" style={styles.subtitle}>
-              {t("timetable.groups.createModal.nameSubtitle")}
-            </Text>
-            <TextInput
-              label={t("timetable.groups.createModal.nameLabel")}
-              value={name}
-              onChangeText={setName}
-              mode="outlined"
-              style={styles.input}
-              placeholder={t("timetable.groups.createModal.namePlaceholder")}
-              autoFocus
-            />
+          <View style={styles.step1Content}>
+            <View
+              style={[
+                styles.inputRow,
+                {
+                  borderColor: nameFocused
+                    ? theme.colors.primary
+                    : addAlpha(theme.colors.onSurface, 0.2),
+                  backgroundColor: nameFocused
+                    ? addAlpha(theme.colors.primary, 0.08)
+                    : addAlpha(theme.colors.onSurface, 0.03),
+                },
+              ]}
+            >
+              <RNTextInput
+                placeholder={t("timetable.groups.createModal.namePlaceholder")}
+                placeholderTextColor="#888"
+                value={name}
+                onChangeText={setName}
+                onFocus={() => setNameFocused(true)}
+                onBlur={() => setNameFocused(false)}
+                autoFocus
+                style={[styles.rnInput, { color: theme.colors.onSurface }]}
+              />
+            </View>
+
             <View style={styles.actions}>
-              <Button onPress={onDismiss}>{t("common.cancel")}</Button>
-              <Button 
-                mode="contained" 
-                onPress={handleNext} 
-                disabled={!name.trim()}
-                icon={() => <ChevronRight size={18} color="white" />}
-                contentStyle={{ flexDirection: 'row-reverse' }}
+              <Button
+                onPress={onDismiss}
+                variant="outline"
+                style={[
+                  styles.button,
+                  { borderColor: addAlpha(theme.colors.onSurface, 0.2) },
+                ]}
               >
-                {t("common.next")}
+                <ButtonText style={{ color: theme.colors.onSurface }}>
+                  {t("common.cancel")}
+                </ButtonText>
+              </Button>
+              <Button
+                onPress={handleNext}
+                isDisabled={!name.trim()}
+                style={[styles.button, { backgroundColor: theme.colors.primary }]}
+              >
+                <ButtonText style={{ color: "#fff", fontWeight: "700" }}>
+                  {t("common.next")}
+                </ButtonText>
               </Button>
             </View>
           </View>
         ) : (
-          <View style={{ maxHeight: 400 }}>
-             <Text variant="bodyMedium" style={styles.subtitle}>
-              {t("timetable.groups.createModal.inviteSubtitle", { name })}
-            </Text>
-            
-            <TextInput
-              placeholder={t("timetable.groups.createModal.searchPlaceholder")}
-              value={search}
-              onChangeText={setSearch}
-              mode="outlined"
-              style={styles.searchInput}
-              left={<TextInput.Icon icon={() => <Search size={20} color={theme.colors.outline} />} />}
-            />
+          <View style={styles.step2Content}>
+            <View
+              style={[
+                styles.inputRow,
+                {
+                  borderColor: searchFocused
+                    ? theme.colors.primary
+                    : addAlpha(theme.colors.onSurface, 0.2),
+                  backgroundColor: searchFocused
+                    ? addAlpha(theme.colors.primary, 0.08)
+                    : addAlpha(theme.colors.onSurface, 0.03),
+                },
+              ]}
+            >
+              <Search
+                size={18}
+                color={searchFocused ? theme.colors.primary : "#888"}
+                style={{ marginRight: 8 }}
+              />
+              <RNTextInput
+                placeholder={t("timetable.groups.createModal.searchPlaceholder")}
+                placeholderTextColor="#888"
+                value={search}
+                onChangeText={setSearch}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
+                style={[styles.rnInput, { color: theme.colors.onSurface }]}
+              />
+            </View>
 
             {loadingFriends ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator color={theme.colors.primary} />
+              <View style={styles.centerLoading}>
+                <Spinner color={theme.colors.primary} />
               </View>
             ) : (
-              <ScrollView style={styles.friendList}>
+              <ScrollView style={styles.friendList} showsVerticalScrollIndicator={false}>
                 {filteredFriends.length > 0 ? (
-                  filteredFriends.map(friend => (
-                    <TouchableOpacity 
-                      key={friend.id} 
-                      style={styles.friendItem}
-                      onPress={() => toggleFriend(friend.id)}
-                    >
-                      <Avatar.Text 
-                        size={40} 
-                        label={(friend.username || friend.first_name || "U").substring(0, 2).toUpperCase()} 
-                        style={{ backgroundColor: addAlpha(theme.colors.primary, 0.1) }}
-                        labelStyle={{ color: theme.colors.primary }}
-                      />
-                      <View style={styles.friendInfo}>
-                        <Text variant="bodyLarge">{friend.username}</Text>
-                        <Text variant="bodySmall" style={{ opacity: 0.6 }}>{friend.first_name} {friend.last_name}</Text>
-                      </View>
-                      <Checkbox 
-                        status={selectedFriends.includes(friend.id) ? 'checked' : 'unchecked'} 
+                  filteredFriends.map((friend) => {
+                    const isSelected = selectedFriends.includes(friend.id);
+                    return (
+                      <Pressable
+                        key={friend.id}
+                        style={[
+                          styles.friendRow,
+                          isSelected && {
+                            backgroundColor: addAlpha(theme.colors.primary, 0.08),
+                          },
+                        ]}
                         onPress={() => toggleFriend(friend.id)}
-                      />
-                    </TouchableOpacity>
-                  ))
+                      >
+                        <GluestackAvatar
+                          size="md"
+                          style={{ backgroundColor: theme.colors.primary, overflow: "hidden" }}
+                        >
+                          {getUserAvatarUrl(friend) ? (
+                            <ExpoImage
+                              source={{ uri: getUserAvatarUrl(friend)! }}
+                              style={{ width: "100%", height: "100%", borderRadius: 100 }}
+                              contentFit="cover"
+                              cachePolicy="memory-disk"
+                            />
+                          ) : (
+                            <AvatarFallbackText style={{ color: "#ffffff" }}>
+                              {getUserDisplayName(friend).charAt(0).toUpperCase()}
+                            </AvatarFallbackText>
+                          )}
+                        </GluestackAvatar>
+
+                        <View style={styles.friendInfo}>
+                          <Text
+                            style={[styles.friendName, { color: theme.colors.onSurface }]}
+                          >
+                            {friend.first_name
+                              ? `${friend.first_name} ${friend.last_name || ""}`.trim()
+                              : friend.username}
+                          </Text>
+                          <Text style={[styles.friendUsername, { color: theme.colors.onSurface }]}>
+                            @{friend.username}
+                          </Text>
+                        </View>
+
+                        <Checkbox
+                          value={friend.id}
+                          isChecked={isSelected}
+                          onChange={() => toggleFriend(friend.id)}
+                          aria-label={`Select ${friend.username}`}
+                        >
+                          <CheckboxIndicator
+                            style={{
+                              borderColor: theme.colors.primary,
+                              borderRadius: 6,
+                            }}
+                          >
+                            <CheckboxIcon as={CheckIcon} />
+                          </CheckboxIndicator>
+                        </Checkbox>
+                      </Pressable>
+                    );
+                  })
                 ) : (
-                  <View style={styles.emptyContainer}>
-                    <Text variant="bodyMedium" style={{ opacity: 0.5 }}>{t("timetable.groups.createModal.noFriends")}</Text>
+                  <View style={{ padding: 24, alignItems: "center" }}>
+                    <Text style={{ opacity: 0.5 }}>
+                      {t("timetable.groups.createModal.noFriends")}
+                    </Text>
                   </View>
                 )}
               </ScrollView>
             )}
 
-            <View style={[styles.actions, { marginTop: 16 }]}>
-              <Button onPress={handleBack} disabled={loading}>{t("common.back")}</Button>
-              <Button 
-                mode="contained" 
-                onPress={handleConfirm} 
-                loading={loading}
-                disabled={loading}
+            <View style={styles.actions}>
+              <Button
+                onPress={handleBack}
+                isDisabled={loading}
+                variant="outline"
+                style={[
+                  styles.button,
+                  { borderColor: addAlpha(theme.colors.onSurface, 0.2) },
+                ]}
               >
-                {selectedFriends.length > 0 
-                  ? t("timetable.groups.createModal.createWithCount", { count: selectedFriends.length }) 
-                  : t("timetable.groups.createModal.titleStep1")}
+                <ButtonText style={{ color: theme.colors.onSurface }}>
+                  {t("common.back")}
+                </ButtonText>
+              </Button>
+              <Button
+                onPress={handleConfirm}
+                isDisabled={loading}
+                style={[styles.button, { backgroundColor: theme.colors.primary }]}
+              >
+                <ButtonText style={{ color: "#fff", fontWeight: "700" }}>
+                  {selectedFriends.length > 0
+                    ? t("timetable.groups.createModal.createWithCount", {
+                        count: selectedFriends.length,
+                      })
+                    : t("timetable.groups.createModal.titleStep1")}
+                </ButtonText>
               </Button>
             </View>
           </View>
         )}
-      </Modal>
-    </Portal>
+      </ModalContent>
+    </Modal>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    width: "92%",
+    maxWidth: 480,
     padding: 24,
-    margin: 16,
-    borderRadius: 24,
+    borderRadius: 28,
+    elevation: 10,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'baseline',
-    marginBottom: 8,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
   },
   title: {
-    fontWeight: "bold",
+    fontSize: 20,
+    fontWeight: "800",
   },
   stepIndicator: {
-    opacity: 0.5,
-    fontWeight: 'bold',
+    opacity: 0.6,
+    fontWeight: "700",
+    fontSize: 13,
   },
-  subtitle: {
-    opacity: 0.7,
-    marginBottom: 20,
-    lineHeight: 20,
+  step1Content: {
+    gap: 20,
   },
-  input: {
-    marginBottom: 24,
+  step2Content: {
+    gap: 16,
   },
-  searchInput: {
-    marginBottom: 12,
-    height: 48,
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: 52,
+    borderWidth: 1.5,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+  },
+  rnInput: {
+    flex: 1,
+    fontSize: 16,
+    height: "100%",
   },
   friendList: {
-    maxHeight: 250,
+    maxHeight: 320,
   },
-  friendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
+  friendRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+    marginBottom: 4,
   },
   friendInfo: {
     flex: 1,
     marginLeft: 12,
   },
+  friendName: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  friendUsername: {
+    fontSize: 12,
+    opacity: 0.6,
+    marginTop: 2,
+  },
   actions: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    gap: 8,
+    gap: 10,
+    marginTop: 12,
   },
-  loadingContainer: {
-    height: 100,
-    justifyContent: 'center',
-    alignItems: 'center',
+  button: {
+    borderRadius: 16,
+    height: 48,
+    paddingHorizontal: 22,
   },
-  emptyContainer: {
-    height: 100,
-    justifyContent: 'center',
-    alignItems: 'center',
-  }
+  centerLoading: {
+    height: 160,
+    justifyContent: "center",
+    alignItems: "center",
+  },
 });

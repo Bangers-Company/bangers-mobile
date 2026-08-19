@@ -1,6 +1,7 @@
 import React, { ErrorInfo, ReactNode } from "react";
 import { StyleSheet, View, ScrollView } from "react-native";
-import { Text, Button, useTheme } from "react-native-paper";
+import { Text, Button, ButtonText } from "@gluestack-ui/themed";
+import { useAppTheme } from "../context/ThemeProvider";
 import { AlertCircle, RefreshCcw } from "lucide-react-native";
 import { PageContainer } from "./PageContainer";
 import { logger } from "../utils/logger";
@@ -47,39 +48,40 @@ export class GlobalErrorBoundary extends React.Component<Props, State> {
 }
 
 function ErrorFallback({ error, onReset }: { error: Error | null; onReset: () => void }) {
-  const theme = useTheme();
+  const theme = useAppTheme();
 
   return (
     <PageContainer>
       <ScrollView contentContainerStyle={styles.container}>
-        <View style={[styles.iconContainer, { backgroundColor: theme.colors.errorContainer }]}>
-          <AlertCircle size={48} color={theme.colors.error} />
+        <View style={[styles.iconContainer, { backgroundColor: "rgba(255, 82, 82, 0.15)" }]}>
+          <AlertCircle size={48} color="#ff5252" />
         </View>
         
-        <Text variant="headlineMedium" style={styles.title}>
+        <Text style={[styles.title, { color: theme.colors.onSurface }]}>
           Something went wrong
         </Text>
         
-        <Text variant="bodyLarge" style={styles.subtitle}>
+        <Text style={[styles.subtitle, { color: theme.colors.onSurface }]}>
           The application encountered an unexpected error. We&apos;ve been notified and are looking into it.
         </Text>
 
         <View style={[styles.errorDetails, { backgroundColor: theme.colors.surfaceVariant }]}>
-          <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 4 }}>
+          <Text style={{ color: theme.colors.onSurface, marginBottom: 4, fontSize: 11, fontWeight: "bold" }}>
             ERROR DETAILS
           </Text>
-          <Text variant="bodySmall" style={styles.errorText}>
+          <Text style={[styles.errorText, { color: theme.colors.onSurface }]}>
             {error?.message || "Unknown error"}
           </Text>
         </View>
 
         <Button
-          mode="contained"
-          icon={() => <RefreshCcw size={18} color="white" />}
           onPress={onReset}
-          style={styles.button}
+          style={[styles.button, { backgroundColor: theme.colors.primary }]}
         >
-          Try Again
+          <RefreshCcw size={18} color="white" style={{ marginRight: 8 }} />
+          <ButtonText style={{ color: "white", fontWeight: "700" }}>
+            Try Again
+          </ButtonText>
         </Button>
       </ScrollView>
     </PageContainer>
@@ -102,6 +104,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   title: {
+    fontSize: 20,
     fontWeight: "bold",
     marginBottom: 12,
     textAlign: "center",
@@ -125,6 +128,10 @@ const styles = StyleSheet.create({
   button: {
     width: "100%",
     borderRadius: 12,
-    paddingVertical: 6,
+    height: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
+
