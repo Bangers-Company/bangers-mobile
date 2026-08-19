@@ -38,6 +38,8 @@ import { resolveMediaUrl, getUserDisplayName, getUserAvatarUrl } from "../../uti
 import { addAlpha } from "../../utils/theme";
 
 
+import { useNotifications } from "../../hooks/useNotifications";
+
 export const TopBar: React.FC = () => {
   const { t } = useTranslation();
   const theme = useAppTheme();
@@ -47,6 +49,9 @@ export const TopBar: React.FC = () => {
   const [menuVisible, setMenuVisible] = useState(false);
 
   const { data: friendRequests = [] } = useFriendRequests();
+  const { data: notificationFeed } = useNotifications();
+  const unreadFeedCount = notificationFeed?.unread_count || 0;
+
   const {
     groups,
     groupsFetched,
@@ -63,15 +68,11 @@ export const TopBar: React.FC = () => {
     });
   };
 
-  const notifications = useMemo(() => {
-    const groupInvitations = groups.filter(
-      (g) => g.pivot?.invitation_status === "pending",
-    );
-    return [
-      ...friendRequests.map((r) => ({ ...r, type: "friend" })),
-      ...groupInvitations.map((g) => ({ ...g, type: "group" })),
-    ];
-  }, [friendRequests, groups]);
+  const pendingGroupCount = useMemo(() => {
+    return groups.filter((g) => g.pivot?.invitation_status === "pending").length;
+  }, [groups]);
+
+  const totalBadgeCount = friendRequests.length + pendingGroupCount + unreadFeedCount;
 
   React.useEffect(() => {
     if (user && !groupsFetched) {
@@ -104,10 +105,10 @@ export const TopBar: React.FC = () => {
             >
               <Bell size={24} color={theme.colors.onSurface} />
             </Pressable>
-            {notifications.length > 0 && (
+            {totalBadgeCount > 0 && (
               <Badge style={[styles.badge, { backgroundColor: theme.colors.primary }]}>
                 <BadgeText style={{ color: "#fff", fontSize: 10, fontWeight: "bold" }}>
-                  {notifications.length}
+                  {totalBadgeCount}
                 </BadgeText>
               </Badge>
             )}

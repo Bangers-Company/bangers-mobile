@@ -51,9 +51,23 @@ export const PushNotificationManager = {
         });
       }
 
-      // Retrieve device push token (returns FCM token on Android/iOS)
-      const tokenData = await Notifications.getDevicePushTokenAsync();
-      const token = tokenData.data;
+      // Retrieve device push token (try native FCM token, fallback to Expo push token if needed)
+      let token: string | null = null;
+      try {
+        const tokenData = await Notifications.getDevicePushTokenAsync();
+        token = tokenData?.data || null;
+      } catch (e) {
+        logger.warn("[PushNotificationManager] getDevicePushTokenAsync failed, trying getExpoPushTokenAsync", e);
+      }
+
+      if (!token) {
+        try {
+          const expoTokenData = await Notifications.getExpoPushTokenAsync();
+          token = expoTokenData?.data || null;
+        } catch (e) {
+          logger.error("[PushNotificationManager] getExpoPushTokenAsync also failed", e);
+        }
+      }
 
       if (!token) {
         logger.warn("[PushNotificationManager] Device push token empty");
@@ -132,6 +146,25 @@ export const PushNotificationManager = {
         router.push(`/user/${data.acceptor_id}` as any);
       } else if ((type === "GROUP_INVITATION" || type === "GROUP_INVITATION_ACCEPTED") && data.group_id) {
         router.push(`/notifications` as any);
+      }
+    });
+
+    // Cold-start notification tap handler (when app was opened from closed state via push tap)
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (response) {
+        if (onNotificationReceived) {
+          onNotificationReceived();
+        }
+        const data = response.notification.request.content.data;
+        if (!data) return;
+        const type = data.type;
+        if (type === "FRIEND_REQUEST") {
+          router.push("/notifications" as any);
+        } else if (type === "FRIEND_REQUEST_ACCEPTED" && data.acceptor_id) {
+          router.push(`/user/${data.acceptor_id}` as any);
+        } else if ((type === "GROUP_INVITATION" || type === "GROUP_INVITATION_ACCEPTED") && data.group_id) {
+          router.push(`/notifications` as any);
+        }
       }
     });
   },

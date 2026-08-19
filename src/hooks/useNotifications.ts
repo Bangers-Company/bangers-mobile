@@ -9,16 +9,21 @@ import { PushNotificationManager } from "../services/notifications/PushNotificat
 import { useAuthStore } from "../store/useAuthStore";
 import { logger } from "../utils/logger";
 
+import { AppState, AppStateStatus } from "react-native";
+
 export const NOTIFICATIONS_QUERY_KEY = ["notifications"];
 
 /**
  * Fetch in-app notifications with pagination & unread count.
  */
 export function useNotifications(page = 1) {
+  const session = useAuthStore((state) => state.session);
   return useQuery({
     queryKey: [...NOTIFICATIONS_QUERY_KEY, page],
     queryFn: () => getNotifications(page),
-    staleTime: 1000 * 30, // 30 seconds
+    enabled: !!session?.accessToken,
+    staleTime: 1000 * 5, // 5 seconds
+    refetchInterval: 10000, // Poll every 10s in foreground
   });
 }
 
@@ -67,17 +72,42 @@ export function usePushNotifications() {
   useEffect(() => {
     if (!accessToken) return;
 
+    // Comprehensive refresh for all real-time views across the app
+    const refreshAllData = () => {
+      logger.info("[usePushNotifications] Refreshing all real-time data queries");
+      queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["friend-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["friendRequests"] });
+      queryClient.invalidateQueries({ queryKey: ["friends"] });
+      queryClient.invalidateQueries({ queryKey: ["groups"] });
+      queryClient.invalidateQueries({ queryKey: ["friendship"] });
+      queryClient.invalidateQueries({ queryKey: ["user"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+    };
+
+    // Trigger an immediate refresh when authenticated hook mounts
+    refreshAllData();
+
     // Register FCM device token with backend
     PushNotificationManager.registerToken();
 
-    // Attach push listeners
+    // Attach push listeners (triggers instant view refresh on push arrival or tap)
     PushNotificationManager.attachListeners(() => {
-      // Invalidate notifications query when push arrives or is tapped
-      queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
+      refreshAllData();
     });
+
+    // Invalidate queries when app returns to foreground from background/lockscreen
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (nextAppState === "active") {
+        refreshAllData();
+      }
+    };
+
+    const subscription = AppState.addEventListener("change", handleAppStateChange);
 
     return () => {
       PushNotificationManager.removeListeners();
+      subscription.remove();
     };
   }, [accessToken, queryClient]);
 }

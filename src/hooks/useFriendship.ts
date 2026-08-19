@@ -63,6 +63,15 @@ export const useFriendshipActions = (userId: string | undefined) => {
     },
   });
 
+  const rejectRequest = useMutation({
+    mutationFn: () => friendsApi.rejectRequest(userId!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["friendship", userId] });
+      queryClient.invalidateQueries({ queryKey: ["user", userId] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+    },
+  });
+
   const removeFriend = useMutation({
     mutationFn: () => friendsApi.removeFriend(userId!),
     onSuccess: () => {
@@ -72,7 +81,7 @@ export const useFriendshipActions = (userId: string | undefined) => {
     },
   });
 
-  return { sendRequest, acceptRequest, removeFriend };
+  return { sendRequest, acceptRequest, rejectRequest, removeFriend };
 };
 
 export const useFriendRequests = () => {
