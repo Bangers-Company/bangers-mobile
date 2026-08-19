@@ -13,10 +13,12 @@ import { MyEventsCarousel } from "../../src/components/dashboard/MyEventsCarouse
 import { SuggestedEvents } from "../../src/components/dashboard/SuggestedEvents";
 import { OnboardingModal } from "../../src/components/modals/OnboardingModal";
 import { TopBar } from "../../src/components/navigation/TopBar";
+import { HomeGreeting } from "../../src/components/home/HomeGreeting";
 import { Droplet } from "../../src/components/ui/Droplet";
 import { useDashboardData } from "../../src/hooks/useDashboardData";
 import { useSharedScroll } from "../../src/hooks/useSharedScroll";
 import { useAuthStore } from "../../src/store/useAuthStore";
+import { Event } from "../../src/types/event";
 
 export default function HomeScreen() {
   const { t } = useTranslation();
@@ -29,9 +31,17 @@ export default function HomeScreen() {
   const scrollOffset = useSharedScroll();
 
   const user = useAuthStore((state) => state.user);
+  const isJustRegistered = useAuthStore((state) => state.isJustRegistered);
+
   const [showOnboarding, setShowOnboarding] = React.useState(
-    user?.last_login_at === null,
+    isJustRegistered || user?.last_login_at === null,
   );
+
+  React.useEffect(() => {
+    if (isJustRegistered) {
+      setShowOnboarding(true);
+    }
+  }, [isJustRegistered]);
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (ev) => {
@@ -55,7 +65,7 @@ export default function HomeScreen() {
         <TopBar />
         <View style={styles.loadingWrapper}>
           <Text style={{ color: "#ff5252", fontSize: 16, fontWeight: "bold" }}>
-            {t("common.error.title") || "Failed to load events"}
+            {t("common.errorTitle") || "Failed to load events"}
           </Text>
           <Text style={[styles.loadingText, { color: theme.colors.onSurface }]}>
             {error.message}
@@ -68,23 +78,59 @@ export default function HomeScreen() {
     );
   }
 
-
-  // Full-screen loading removed in favor of inline skeletons
-
   const rawAttending = data?.attending_events;
-  const attendingEvents = Array.isArray(rawAttending)
+  const attendingEvents: Event[] = Array.isArray(rawAttending)
     ? rawAttending
     : (rawAttending as any)?.data || [];
 
   const rawUpcoming = data?.upcoming_events;
-  const upcomingEvents = Array.isArray(rawUpcoming)
+  const upcomingEvents: Event[] = Array.isArray(rawUpcoming)
     ? rawUpcoming
     : (rawUpcoming as any)?.data || [];
 
   const rawSuggested = data?.suggested_events;
-  const suggestedEvents = Array.isArray(rawSuggested)
+  const suggestedEvents: Event[] = Array.isArray(rawSuggested)
     ? rawSuggested
     : (rawSuggested as any)?.data || [];
+
+  // HomeGreeting ONLY appears if there is an attending event happening TODAY
+  const todayHappeningEvent = React.useMemo(() => {
+    const allAttending = [...attendingEvents];
+
+    // Also include any event from upcoming/suggested where user is marked as attending/going
+    [...upcomingEvents, ...suggestedEvents].forEach((ev) => {
+      if (((ev as any).is_attending || ev.user_status === "going") && !allAttending.some((a) => a.id === ev.id)) {
+        allAttending.push(ev);
+      }
+    });
+
+    if (allAttending.length === 0) return null;
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const todayYMD = `${year}-${month}-${day}`;
+
+    return (
+      allAttending.find((ev: Event) => {
+        if (!ev.start_date) return false;
+        // Cleanly extract YYYY-MM-DD from "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM:SS"
+        const startYMD = String(ev.start_date).trim().substring(0, 10);
+        const endDateStr = ev.end_date || ev.start_date;
+        const endYMD = String(endDateStr).trim().substring(0, 10);
+
+        return todayYMD >= startYMD && todayYMD <= endYMD;
+      }) || null
+    );
+  }, [attendingEvents, upcomingEvents, suggestedEvents]);
+
+  // My Festivals carousel filters out today's happening event so it shows the NEXT ones
+  const myFestivalsList = React.useMemo(() => {
+    if (!attendingEvents) return [];
+    if (!todayHappeningEvent) return attendingEvents;
+    return attendingEvents.filter((ev: Event) => ev.id !== todayHappeningEvent.id);
+  }, [attendingEvents, todayHappeningEvent]);
 
   return (
     <View style={styles.container}>
@@ -110,11 +156,21 @@ export default function HomeScreen() {
           { paddingBottom: insets.bottom + 100 },
         ]}
       >
-        {(loading || attendingEvents.length > 0) && (
+        {/* HomeGreeting: ONLY appears if an attending event is happening TODAY */}
+        {todayHappeningEvent && (
+          <HomeGreeting
+            event={todayHappeningEvent}
+            onPress={() =>
+              router.push(`/event/${todayHappeningEvent.id}/schedule?from=home` as any)
+            }
+          />
+        )}
+
+        {(loading || myFestivalsList.length > 0) && (
           <MyEventsCarousel
             title={t("dashboard.myEvents")}
-            events={attendingEvents}
-            loading={loading && attendingEvents.length === 0}
+            events={myFestivalsList}
+            loading={loading && myFestivalsList.length === 0}
             onPress={(ev) => router.push(`/event/${ev.id}` as any)}
           />
         )}
@@ -159,12 +215,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    padding: 24,
   },
   loadingText: {
-    marginTop: 16,
-    opacity: 0.6,
+    marginTop: 12,
+    fontSize: 14,
+    opacity: 0.7,
+    textAlign: "center",
   },
-  scrollContent: {
-    paddingTop: 16,
-  },
+  scrollContent: {},
 });

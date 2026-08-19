@@ -158,17 +158,32 @@ export default function VisitorsScreen() {
 
   return (
     <PageContainer withPadding={false} withSafeArea={false}>
-      <View style={[styles.header, { paddingTop: top / 4, paddingBottom: 10 }]}>
+      <View style={[styles.header, { paddingTop: Math.max(top + 8, 16) }]}>
         <View style={styles.headerRow}>
-          <IconButton icon="chevron-left" iconColor={theme.colors.onSurface} onPress={() => router.back()} />
+          <IconButton
+            icon="chevron-left"
+            iconColor={theme.colors.onSurface}
+            size={24}
+            style={styles.backButton}
+            onPress={() => router.navigate(`/event/${id}` as any)}
+          />
           <View style={{ flex: 1 }}>
-            <Text variant="titleLarge" style={[styles.headerTitle, { color: theme.colors.onSurface }]} numberOfLines={1}>Visitors</Text>
-            <Text variant="bodySmall" style={[styles.headerSubtitle, { color: theme.colors.onSurface }]} numberOfLines={1}>
+            <Text
+              variant="titleLarge"
+              style={[styles.headerTitle, { color: theme.colors.onSurface }]}
+              numberOfLines={1}
+            >
+              Visitors
+            </Text>
+            <Text
+              variant="bodySmall"
+              style={[styles.headerSubtitle, { color: theme.colors.onSurface }]}
+              numberOfLines={1}
+            >
               {attendees.length} attending
             </Text>
           </View>
         </View>
-
       </View>
 
       <AnimatedFlashList
@@ -195,10 +210,22 @@ export default function VisitorsScreen() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  header: { paddingHorizontal: 16, zIndex: 10 },
-  headerRow: { flexDirection: "row", alignItems: "center" },
-  headerTitle: { fontWeight: "900" },
-  headerSubtitle: { opacity: 0.6 },
+  header: {
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+    backgroundColor: "transparent",
+    zIndex: 10,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  backButton: {
+    margin: 0,
+  },
+  headerTitle: { fontWeight: "800", fontSize: 18 },
+  headerSubtitle: { fontSize: 12, fontWeight: "500", marginTop: 1, opacity: 0.65 },
   listContent: { padding: 16 },
   visitorCard: { borderRadius: 16, overflow: "hidden", marginBottom: 16 },
 

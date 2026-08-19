@@ -22,15 +22,18 @@ import {
   TouchableRipple,
   useTheme,
 } from "react-native-paper";
+import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PageContainer } from "../../../src/components/PageContainer";
 import { useEvent } from "../../../src/hooks/useEvent";
 import { Act, Stage } from "../../../src/types/event";
+import { sortStages } from "../../../src/utils/stageSort";
 import { addAlpha } from "../../../src/utils/theme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export default function LineupScreen() {
+  const { i18n } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useTheme();
   const router = useRouter();
@@ -180,7 +183,7 @@ export default function LineupScreen() {
   const groupedActs: { id: string; name: string; acts: Act[] }[] = [];
 
   if (stages.length > 0) {
-    stages.forEach((stage) => {
+    sortStages(stages).forEach((stage) => {
       const stageActs = currentDayActs.filter((a) => a.stage_id === stage.id);
       if (stageActs.length > 0) {
         groupedActs.push({
@@ -357,9 +360,15 @@ export default function LineupScreen() {
 
   return (
     <PageContainer withPadding={false} withSafeArea={false}>
-      <View style={[styles.header, { paddingTop: top / 4, paddingBottom: 10 }]}>
+      <View style={[styles.header, { paddingTop: Math.max(top + 8, 16) }]}>
         <View style={styles.headerRow}>
-          <IconButton icon="chevron-left" iconColor={theme.colors.onSurface} onPress={() => router.back()} />
+          <IconButton
+            icon="chevron-left"
+            iconColor={theme.colors.onSurface}
+            size={24}
+            style={styles.backButton}
+            onPress={() => router.navigate(`/event/${id}` as any)}
+          />
           <View style={{ flex: 1 }}>
             <Text
               variant="titleLarge"
@@ -376,7 +385,6 @@ export default function LineupScreen() {
               {event.name}
             </Text>
           </View>
-
         </View>
 
         {uniqueDates.length === 1 && (
@@ -394,7 +402,7 @@ export default function LineupScreen() {
                   const d = new Date(uniqueDates[0]);
                   return isNaN(d.getTime())
                     ? uniqueDates[0]
-                    : d.toLocaleDateString("en-US", {
+                    : d.toLocaleDateString(i18n.language || "nl-NL", {
                         weekday: "short",
                         month: "long",
                         day: "numeric",
@@ -433,7 +441,7 @@ export default function LineupScreen() {
                     const d = new Date(item);
                     return isNaN(d.getTime())
                       ? item
-                      : d.toLocaleDateString("en-US", {
+                      : d.toLocaleDateString(i18n.language || "nl-NL", {
                           weekday: "short",
                           month: "long",
                           day: "numeric",
@@ -478,7 +486,7 @@ export default function LineupScreen() {
                       const d = new Date(item);
                       return isNaN(d.getTime())
                         ? item
-                        : d.toLocaleDateString("en-US", {
+                        : d.toLocaleDateString(i18n.language || "nl-NL", {
                             weekday: "short",
                             month: "long",
                             day: "numeric",
@@ -607,17 +615,21 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   header: {
+    paddingHorizontal: 16,
+    paddingBottom: 10,
     backgroundColor: "transparent",
     zIndex: 10,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
-  headerRow: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
-  headerTitle: { fontWeight: "900" },
-  headerSubtitle: { opacity: 0.6 },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  backButton: {
+    margin: 0,
+  },
+  headerTitle: { fontWeight: "800", fontSize: 18 },
+  headerSubtitle: { fontSize: 12, fontWeight: "500", marginTop: 1, opacity: 0.65 },
   dayContainer: {
     borderBottomWidth: 1,
     borderBottomColor: "rgba(0,0,0,0.05)",

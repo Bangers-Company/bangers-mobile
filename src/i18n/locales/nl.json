@@ -1,51 +1,79 @@
 {
   "common": {
-    "next": "Volgende",
-    "back": "Terug",
-    "save": "Wijzigingen opslaan",
+    "save": "Opslaan",
     "cancel": "Annuleren",
+    "edit": "Bewerken",
+    "delete": "Verwijderen",
+    "back": "Terug",
+    "next": "Volgende",
+    "search": "Zoeken",
     "loading": "Laden...",
     "error": "Fout",
+    "errorTitle": "Laden mislukt",
     "success": "Succes",
-    "logout": "Uitloggen",
     "confirm": "Bevestigen",
-    "delete": "Verwijderen",
-    "edit": "Bewerken",
-    "viewAll": "Bekijk alles",
-    "search": "Zoeken",
-    "noResults": "Geen resultaten gevonden",
-    "attending": "Aanwezig",
-    "attend": "Deelnemen",
-    "going": "Ik ga",
-    "remove": "Verwijderen",
-    "join": "Deelnemen",
     "accept": "Accepteren",
-    "reject": "Weigeren",
     "decline": "Afwijzen",
-    "someone": "iemand",
     "offline": "Offline",
-    "offline_warning": "Alleen beschikbaar met internet"
+    "offline_warning": "Je bent momenteel offline",
+    "someone": "Iemand",
+    "tryAgain": "Opnieuw proberen",
+    "saving": "Opslaan...",
+    "getStarted": "Aan de slag",
+    "viewAll": "Bekijk alles",
+    "attend": "Aanwezig",
+    "going": "Gaan",
+    "logout": "Uitloggen"
+  },
+  "navigation": {
+    "home": "Home",
+    "events": "Festivals",
+    "schedule": "Rooster",
+    "timetable": "Tijdschema",
+    "lineup": "Line-up",
+    "visitors": "Bezoekers",
+    "friends": "Vrienden",
+    "profile": "Profiel",
+    "settings": "Instellingen",
+    "groups": "Groepen",
+    "notifications": "Meldingen",
+    "info": "Info"
   },
   "auth": {
     "login": {
-      "title": "Welkom terug",
-      "subtitle": "Log in met je gegevens om verder te gaan",
+      "title": "Welkom Terug",
+      "subtitle": "Meld je aan om je festivals en vrienden te volgen.",
       "email": "E-mailadres",
       "password": "Wachtwoord",
-      "signIn": "Inloggen",
+      "emailPlaceholder": "raver@bangers.app",
+      "passwordPlaceholder": "••••••••",
+      "submit": "Inloggen",
+      "noAccount": "Nog geen account?",
       "newHere": "Nieuw hier?",
       "createAccount": "Account aanmaken",
-      "invalidCredentials": "Ongeldig e-mailadres of wachtwoord"
+      "registerLink": "Account aanmaken",
+      "invalidCredentials": "Ongeldig e-mailadres of wachtwoord",
+      "forgotPassword": "Wachtwoord vergeten?"
     },
     "register": {
+      "title": "Account Aanmaken",
+      "subtitle": "Word lid van Bangers voor gepersonaliseerde tijdschema's en festivalupdates.",
+      "emailPlaceholder": "raver@bangers.app",
+      "usernamePlaceholder": "UniekeRaver123",
+      "passwordPlaceholder": "••••••••",
+      "register": "Registreren",
+      "emailTaken": "E-mailadres al in gebruik",
+      "usernameTaken": "Gebruikersnaam al bezet",
+      "ageRestriction": "Je moet 18 jaar of ouder zijn om mee te doen.",
+      "policyAgreement": "Ik ga akkoord met de Algemene voorwaarden en het Privacybeleid.",
       "steps": {
         "email": {
-          "title": "Voer je e-mailadres in",
-          "subtitle": "We sturen je updates en verificatie."
+          "title": "Wat is je e-mailadres?",
+          "subtitle": "We gebruiken dit voor herstel en meldingen."
         },
         "username": {
           "title": "Kies een gebruikersnaam",
-          "subtitle": "Dit is hoe anderen je zullen zien."
+          "subtitle": "Zo kunnen je vrienden je vinden op Bangers."
         },
         "password": {
           "title": "Beveilig je account",
@@ -53,202 +81,213 @@
         },
         "birthday": {
           "title": "Wanneer ben je jarig?",
-          "subtitle": "Je moet 18+ zijn om deel te nemen aan de rave."
+          "subtitle": "Je moet 18+ zijn om deel te nemen aan de rave.",
+          "placeholder": "Selecteer geboortedatum"
         },
         "policies": {
           "title": "Bijna klaar",
           "subtitle": "Ga akkoord met onze voorwaarden."
         }
-      },
-      "usernamePlaceholder": "UniekeRaver123",
-      "register": "Registreren",
-      "emailTaken": "E-mailadres al in gebruik",
-      "usernameTaken": "Gebruikersnaam al bezet",
-      "ageRestriction": "Je moet 18 jaar of ouder zijn om mee te doen.",
-      "policyAgreement": "Ik ga akkoord met de Algemene voorwaarden en het Privacybeleid."
+      }
     }
+  },
+  "dashboard": {
+    "myEvents": "Mijn Festivals",
+    "maybeInterested": "Aankomende Events",
+    "suggested": "Aanbevolen Voor Jou",
+    "noEvents": "Geen evenementen gevonden",
+    "seeAll": "Bekijk alles",
+    "happeningToday": "Vandaag",
+    "tapToView": "Klik om de timetable te openen ->"
+  },
+  "events": {
+    "details": "Festival Details",
+    "location": "Locatie",
+    "date": "Datum",
+    "attendees": "Bezoekers",
+    "interested": "Geïnteresseerd",
+    "attending": "Aanwezig",
+    "notAttending": "Niet aanwezig",
+    "lineup": "Line-up",
+    "stages": "Stages",
+    "acts": "Acts",
+    "searchPlaceholder": "Zoek acts of stages..."
+  },
+  "profile": {
+    "title": "Profiel",
+    "editProfile": "Profiel Bewerken",
+    "bio": "Bio",
+    "genres": "Favoriete Genres",
+    "mySchedule": "Mijn Timetable",
+    "stats": {
+      "events": "Festivals",
+      "acts": "Acts",
+      "friends": "Vrienden",
+      "past": "Afgelopen Festivals"
+    },
+    "sections": {
+      "about": "Over",
+      "date": "Datum",
+      "location": "Locatie",
+      "lineup": "Line-up",
+      "viewLineup": "Bekijk Volledige Line-up",
+      "upcoming": "Aankomende Festivals",
+      "past": "Afgelopen Festivals"
+    },
+    "edit": {
+      "title": "Profiel Bewerken",
+      "firstName": "Voornaam",
+      "lastName": "Achternaam",
+      "dob": "Geboortedatum",
+      "bio": "Bio / Over jezelf",
+      "isPublic": "Openbaar Profiel",
+      "publicProfile": "Openbaar Profiel",
+      "publicProfileSub": "Laat iedereen je festivalroosters zien",
+      "save": "Wijzigingen Opslaan",
+      "permissionRequired": "Toestemming vereist",
+      "cameraPermissionMsg": "Cameratoegang is nodig voor profielfoto",
+      "libraryPermissionMsg": "Fotobibliotheektoegang is nodig voor profielfoto"
+    }
+  },
+  "notifications": {
+    "title": "Meldingen",
+    "recentActivity": "Recente Activiteit",
+    "friends": "Vriendenverzoeken",
+    "groups": "Groepsuitnodigingen",
+    "emptyFriends": "Geen openstaande vriendschapsverzoeken",
+    "emptyGroups": "Geen openstaande groepsuitnodigingen",
+    "friendRequestSub": "wil met je linken"
   },
   "onboarding": {
     "welcome": {
-      "title": "Welkom bij de Rave!",
-      "description": "We zijn blij dat je er bent. Laten we je ervaring personaliseren."
+      "title": "Welkom bij Bangers!",
+      "description": "Je ultieme festivalgids staat klaar. Laten we je ervaring in een paar snelle stappen personaliseren!"
     },
     "identity": {
-      "title": "Wie ben je?",
-      "subtitle": "Hoe moeten je vrienden je vinden?",
+      "title": "Wat is je naam?",
+      "subtitle": "Laat je festivalcrew weten wie je bent",
       "firstName": "Voornaam",
       "lastName": "Achternaam"
     },
     "genres": {
-      "title": "Jouw vibe",
-      "subtitle": "Selecteer de genres waar je voor leeft."
+      "title": "Favoriete Muziekstijlen",
+      "subtitle": "Kies genres voor op maat gemaakte podiamuggesties"
+    },
+    "ready": {
+      "title": "Je bent er helemaal klaar voor!",
+      "description": "Bekijk tijdschema's, voeg acts toe aan je rooster en feest samen met vrienden!",
+      "feature1": "Stel je perfecte festivalrooster samen",
+      "feature2": "Blijf gesynchroniseerd met de locaties van je vrienden",
+      "feature3": "Ontvang herinneringen voor je favoriete acts",
+      "ready": "Aan de slag"
     },
     "bio": {
       "title": "Vertel iets over jezelf",
-      "subtitle": "Een korte introductie (optioneel).",
-      "placeholder": "Hardstyle liefhebber, festival hopper..."
-    },
-    "finish": {
-      "title": "Je bent er helemaal klaar voor!",
-      "feature1": "Stel je perfecte festivalrooster samen",
-      "feature2": "Blijf op de hoogte van de locaties van je vrienden",
-      "feature3": "Ontvang persoonlijke act-aanbevelingen",
-      "ready": "Laten we beginnen!"
-    }
-  },
-  "profile": {
-    "edit": {
-      "title": "Profiel bewerken",
-      "firstName": "Voornaam",
-      "lastName": "Achternaam",
-      "bio": "Bio",
-      "dob": "Geboortedatum",
-      "publicProfile": "Openbaar profiel",
-      "publicProfileSub": "Laat anderen zien welke evenementen je bezoekt",
-      "permissionRequired": "Toestemming vereist",
-      "cameraPermissionMsg": "Je moet toegang tot de camera geven om je profielfoto te wijzigen.",
-      "libraryPermissionMsg": "Je moet toegang tot je bibliotheek geven om je profielfoto te wijzigen.",
-      "updateError": "Het bijwerken van je profiel is mislukt. Probeer het opnieuw."
-    },
-    "stats": {
-      "events": "Evenementen",
-      "past": "Verleden",
-      "friends": "Vrienden"
-    },
-    "sections": {
-      "upcoming": "Aankomende evenementen",
-      "past": "Eerdere evenementen",
-      "noEvents": "Geen evenementen gevonden",
-      "noUpcoming": "Geen aankomende evenementen",
-      "noPast": "Geen eerdere evenementen gevonden",
-      "about": "Over",
-      "lineup": "Line-up",
-      "viewLineup": "Bekijk volledige line-up",
-      "location": "Locatie",
-      "dates": "Datums"
-    }
-  },
-  "dashboard": {
-    "myEvents": "Mijn evenementen",
-    "maybeInterested": "Misschien interessant",
-    "suggested": "Suggesties voor jou"
-  },
-  "notifications": {
-    "title": "Meldingen",
-    "friends": "Vriendschapsverzoeken",
-    "groups": "Groepsuitnodigingen",
-    "emptyFriends": "Geen openstaande vriendschapsverzoeken",
-    "emptyGroups": "Geen openstaande groepsuitnodigingen",
-    "friendRequestSub": "wil je vriend worden",
-    "groupInviteSub": "heeft je uitgenodigd voor hun groep"
-  },
-  "navigation": {
-    "home": "Home",
-    "events": "Evenementen",
-    "profile": "Profiel",
-    "map": "Kaart",
-    "timetable": "Rooster",
-    "settings": "Instellingen",
-    "notifications": "Meldingen",
-    "lineup": "Line-up",
-    "schedule": "Rooster",
-    "visitors": "Bezoekers",
-    "info": "Info"
-  },
-  "settings": {
-    "title": "Instellingen",
-    "general": {
-      "title": "Algemeen",
-      "language": "Taal",
-      "english": "Engels",
-      "dutch": "Nederlands",
-      "french": "Frans",
-      "german": "Duits",
-      "spanish": "Spaans",
-      "italian": "Italiaans"
-    },
-    "appearance": {
-      "title": "Uiterlijk",
-      "themeTitle": "Thema modus",
-      "themeSubtitle": "Kies je gewenste look",
-      "system": "Systeem",
-      "light": "Licht",
-      "dark": "Donker",
-      "amoledTitle": "AMOLED-modus",
-      "amoledSubtitle": "Puur zwart voor OLED-schermen",
-      "accentTitle": "Accentkleur"
-    },
-    "notifications": {
-      "title": "Meldingen",
-      "description": "Beheer je waarschuwingen en timetable herinneringen.",
-      "enabled": "Timetable Herinneringen",
-      "enabledSubtitle": "Ontvang een melding voordat een act begint",
-      "minutesBefore": "Herinneringstijd",
-      "minutesBeforeSubtitle": "Hoe lang voor de act begint",
-      "minutes": "{{count}} minuten",
-      "joinSuccess": "Succesvol lid geworden van de groep!"
-    },
-    "account": {
-      "title": "Account",
-      "description": "Werk je e-mail, wachtwoord en abonnementsgegevens bij."
-    },
-    "privacy": {
-      "title": "Privacy",
-      "description": "Beheer je zichtbaarheid en beveiligingsinstellingen."
+      "subtitle": "Deel wat voor raver je bent.",
+      "placeholder": "Hardstyle-liefhebber, festivalganger..."
     }
   },
   "timetable": {
-    "switchTitle": "Timetable Wisselen",
-    "selectTimetable": "Selecteer Timetable",
-    "officialBadge": "Officieel",
-    "groupBadge": "Groep",
+    "selectTimetable": "Selecteer Tijdschema",
+    "days": "Dagen",
+    "stages": "Stages",
+    "nowPlaying": "Nu Bezig",
+    "upNext": "Volgende",
+    "addToSchedule": "Toevoegen aan Mijn Timetables",
+    "removeFromSchedule": "Verwijderen uit Timetables",
+    "mySchedule": "Mijn Persoonlijke Timetable",
+    "groupSchedule": "Groepstimetable",
+    "clashes": "Overlap Gedetecteerd",
     "sections": {
-      "official": "Officieel Rooster",
-      "officialSubtitle": "Officieel Rooster van het Evenement",
-      "invitations": "Uitnodigingen ({{count}})",
-      "groups": "Groepen"
+      "official": "Officieel Timetable",
+      "officialSubtitle": "Volledig Stage rooster",
+      "groups": "Groepstimetables",
+      "invitations": "Openstaande Uitnodigingen"
+    },
+    "empty": {
+      "title": "Geen acts gepland",
+      "description": "Voeg acts toe aan je tijdschema om ze hier te zien"
+    },
+    "notYetAvailable": "Nog niet beschikbaar",
+    "notYetAvailableSub": "Het officiële tijdschema voor dit festival is nog niet gepubliceerd. Kom snel terug!",
+    "actInfo": {
+      "about": "Over de Artiest",
+      "date": "Datum",
+      "time": "Tijd",
+      "stage": "Stage",
+      "whosGoing": "Wie gaan er mee",
+      "fromGroup": "Van Groep",
+      "noAttendees": "Nog geen vrienden aanwezig",
+      "loadingAttendees": "Bezoekers laden...",
+      "gotIt": "Begrepen"
     },
     "groups": {
-      "create": "Groep aanmaken",
+      "create": "Groepstimetable Aanmaken",
       "createFirst": "Maak je eerste groep aan",
       "createAnother": "Maak nog een groep aan",
-      "memberCount": "{{count}} Leden • Ingedrukt houden om te verwijderen",
-      "invitedBy": "Uitgenodigd door {{name}}",
+      "memberCount": "leden",
+      "invitedBy": "Uitgenodigd door",
       "createModal": {
-        "titleStep1": "Groep Aanmaken",
-        "titleStep2": "Leden Uitnodigen",
-        "stepIndicator": "Stap {{current}} van {{total}}",
-        "nameSubtitle": "Hoe moet je nieuwe squad heten?",
-        "nameLabel": "Groepsnaam",
-        "namePlaceholder": "bijv. Festival Squad",
-        "inviteSubtitle": "Selecteer vrienden voor {{name}}.",
-        "searchPlaceholder": "Vrienden zoeken...",
-        "noFriends": "Geen vrienden gevonden.",
-        "createWithCount": "Aanmaken ({{count}})"
+        "stepIndicator": "Stap {{step}} van {{total}}",
+        "titleStep1": "Groepsnaam",
+        "titleStep2": "Nodig Vrienden Uit",
+        "namePlaceholder": "bijv. Defqon Crew 2026",
+        "searchPlaceholder": "Zoek vrienden...",
+        "noFriends": "Geen vrienden gevonden om uit te nodigen",
+        "createWithCount": "Groep Aanmaken ({{count}} uitgenodigd)"
       },
       "deleteModal": {
         "titleDelete": "Groep Verwijderen",
         "titleLeave": "Groep Verlaten",
-        "messageDelete": "Weet je zeker dat je {{name}} wilt verwijderen? Dit verwijdert alle leden en schema's.",
-        "messageLeave": "Weet je zeker dat je {{name}} wilt verlaten?",
-        "confirmDelete": "Verwijderen",
-        "confirmLeave": "Verlaten"
+        "messageDelete": "Weet je zeker dat je deze groepstimetable wilt verwijderen? Dit kan niet ongedaan worden gemaakt.",
+        "messageLeave": "Weet je zeker dat je deze groepstimetable wilt verlaten?",
+        "confirmDelete": "Groep Verwijderen",
+        "confirmLeave": "Groep Verlaten"
       }
-    },
-    "empty": {
-      "title": "Nog niet gepubliceerd",
-      "description": "Sorry, wacht tot het officiële rooster voor dit evenement is gepubliceerd, of maak een groep aan om te beginnen met plannen."
-    },
-    "actInfo": {
-      "stage": "Podium",
-      "time": "Tijd",
-      "date": "Datum",
-      "whosGoing": "Wie gaan er?",
-      "fromGroup": "Van jouw groep",
-      "loadingAttendees": "Deelnemers laden...",
-      "noAttendees": "Niemand van je groep gaat nog naar deze act.",
-      "about": "Over",
-      "gotIt": "Begrepen"
     }
+  },
+  "settings": {
+    "title": "Instellingen",
+    "account": {
+      "title": "Accountinstellingen",
+      "description": "Beheer je profiel & beveiliging"
+    },
+    "appearance": {
+      "title": "Uiterlijk",
+      "themeTitle": "App Thema",
+      "themeSubtitle": "Kies je gewenste weergave",
+      "accentTitle": "Accentkleur",
+      "amoledTitle": "AMOLED Donkere Modus",
+      "amoledSubtitle": "Puur zwarte achtergronden voor OLED-schermen"
+    },
+    "general": {
+      "title": "Taal & Regio",
+      "language": "Taal",
+      "english": "Engels",
+      "dutch": "Nederlands",
+      "german": "Duits",
+      "spanish": "Spaans",
+      "french": "Frans",
+      "italian": "Italiaans"
+    },
+    "notifications": {
+      "title": "Stage Meldingen",
+      "enabled": "Act Herinneringen",
+      "enabledSubtitle": "Ontvang een melding voordat je favoriete acts beginnen",
+      "minutesBefore": "Meldingstijd Vooraf",
+      "minutesBeforeSubtitle": "Meld mij {{minutes}} minuten voor de set",
+      "minutes": "{{count}} minuten"
+    },
+    "privacy": {
+      "title": "Privacy",
+      "description": "Beheer wie je roosters en status kan zien"
+    },
+    "language": "Taal",
+    "theme": "Thema",
+    "dark": "Donkere Modus",
+    "light": "Lichte Modus",
+    "system": "Systeemstandaard",
+    "logout": "Uitloggen",
+    "version": "App Versie"
   }
 }

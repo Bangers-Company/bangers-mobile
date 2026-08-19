@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
-import { ChevronDown, LayoutGrid, Share2 } from "lucide-react-native";
+import { ChevronDown, LayoutGrid, List, Share2, Clock } from "lucide-react-native";
 import React, { useEffect, useState, useCallback } from "react";
 import { StyleSheet, View, Pressable } from "react-native";
 import { IconButton, Text, useTheme, ActivityIndicator } from "react-native-paper";
@@ -32,11 +32,19 @@ const EMPTY_ARRAY: any[] = [];
 
 export default function ScheduleScreen() {
   const { t } = useTranslation();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
 
   const theme = useTheme();
   const router = useRouter();
-  const { top } = useSafeAreaInsets();
+  const insets = useSafeAreaInsets();
+
+  const handleBack = () => {
+    if (from === "home") {
+      router.navigate("/(tabs)" as any);
+    } else {
+      router.navigate(`/event/${id}` as any);
+    }
+  };
 
   const [selectedTimetableId, setSelectedTimetableId] = useState<string | null>(null);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
@@ -101,14 +109,20 @@ export default function ScheduleScreen() {
   const isPersonal = !!selectedTimetable && 
     (selectedTimetable.is_official || !!selectedGroupId);
 
-  // Handle BottomNav visibility
+  const isTimetableAvailable = React.useMemo(() => {
+    if (!selectedTimetable) return false;
+    const entries = selectedTimetable.entries || [];
+    return entries.length > 0;
+  }, [selectedTimetable]);
+
+  // Hide BottomNav when timetable is unavailable/unpublished ("Not yet available")
   useFocusEffect(
     useCallback(() => {
-      setIsBottomNavVisible(false);
+      setIsBottomNavVisible(isTimetableAvailable);
       return () => {
         setIsBottomNavVisible(true);
       };
-    }, [setIsBottomNavVisible])
+    }, [setIsBottomNavVisible, isTimetableAvailable])
   );
 
   const handleSelectOfficial = () => {
@@ -197,35 +211,77 @@ export default function ScheduleScreen() {
     setViewMode(viewMode === "vertical" ? "horizontal" : "vertical");
   };
 
+  const titleText = selectedTimetable ? selectedTimetable.name : (official?.name || t("timetable.sections.official"));
+  const groupName = selectedGroupId ? groups.find((g: any) => g.id === selectedGroupId)?.name : null;
+
   return (
     <PageContainer withPadding={false} withSafeArea={false}>
-      <View style={[styles.header, { paddingTop: top / 4 }]}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top + 8, 16) }]}>
         <View style={styles.headerRow}>
-          <IconButton icon="chevron-left" iconColor={theme.colors.onSurface} onPress={() => router.back()} />
+          <IconButton
+            icon="chevron-left"
+            iconColor={theme.colors.onSurface}
+            size={24}
+            style={styles.backButton}
+            onPress={handleBack}
+          />
 
+          {/* Selector Glass Pill - Centered text layout */}
           <Pressable
-            style={[styles.selectorPill, { backgroundColor: addAlpha(theme.colors.onSurface, 0.06) }]}
-            onPress={() => setSelectorSheetVisible(true)}
+            style={[
+              styles.selectorPill,
+              {
+                backgroundColor: addAlpha(theme.colors.primary, 0.1),
+                borderColor: addAlpha(theme.colors.primary, 0.22),
+                opacity: isTimetableAvailable ? 1 : 0.8,
+              },
+            ]}
+            disabled={!isTimetableAvailable}
+            onPress={() => isTimetableAvailable && setSelectorSheetVisible(true)}
           >
-            <View style={{ flex: 1 }}>
+            <View style={styles.selectorContentWrapper}>
               <View style={styles.selectorTitleRow}>
-                <Text variant="titleMedium" style={[styles.headerTitle, { color: theme.colors.onSurface }]} numberOfLines={1}>
-                  {selectedTimetable ? selectedTimetable.name : (official?.name || t("timetable.sections.official"))}
+                <Text
+                  variant="titleMedium"
+                  style={[styles.headerTitle, { color: theme.colors.onSurface }]}
+                  numberOfLines={1}
+                >
+                  {titleText}
                 </Text>
-                <ChevronDown size={18} color={theme.colors.primary} style={{ marginLeft: 4 }} />
+                {isTimetableAvailable && (
+                  <ChevronDown size={16} color={theme.colors.primary} style={{ marginLeft: 6 }} />
+                )}
               </View>
-              <Text variant="bodySmall" style={[styles.headerSubtitle, { color: theme.colors.onSurface }]} numberOfLines={1}>
-                {selectedGroupId 
-                  ? (groups.find((g: any) => g.id === selectedGroupId)?.name || t("timetable.groupBadge")) 
-                  : t("timetable.officialBadge")}
-              </Text>
+
+              {groupName && (
+                <Text
+                  variant="bodySmall"
+                  style={[styles.headerSubtitle, { color: addAlpha(theme.colors.onSurface, 0.65) }]}
+                  numberOfLines={1}
+                >
+                  {groupName}
+                </Text>
+              )}
             </View>
           </Pressable>
 
-          <View style={styles.headerActions}>
-            <IconButton icon={() => <LayoutGrid size={20} color={theme.colors.primary} />} onPress={toggleViewMode} />
-            <IconButton icon={() => <Share2 size={20} color={theme.colors.outline} />} disabled onPress={() => {}} />
-          </View>
+          {isTimetableAvailable && (
+            <View style={styles.headerActions}>
+              <Pressable
+                style={[
+                  styles.actionBtn,
+                  { backgroundColor: addAlpha(theme.colors.primary, 0.12), borderColor: addAlpha(theme.colors.primary, 0.28) },
+                ]}
+                onPress={toggleViewMode}
+              >
+                {viewMode === "vertical" ? (
+                  <LayoutGrid size={18} color={theme.colors.primary} />
+                ) : (
+                  <List size={18} color={theme.colors.primary} />
+                )}
+              </Pressable>
+            </View>
+          )}
         </View>
       </View>
 
@@ -245,9 +301,30 @@ export default function ScheduleScreen() {
               timetableId={selectedTimetableId}
             />
           )
-        ) : (
+        ) : isLoadingOfficial ? (
           <View style={styles.center}>
             <ActivityIndicator color={theme.colors.primary} size="large" />
+          </View>
+        ) : (
+          <View style={styles.emptyContainer}>
+            <View
+              style={[
+                styles.emptyIconWrapper,
+                {
+                  backgroundColor: addAlpha(theme.colors.primary, 0.12),
+                  borderColor: addAlpha(theme.colors.primary, 0.3),
+                },
+              ]}
+            >
+              <Clock size={36} color={theme.colors.primary} />
+            </View>
+            <Text style={[styles.emptyTitle, { color: theme.colors.onSurface }]}>
+              {t("timetable.notYetAvailable") || "Not yet available"}
+            </Text>
+            <Text style={[styles.emptySub, { color: addAlpha(theme.colors.onSurface, 0.65) }]}>
+              {t("timetable.notYetAvailableSub") ||
+                "The official timetable for this festival has not been published yet. Check back soon!"}
+            </Text>
           </View>
         )}
       </View>
@@ -303,22 +380,87 @@ export default function ScheduleScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { paddingHorizontal: 8, paddingBottom: 8, backgroundColor: "transparent", zIndex: 10 },
-  headerRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 10,
+    backgroundColor: "transparent",
+    zIndex: 10,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  backButton: {
+    margin: 0,
+  },
   selectorPill: {
     flex: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 16,
+    borderWidth: 1,
     justifyContent: "center",
+    alignItems: "center",
+  },
+  selectorContentWrapper: {
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
   },
   selectorTitleRow: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
   },
-  headerTitle: { fontWeight: "900", fontSize: 16 },
-  headerSubtitle: { opacity: 0.6, fontSize: 11 },
+  headerTitle: { fontWeight: "800", fontSize: 16, textAlign: "center" },
+  headerSubtitle: { fontSize: 11.5, fontWeight: "500", marginTop: 1, textAlign: "center" },
   headerActions: { flexDirection: "row", alignItems: "center" },
+  actionBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    borderWidth: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   content: { flex: 1 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 32,
+    paddingBottom: 40,
+    gap: 12,
+    width: "100%",
+  },
+  emptyIconWrapper: {
+    width: 68,
+    height: 68,
+    borderRadius: 22,
+    borderWidth: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
+    marginBottom: 4,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: "900",
+    letterSpacing: -0.4,
+    textAlign: "center",
+    alignSelf: "center",
+    width: "100%",
+  },
+  emptySub: {
+    fontSize: 14,
+    fontWeight: "500",
+    textAlign: "center",
+    alignSelf: "center",
+    maxWidth: 290,
+    lineHeight: 20,
+    width: "100%",
+  },
 });

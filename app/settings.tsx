@@ -1,31 +1,29 @@
+import {
+  Divider,
+  Popover,
+  PopoverBackdrop,
+  PopoverBody,
+  PopoverContent,
+  Pressable,
+  Switch,
+  Text
+} from "@gluestack-ui/themed";
 import { useRouter } from "expo-router";
 import {
+  ArrowLeft,
+  Check,
+  ChevronDown,
+  ChevronUp,
   Globe,
   LogOut,
   Bell as Notifications,
   Palette,
   Shield,
   User,
-  ChevronDown,
-  ChevronUp,
-  ArrowLeft,
-  Check,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet, TouchableOpacity, useColorScheme, View } from "react-native";
-import {
-  Box,
-  Text,
-  Switch,
-  Divider,
-  Pressable,
-  Popover,
-  PopoverContent,
-  PopoverBody,
-  PopoverBackdrop,
-} from "@gluestack-ui/themed";
-import { useAppTheme } from "../src/context/ThemeProvider";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -33,6 +31,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PageContainer } from "../src/components/PageContainer";
+import { useAppTheme } from "../src/context/ThemeProvider";
 import { useAuthStore } from "../src/store/useAuthStore";
 import { useSettingsStore } from "../src/store/useSettingsStore";
 import { useUIStore } from "../src/store/useUIStore";
@@ -188,7 +187,7 @@ export default function SettingsScreen() {
 
   return (
     <PageContainer withPadding={false}>
-      <View style={[styles.topBar, { backgroundColor: "transparent" }]}>
+      <View style={[styles.topBar, { backgroundColor: "transparent", borderBottomWidth: 0, borderWidth: 0, elevation: 0, shadowOpacity: 0 }]}>
         <Pressable
           onPress={() => router.back()}
           style={[styles.backButtonCircular, { backgroundColor: theme.colors.surface }]}
@@ -270,7 +269,7 @@ export default function SettingsScreen() {
         {/* Appearance */}
         {renderSection(
           "appearance",
-          "Appearance",
+          t("settings.appearance.title") || "Appearance",
           <Palette size={24} color={theme.colors.primary} />,
           <View style={styles.appearanceContent}>
             <View style={[styles.settingRow, { flexDirection: "column", alignItems: "flex-start", gap: 12 }]}>
@@ -375,7 +374,7 @@ export default function SettingsScreen() {
                   {t("settings.notifications.minutesBefore")}
                 </Text>
                 <Text style={[styles.settingSubtext, { color: theme.colors.onSurface }]}>
-                  {t("settings.notifications.minutesBeforeSubtitle")}
+                  {t("settings.notifications.minutesBeforeSubtitle", { minutes: notificationMinutesBefore })}
                 </Text>
               </View>
 
@@ -480,13 +479,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingBottom: 12,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
     zIndex: 10,
     borderBottomWidth: 0,
+    borderWidth: 0,
+    elevation: 0,
+    shadowOpacity: 0,
   },
   backButtonCircular: {
     width: 44,

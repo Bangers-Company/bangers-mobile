@@ -1,182 +1,290 @@
 {
   "common": {
-    "next": "Avanti",
-    "back": "Indietro",
-    "save": "Salva modifiche",
+    "save": "Salva",
     "cancel": "Annulla",
+    "edit": "Modifica",
+    "delete": "Elimina",
+    "back": "Indietro",
+    "next": "Avanti",
+    "search": "Cerca",
     "loading": "Caricamento...",
     "error": "Errore",
+    "errorTitle": "Impossibile caricare",
     "success": "Successo",
-    "logout": "Esci",
     "confirm": "Conferma",
-    "delete": "Elimina",
-    "edit": "Modifica",
-    "viewAll": "Vedi tutti",
-    "search": "Cerca",
-    "noResults": "Nessun risultato trovato",
-    "attending": "Partecipazione",
-    "attend": "Partecipa",
-    "going": "Ci vado",
-    "remove": "Rimuovi",
-    "join": "Unisciti",
     "accept": "Accetta",
-    "reject": "Rifiuta"
+    "decline": "Rifiuta",
+    "offline": "Non connesso",
+    "offline_warning": "Sei attualmente offline",
+    "someone": "Qualcuno",
+    "tryAgain": "Riprova",
+    "saving": "Salvataggio...",
+    "getStarted": "Inizia",
+    "viewAll": "Vedi tutti",
+    "attend": "Partecipa",
+    "going": "Partecipa",
+    "logout": "Disconnettiti"
+  },
+  "navigation": {
+    "home": "Home",
+    "events": "Festival",
+    "schedule": "Programma",
+    "timetable": "Orari",
+    "lineup": "Line-up",
+    "visitors": "Partecipanti",
+    "friends": "Amici",
+    "profile": "Profilo",
+    "settings": "Impostazioni",
+    "groups": "Gruppi",
+    "notifications": "Notifiche",
+    "info": "Info"
   },
   "auth": {
     "login": {
       "title": "Bentornato",
-      "subtitle": "Inserisci le tue credenziali per continuare",
-      "email": "Indirizzo email",
+      "subtitle": "Accedi per seguire i tuoi festival e amici.",
+      "email": "Indirizzo Email",
       "password": "Password",
-      "signIn": "Accedi",
+      "emailPlaceholder": "raver@bangers.app",
+      "passwordPlaceholder": "••••••••",
+      "submit": "Accedi",
+      "noAccount": "Non hai un account?",
       "newHere": "Nuovo qui?",
-      "createAccount": "Crea account",
-      "invalidCredentials": "Email o password non validi"
+      "createAccount": "Crea un Account",
+      "registerLink": "Creane uno",
+      "invalidCredentials": "Email o password non validi",
+      "forgotPassword": "Password dimenticata?"
     },
     "register": {
-      "steps": {
-        "email": {
-          "title": "Inserisci la tua email",
-          "subtitle": "Ti invieremo aggiornamenti e la verifica."
-        },
-        "username": {
-          "title": "Scegli un nome utente",
-          "subtitle": "Questo è il modo in cui ti vedranno gli altri."
-        },
-        "password": {
-          "title": "Metti in sicurezza il tuo account",
-          "subtitle": "Scegli una password forte."
-        },
-        "birthday": {
-          "title": "Quando è il tuo compleanno?",
-          "subtitle": "Devi avere 18+ anni per unirti alla rave."
-        },
-        "policies": {
-          "title": "Tocchi finali",
-          "subtitle": "Accetta i nostri termini e condizioni."
-        }
-      },
+      "title": "Crea Account",
+      "subtitle": "Unisciti a Bangers per orari personalizzati.",
+      "emailPlaceholder": "raver@bangers.app",
       "usernamePlaceholder": "RaverUnico123",
+      "passwordPlaceholder": "••••••••",
       "register": "Registrati",
       "emailTaken": "Email già in uso",
       "usernameTaken": "Nome utente già occupato",
-      "ageRestriction": "Devi avere 18 anni o più per unirti.",
-      "policyAgreement": "Accetto i Termini di Servizio e l'Informativa sulla Privacy."
+      "ageRestriction": "Devi avere 18 anni o più.",
+      "policyAgreement": "Accetto i Termini di Servizio e l'Informativa sulla Privacy.",
+      "steps": {
+        "email": {
+          "title": "Qual è la tua email?",
+          "subtitle": "La useremo per il recupero account e le notifiche."
+        },
+        "username": {
+          "title": "Scegli un nome utente",
+          "subtitle": "Così i tuoi amici ti troveranno su Bangers."
+        },
+        "password": {
+          "title": "Proteggi il tuo account",
+          "subtitle": "Scegli una password sicura."
+        },
+        "birthday": {
+          "title": "Quando è il tuo compleanno?",
+          "subtitle": "Devi avere 18+ anni per unirti.",
+          "placeholder": "Seleziona data di nascita"
+        },
+        "policies": {
+          "title": "Ultimi dettagli",
+          "subtitle": "Accetta i nostri termini e condizioni."
+        }
+      }
     }
+  },
+  "dashboard": {
+    "myEvents": "I Miei Festival",
+    "maybeInterested": "Prossimi Eventi",
+    "suggested": "Consigliati Per Te",
+    "noEvents": "Nessun evento trovato",
+    "seeAll": "Vedi tutti"
+  },
+  "events": {
+    "details": "Dettagli Festival",
+    "location": "Luogo",
+    "date": "Data",
+    "attendees": "Partecipanti",
+    "interested": "Interessato",
+    "attending": "Parteciperò",
+    "notAttending": "Non parteciperò",
+    "lineup": "Line-up",
+    "stages": "Palchi",
+    "acts": "Artisti",
+    "searchPlaceholder": "Cerca artisti o palchi..."
+  },
+  "profile": {
+    "title": "Profilo",
+    "editProfile": "Modifica Profilo",
+    "bio": "Bio",
+    "genres": "Generi Preferiti",
+    "mySchedule": "Il Mio Programma",
+    "stats": {
+      "events": "Festival",
+      "acts": "Artisti",
+      "friends": "Amici",
+      "past": "Festival Passati"
+    },
+    "sections": {
+      "about": "Info",
+      "date": "Data",
+      "location": "Luogo",
+      "lineup": "Line-up",
+      "viewLineup": "Vedi Line-up Completa",
+      "upcoming": "Prossimi Festival",
+      "past": "Festival Passati"
+    },
+    "edit": {
+      "title": "Modifica Profilo",
+      "firstName": "Nome",
+      "lastName": "Cognome",
+      "dob": "Data di Nascita",
+      "bio": "Bio / Su di te",
+      "isPublic": "Profilo Pubblico",
+      "publicProfile": "Profilo Pubblico",
+      "publicProfileSub": "Consenti a tutti di vedere i tuoi orari",
+      "save": "Salva Modifiche",
+      "permissionRequired": "Autorizzazione richiesta",
+      "cameraPermissionMsg": "Serve l'accesso alla fotocamera per la foto profilo",
+      "libraryPermissionMsg": "Serve l'accesso alla galleria per la foto profilo"
+    }
+  },
+  "notifications": {
+    "title": "Notifiche",
+    "recentActivity": "Attività recente",
+    "friends": "Richieste di amicizia",
+    "groups": "Inviti di gruppo",
+    "emptyFriends": "Nessuna richiesta in sospeso",
+    "emptyGroups": "Nessun invito in sospeso",
+    "friendRequestSub": "vuole connettersi con te"
   },
   "onboarding": {
     "welcome": {
-      "title": "Benvenuto alla Rave!",
-      "description": "Siamo entusiasti di averti parte della comunità Bangers. Personalizziamo la tua esperienza."
+      "title": "Benvenuto su Bangers!",
+      "description": "Il tuo compagno di festival definitivo è pronto. Personalizziamo la tua esperienza!"
     },
     "identity": {
-      "title": "Chi sei?",
-      "subtitle": "Come dovrebbero trovarti i tuoi amici?",
+      "title": "Come ti chiami?",
+      "subtitle": "Fai sapere al tuo gruppo chi sei",
       "firstName": "Nome",
       "lastName": "Cognome"
     },
     "genres": {
-      "title": "La tua Vibe",
-      "subtitle": "Seleziona i generi musicali per cui vivi."
+      "title": "Stili Musicali Preferiti",
+      "subtitle": "Scegli i tuoi generi per suggerimenti su misura."
+    },
+    "ready": {
+      "title": "Tutto pronto!",
+      "description": "Esplora gli orari, aggiungi artisti e divertiti con gli amici!",
+      "feature1": "Crea il tuo programma festival perfetto",
+      "feature2": "Rimani sincronizzato con le posizioni dei tuoi amici",
+      "feature3": "Ricevi avvisi per i tuoi artisti preferiti",
+      "ready": "Inizia"
     },
     "bio": {
       "title": "Racconta la tua storia",
-      "subtitle": "Qualcosa su di te (opzionale).",
+      "subtitle": "Mostra che tipo di raver sei.",
       "placeholder": "Appassionato di Hardstyle, frequentatore di festival..."
-    },
-    "finish": {
-      "title": "Tutto pronto!",
-      "feature1": "Costruisci il tuo programma perfetto del festival",
-      "feature2": "Resta sincronizzato con la posizione dei tuoi amici",
-      "feature3": "Ricevi raccomandazioni personalizzate per i set",
-      "ready": "Pronto a iniziare!"
     }
   },
-  "profile": {
-    "edit": {
-      "title": "Modifica profilo",
-      "firstName": "Nome",
-      "lastName": "Cognome",
-      "bio": "Biografia",
-      "dob": "Data di nascita",
-      "publicProfile": "Profilo pubblico",
-      "publicProfileSub": "Permetti agli altri di vedere a quali eventi partecipi"
-    },
-    "stats": {
-      "events": "Eventi",
-      "past": "Passati",
-      "friends": "Amici"
-    },
+  "timetable": {
+    "selectTimetable": "Seleziona Orario",
+    "days": "Giorni",
+    "stages": "Palchi",
+    "nowPlaying": "In Onda Ora",
+    "upNext": "A Seguire",
+    "addToSchedule": "Aggiungi al Mio Programma",
+    "removeFromSchedule": "Rimuovi dal Programma",
+    "mySchedule": "Il Mio Programma Personale",
+    "groupSchedule": "Programma di Gruppo",
+    "clashes": "Sovrapposizioni Rilevate",
     "sections": {
-      "past": "Eventi passati",
-      "noEvents": "Nessun evento trovato",
-      "noUpcoming": "Nessun evento in programma",
-      "noPast": "Nessun evento passato registrato",
-      "about": "Informazioni",
-      "lineup": "Line-up",
-      "viewLineup": "Vedi line-up completa",
-      "location": "Luogo",
-      "dates": "Date"
+      "official": "Orario Ufficiale",
+      "officialSubtitle": "Programma completo dei palchi",
+      "groups": "Orari di Gruppo",
+      "invitations": "Inviti in Sospeso"
+    },
+    "empty": {
+      "title": "Nessuna esibizione in programma",
+      "description": "Aggiungi artisti al tuo orario per vederli qui"
+    },
+    "notYetAvailable": "Non ancora disponibile",
+    "notYetAvailableSub": "L'orario ufficiale di questo festival non è ancora stato pubblicato. Torna presto!",
+    "actInfo": {
+      "about": "Info sull'Artista",
+      "date": "Data",
+      "time": "Ora",
+      "stage": "Palco",
+      "whosGoing": "Chi Partecipa",
+      "fromGroup": "Dal Gruppo",
+      "noAttendees": "Nessun amico ancora partecipante",
+      "loadingAttendees": "Caricamento...",
+      "gotIt": "Ho capito"
+    },
+    "groups": {
+      "create": "Crea Programma di Gruppo",
+      "createFirst": "Crea il tuo primo gruppo",
+      "createAnother": "Crea un altro gruppo",
+      "memberCount": "membri",
+      "invitedBy": "Invitato da",
+      "createModal": {
+        "stepIndicator": "Passaggio {{step}} di {{total}}",
+        "titleStep1": "Nome Gruppo",
+        "titleStep2": "Invita Amici",
+        "namePlaceholder": "es. Defqon Crew 2026",
+        "searchPlaceholder": "Cerca amici...",
+        "noFriends": "Nessun amico trovato da invitare",
+        "createWithCount": "Crea Gruppo ({{count}} invitati)"
+      },
+      "deleteModal": {
+        "titleDelete": "Elimina Gruppo",
+        "titleLeave": "Lascia Gruppo",
+        "messageDelete": "Sei sicuro di voler eliminare questo gruppo?",
+        "messageLeave": "Sei sicuro di voler lasciare questo gruppo?",
+        "confirmDelete": "Elimina Gruppo",
+        "confirmLeave": "Lascia Gruppo"
+      }
     }
-  },
-  "dashboard": {
-    "myEvents": "I miei eventi",
-    "maybeInterested": "Forse interessato a",
-    "suggested": "Suggerito per te"
-  },
-  "notifications": {
-    "title": "Notifiche",
-    "friends": "Richieste di amicizia",
-    "groups": "Inviti di gruppo",
-    "emptyFriends": "Nessuna richiesta di amicizia in sospeso",
-    "emptyGroups": "Nessun invito di gruppo in sospeso",
-    "friendRequestSub": "vuole essere tuo amico",
-    "groupInviteSub": "ti ha invitato a unirti al suo gruppo"
-  },
-  "navigation": {
-    "home": "Home",
-    "events": "Eventi",
-    "profile": "Profilo",
-    "map": "Mappa",
-    "timetable": "Programma",
-    "settings": "Impostazioni",
-    "notifications": "Notifiche"
   },
   "settings": {
     "title": "Impostazioni",
+    "account": {
+      "title": "Impostazioni Account",
+      "description": "Gestisci il tuo profilo e la sicurezza"
+    },
+    "appearance": {
+      "themeTitle": "Tema dell'App",
+      "themeSubtitle": "Scegli il tuo aspetto preferito",
+      "accentTitle": "Colore Accento",
+      "amoledTitle": "Modalità Scura AMOLED",
+      "amoledSubtitle": "Nero puro per schermi OLED"
+    },
     "general": {
-      "title": "Generale",
+      "title": "Lingua e Regione",
       "language": "Lingua",
       "english": "Inglese",
       "dutch": "Olandese",
-      "french": "Francese",
       "german": "Tedesco",
       "spanish": "Spagnolo",
+      "french": "Francese",
       "italian": "Italiano"
     },
-    "appearance": {
-      "title": "Aspetto",
-      "themeTitle": "Modalità Tema",
-      "themeSubtitle": "Scegli il tuo look preferito",
-      "system": "Sistema",
-      "light": "Chiaro",
-      "dark": "Scuro",
-      "amoledTitle": "Modalità AMOLED",
-      "amoledSubtitle": "Nero puro per schermi OLED",
-      "accentTitle": "Colore risalto"
-    },
     "notifications": {
-      "title": "Notifiche",
-      "description": "Gestisci i tuoi avvisi, notifiche push e preferenze email.",
-      "joinSuccess": "Unito al gruppo con successo!"
-    },
-    "account": {
-      "title": "Account",
-      "description": "Aggiorna la tua email, password e dettagli dell'abbonamento."
+      "title": "Notifiche Palco",
+      "enabled": "Promemoria Artisti",
+      "enabledSubtitle": "Ricevi un avviso prima dell'inizio dei tuoi artisti",
+      "minutesBefore": "Tempo di Preavviso",
+      "minutesBeforeSubtitle": "Avvisami {{minutes}} minuti prima",
+      "minutes": "{{count}} minuti"
     },
     "privacy": {
       "title": "Privacy",
-      "description": "Controlla la tua visibilità e le impostazioni di sicurezza."
-    }
+      "description": "Controlla chi vede i tuoi orari e il tuo stato"
+    },
+    "language": "Lingua",
+    "theme": "Tema",
+    "dark": "Modalità Scura",
+    "light": "Modalità Chiara",
+    "system": "Predefinito di Sistema",
+    "logout": "Disconnettiti",
+    "version": "Versione App"
   }
 }

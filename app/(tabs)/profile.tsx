@@ -1,5 +1,5 @@
 import { useRouter, useFocusEffect } from "expo-router";
-import { Calendar, History, Users, ShieldAlert, ShieldCheck, Pencil } from "lucide-react-native";
+import { Calendar, History, Users, ShieldAlert, ShieldCheck, Pencil, Sparkles, Settings } from "lucide-react-native";
 import React, { useCallback } from "react";
 import { RefreshControl, StyleSheet, View, TouchableOpacity } from "react-native";
 import {
@@ -14,7 +14,7 @@ import ContentLoader, { Rect } from "react-content-loader/native";
 import { useProfile } from "../../src/hooks/useProfile";
 import { Image as ExpoImage } from "expo-image";
 import { getUserAvatarUrl, getUserDisplayName } from "../../src/utils/format";
-
+import { addAlpha } from "../../src/utils/theme";
 import { useSharedScroll } from "../../src/hooks/useSharedScroll";
 import Animated, { useAnimatedScrollHandler } from "react-native-reanimated";
 import {
@@ -25,11 +25,13 @@ import { AnimatedCounter } from "../../src/components/ui/AnimatedCounter";
 import { EditProfileModal } from "../../src/components/modals/EditProfileModal";
 import { useUIStore } from "../../src/store/useUIStore";
 import { useAuthStore } from "../../src/store/useAuthStore";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [focusKey, setFocusKey] = React.useState(0);
   const { data: userProfile, isLoading: loading, refetch: refreshProfile } = useProfile();
   const [localUser, setLocalUser] = React.useState<any>(null);
@@ -91,12 +93,29 @@ export default function ProfileScreen() {
     <Animated.ScrollView
       style={styles.container}
       refreshControl={
-        <RefreshControl refreshing={loading} onRefresh={refreshProfile} />
+        <RefreshControl refreshing={loading} onRefresh={refreshProfile} tintColor={theme.colors.primary} />
       }
       onScroll={scrollHandler}
       scrollEventThrottle={16}
+      contentContainerStyle={{ paddingBottom: insets.bottom + 90 }}
     >
+      {/* Top Glass Card Header */}
       <View style={styles.header}>
+        <View style={styles.topRightActions}>
+          <TouchableOpacity
+            style={[
+              styles.settingsBtn,
+              {
+                backgroundColor: addAlpha(theme.colors.surface, 0.8),
+                borderColor: addAlpha(theme.colors.outline, 0.15),
+              },
+            ]}
+            onPress={() => router.push("/settings" as any)}
+          >
+            <Settings size={18} color={theme.colors.onSurface} />
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.profileHeader}>
           <TouchableOpacity 
             onPress={() => {
@@ -106,21 +125,21 @@ export default function ProfileScreen() {
               }
               setIsEditModalVisible(true);
             }} 
-            activeOpacity={0.7}
+            activeOpacity={0.8}
           >
             <View style={styles.avatarWrapper}>
               {getUserAvatarUrl(user) ? (
                 <ExpoImage
                   source={{ uri: getUserAvatarUrl(user)! }}
-                  style={{ width: 80, height: 80, borderRadius: 22 }}
+                  style={{ width: 84, height: 84, borderRadius: 26 }}
                   contentFit="cover"
                   cachePolicy="memory-disk"
                 />
               ) : (
                 <Avatar.Text
-                  size={80}
+                  size={84}
                   label={getUserDisplayName(user).charAt(0).toUpperCase()}
-                  style={{ backgroundColor: theme.colors.primary, borderRadius: 22 }}
+                  style={{ backgroundColor: theme.colors.primary, borderRadius: 26 }}
                   color="#ffffff"
                 />
               )}
@@ -130,10 +149,11 @@ export default function ProfileScreen() {
                 rippleColor="rgba(255, 255, 255, 0.3)"
                 borderless
               >
-                <Pencil size={14} color="#fff" />
+                <Pencil size={13} color="#fff" />
               </TouchableRipple>
             </View>
           </TouchableOpacity>
+
           <View style={styles.profileInfoContainer}>
             <View style={styles.profileInfo}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
@@ -142,14 +162,14 @@ export default function ProfileScreen() {
                 </Text>
 
                 {user?.roles?.includes('admin') && (
-                  <ShieldAlert size={24} color={theme.colors.error} />
+                  <ShieldAlert size={22} color={theme.colors.error} />
                 )}
                 {!user?.roles?.includes('admin') &&
                   user?.roles?.includes('moderator') && (
-                    <ShieldCheck size={24} color={theme.colors.primary} />
+                    <ShieldCheck size={22} color={theme.colors.primary} />
                   )}
               </View>
-              <Text variant="bodyMedium" style={styles.userEmail}>
+              <Text variant="bodyMedium" style={[styles.userEmail, { color: addAlpha(theme.colors.onSurface, 0.6) }]}>
                 @{user?.username}
               </Text>
             </View>
@@ -163,12 +183,19 @@ export default function ProfileScreen() {
             contentContainerStyle={styles.genresScroll}
             style={styles.genresContainer}
           >
-            {user.genres.map((genre) => (
+            {user.genres.map((genre: any) => (
               <View 
                 key={genre.id} 
-                style={[styles.genreBadge, { backgroundColor: theme.colors.surfaceVariant }]}
+                style={[
+                  styles.genreBadge,
+                  {
+                    backgroundColor: addAlpha(theme.colors.primary, 0.12),
+                    borderColor: addAlpha(theme.colors.primary, 0.25),
+                  },
+                ]}
               >
-                <Text variant="labelMedium" style={styles.genreText}>
+                <Sparkles size={11} color={theme.colors.primary} style={{ marginRight: 4 }} />
+                <Text variant="labelMedium" style={{ color: theme.colors.primary, fontWeight: "800", fontSize: 11 }}>
                   {genre.name}
                 </Text>
               </View>
@@ -185,7 +212,13 @@ export default function ProfileScreen() {
                   router.push(item.route as any);
                 }
               }}
-              style={styles.statItemRipple}
+              style={[
+                styles.statItemRipple,
+                {
+                  backgroundColor: addAlpha(theme.colors.surface, 0.85),
+                  borderColor: addAlpha(theme.colors.outline, 0.15),
+                },
+              ]}
               rippleColor="rgba(0, 0, 0, .05)"
             >
               <View style={styles.statItem}>
@@ -208,11 +241,20 @@ export default function ProfileScreen() {
                   <AnimatedCounter
                     value={item.value}
                     variant="titleMedium"
-                    style={styles.statValue}
+                    textStyle={{ fontWeight: "900", textAlign: "center" }}
                   />
                 )}
-                <Text variant="labelSmall" style={styles.statLabel}>
-                   {item.label}
+                <Text
+                  variant="labelSmall"
+                  style={{
+                    color: addAlpha(theme.colors.onSurface, 0.6),
+                    fontWeight: "700",
+                    marginTop: 2,
+                    textAlign: "center",
+                    width: "100%",
+                  }}
+                >
+                  {item.label}
                 </Text>
               </View>
             </TouchableRipple>
@@ -222,13 +264,14 @@ export default function ProfileScreen() {
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text variant="titleLarge" style={styles.sectionTitle}>
-            {t("profile.sections.upcoming")}
+          <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
+            {t("profile.sections.upcoming") || "Upcoming Festivals"}
           </Text>
           <Button
             mode="text"
             onPress={() => { }}
             textColor={theme.colors.primary}
+            labelStyle={{ fontWeight: "800", fontSize: 12 }}
           >
             {t("common.viewAll")}
           </Button>
@@ -240,70 +283,70 @@ export default function ProfileScreen() {
         >
           {loading && attendingEvents.length === 0 ? (
             <>
-              <EventCardSkeleton variant="horizontal" style={{ marginRight: 16 }} />
-              <EventCardSkeleton variant="horizontal" style={{ marginRight: 16 }} />
-              <EventCardSkeleton variant="horizontal" style={{ marginRight: 16 }} />
+              <EventCardSkeleton variant="horizontal" style={{ marginRight: 14 }} />
+              <EventCardSkeleton variant="horizontal" style={{ marginRight: 14 }} />
             </>
           ) : attendingEvents.length > 0 ? (
-            attendingEvents.map((event) => (
+            attendingEvents.map((event: any) => (
               <EventCard
                 key={event.id}
                 event={event}
                 variant="horizontal"
-                style={{ marginRight: 16 }}
-                onPress={(e) => router.push(`/event/${e.id}` as any)}
+                style={{ marginRight: 14 }}
+                onPress={() => router.push(`/event/${event.id}` as any)}
               />
             ))
           ) : (
-            <Text style={styles.emptyText}>{t("profile.sections.noUpcoming") || "No upcoming events"}</Text>
+            <View style={[styles.emptyBox, { backgroundColor: addAlpha(theme.colors.surface, 0.6), borderColor: addAlpha(theme.colors.outline, 0.12) }]}>
+              <Text style={{ color: addAlpha(theme.colors.onSurface, 0.6), fontSize: 13 }}>
+                No upcoming events joined yet.
+              </Text>
+            </View>
           )}
         </Animated.ScrollView>
       </View>
 
       <View style={styles.section}>
-        <Text variant="titleLarge" style={styles.sectionTitle}>
-          {t("profile.sections.past")}
-        </Text>
+        <View style={styles.sectionHeader}>
+          <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
+            {t("profile.sections.past") || "Past Festival Memories"}
+          </Text>
+        </View>
         <Animated.ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.horizontalScroll}
         >
           {loading && pastEvents.length === 0 ? (
-            <>
-              <EventCardSkeleton variant="horizontal" style={{ marginRight: 16 }} />
-              <EventCardSkeleton variant="horizontal" style={{ marginRight: 16 }} />
-              <EventCardSkeleton variant="horizontal" style={{ marginRight: 16 }} />
-            </>
+            <EventCardSkeleton variant="horizontal" style={{ marginRight: 14 }} />
           ) : pastEvents.length > 0 ? (
-            pastEvents.map((event) => (
+            pastEvents.map((event: any) => (
               <EventCard
                 key={event.id}
                 event={event}
                 variant="horizontal"
-                style={{ marginRight: 16 }}
-                onPress={(e) => router.push(`/event/${e.id}` as any)}
+                style={{ marginRight: 14 }}
+                onPress={() => router.push(`/event/${event.id}` as any)}
               />
             ))
           ) : (
-            <Text style={styles.emptyText}>{t("profile.sections.noPast") || "No past events recorded"}</Text>
+            <View style={[styles.emptyBox, { backgroundColor: addAlpha(theme.colors.surface, 0.6), borderColor: addAlpha(theme.colors.outline, 0.12) }]}>
+              <Text style={{ color: addAlpha(theme.colors.onSurface, 0.6), fontSize: 13 }}>
+                No past event history.
+              </Text>
+            </View>
           )}
         </Animated.ScrollView>
       </View>
 
-      <View style={styles.footer}>
-        <Text variant="labelSmall" style={styles.versionText}>
-          Version 1.0.0 (Beta)
-        </Text>
-      </View>
-
-      {user && (
-        <EditProfileModal
-          visible={isEditModalVisible}
-          user={user}
-          onClose={() => setIsEditModalVisible(false)}
-        />
-      )}
+      <EditProfileModal
+        visible={isEditModalVisible}
+        onClose={() => {
+          setIsEditModalVisible(false);
+          refreshProfile();
+        }}
+        user={user}
+      />
     </Animated.ScrollView>
   );
 }
@@ -313,121 +356,114 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    padding: 24,
-    paddingTop: 40,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  topRightActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginBottom: 8,
+  },
+  settingsBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: "center",
     alignItems: "center",
   },
   profileHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 20,
-    width: "100%",
-  },
-  profileInfoContainer: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  profileInfo: {
-    flex: 1,
-  },
-  userName: {
-    fontWeight: "800",
-    letterSpacing: -0.5,
-  },
-  userEmail: {
-    opacity: 0.6,
-  },
-  genresContainer: {
-    marginTop: 16,
-    width: "100%",
-  },
-  genresScroll: {
-    gap: 8,
-  },
-  genreBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  genreText: {
-    fontWeight: "600",
-    opacity: 0.8,
-  },
-  statsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
-    marginTop: 24,
-    backgroundColor: "rgba(0,0,0,0.03)",
-    padding: 20,
-    borderRadius: 24,
-  },
-  statItemRipple: {
-    flex: 1,
-    borderRadius: 16,
-  },
-  statItem: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 12,
-  },
-  statValue: {
-  },
-  statLabel: {
-    opacity: 0.5,
-    textTransform: "uppercase",
-    fontSize: 10,
-    textAlign: "center",
-  },
-  section: {
-    paddingHorizontal: 24,
-    marginTop: 24,
-  },
-  sectionTitle: {
-    fontWeight: "bold",
-    marginBottom: 12,
-    marginLeft: 4,
-  },
-  footer: {
-    padding: 40,
-    alignItems: "center",
     gap: 16,
-    paddingBottom: 120,
-  },
-  versionText: {
-    opacity: 0.3,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  horizontalScroll: {
-    paddingRight: 24,
-    minHeight: 130,
-  },
-  emptyText: {
-    opacity: 0.5,
-    fontStyle: "italic",
-    paddingVertical: 12,
+    marginBottom: 16,
   },
   avatarWrapper: {
     position: "relative",
   },
   editIconBadge: {
     position: "absolute",
-    bottom: 0,
-    right: 0,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: "#000",
+    bottom: -2,
+    right: -2,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 10,
+    borderWidth: 2,
+    borderColor: "#ffffff",
+  },
+  profileInfoContainer: {
+    flex: 1,
+  },
+  profileInfo: {
+    gap: 2,
+  },
+  userName: {
+    fontWeight: "900",
+    letterSpacing: -0.5,
+  },
+  userEmail: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  genresContainer: {
+    marginBottom: 16,
+  },
+  genresScroll: {
+    gap: 8,
+  },
+  genreBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  statsContainer: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 4,
+  },
+  statItemRipple: {
+    flex: 1,
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  statItem: {
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+  },
+  section: {
+    paddingTop: 16,
+    paddingHorizontal: 16,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    fontWeight: "900",
+    letterSpacing: -0.3,
+  },
+  horizontalScroll: {
+    paddingRight: 16,
+  },
+  emptyBox: {
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    borderRadius: 16,
+    borderWidth: 1,
+    width: 280,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

@@ -10,15 +10,16 @@ export default function EventLayout() {
   const { t } = useTranslation();
 
   return (
-    <PageContainer withPadding={false} withSafeArea={{ top: true, bottom: false }}>
+    <PageContainer withPadding={false} withSafeArea={{ top: false, bottom: false }}>
       <ScrollResetHandler />
       <Tabs
         screenOptions={{
           headerShown: false,
           tabBarStyle: { display: "none" },
-          animation: "shift",
+          animation: "none",
+          freezeOnBlur: true,
         }}
-        backBehavior="history"
+        backBehavior="firstRoute"
       >
         <Tabs.Screen name="index" options={{ title: t("navigation.info") }} />
         <Tabs.Screen name="lineup" options={{ title: t("navigation.lineup") }} />

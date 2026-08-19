@@ -18,6 +18,7 @@ Notifications.setNotificationHandler({
 let currentFcmToken: string | null = null;
 let lastRegisteredToken: string | null = null;
 let isRegisteringToken: string | null = null;
+let notificationReceivedSubscription: Notifications.Subscription | null = null;
 let responseSubscription: Notifications.Subscription | null = null;
 let tokenSubscription: Notifications.Subscription | null = null;
 
@@ -82,7 +83,7 @@ export const PushNotificationManager = {
   },
 
   /**
-   * Listen to push token refresh and notification tap events.
+   * Listen to push token refresh, foreground notification arrival, and notification tap events.
    */
   attachListeners(onNotificationReceived?: () => void) {
     this.removeListeners();
@@ -102,6 +103,14 @@ export const PushNotificationManager = {
         } finally {
           isRegisteringToken = null;
         }
+      }
+    });
+
+    // Foreground notification arrival handler
+    notificationReceivedSubscription = Notifications.addNotificationReceivedListener((notification) => {
+      logger.info("[PushNotificationManager] Foreground notification received:", notification.request.content.data);
+      if (onNotificationReceived) {
+        onNotificationReceived();
       }
     });
 
@@ -134,6 +143,10 @@ export const PushNotificationManager = {
     if (tokenSubscription) {
       tokenSubscription.remove();
       tokenSubscription = null;
+    }
+    if (notificationReceivedSubscription) {
+      notificationReceivedSubscription.remove();
+      notificationReceivedSubscription = null;
     }
     if (responseSubscription) {
       responseSubscription.remove();

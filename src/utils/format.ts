@@ -65,6 +65,40 @@ export const formatDate = (dateString: string) => {
   });
 };
 
+export const formatDateRange = (startDateStr?: string, endDateStr?: string, lang: string = "nl-NL"): string => {
+  if (!startDateStr) return "";
+  try {
+    const start = new Date(startDateStr);
+    const startYMD = startDateStr.split("T")[0];
+    const endYMD = endDateStr ? endDateStr.split("T")[0] : startYMD;
+
+    const startDay = start.getDate();
+    const startMonth = start.toLocaleDateString(lang || "nl-NL", { month: "short" });
+    const startYear = start.getFullYear();
+
+    if (!endDateStr || startYMD === endYMD) {
+      return `${startDay} ${startMonth} ${startYear}`;
+    }
+
+    const end = new Date(endDateStr);
+    const endDay = end.getDate();
+    const endMonth = end.toLocaleDateString(lang || "nl-NL", { month: "short" });
+    const endYear = end.getFullYear();
+
+    if (start.getMonth() === end.getMonth() && startYear === endYear) {
+      return `${startDay} - ${endDay} ${startMonth} ${startYear}`;
+    }
+
+    if (startYear === endYear) {
+      return `${startDay} ${startMonth} - ${endDay} ${endMonth} ${startYear}`;
+    }
+
+    return `${startDay} ${startMonth} ${startYear} - ${endDay} ${endMonth} ${endYear}`;
+  } catch {
+    return startDateStr;
+  }
+};
+
 export const getUserDisplayName = (user?: any): string => {
   if (!user) return "User";
 

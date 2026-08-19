@@ -170,7 +170,20 @@ export const ActInfoBottomSheet: React.FC<ActInfoBottomSheetProps> = ({
                       <Text style={[styles.infoLabel, { color: theme.colors.onSurface }]}>
                         {t("timetable.actInfo.date")}
                       </Text>
-                      <Text style={{ color: theme.colors.onSurface, fontWeight: "600" }}>{format(startTime, "EEEE, MMMM do")}</Text>
+                      <Text style={{ color: theme.colors.onSurface, fontWeight: "600" }}>
+                        {(() => {
+                          try {
+                            const rawStr = startTime.toLocaleDateString(i18n.language || "nl-NL", {
+                              weekday: "long",
+                              month: "long",
+                              day: "numeric",
+                            });
+                            return rawStr.charAt(0).toUpperCase() + rawStr.slice(1);
+                          } catch {
+                            return format(startTime, "EEEE, MMMM do");
+                          }
+                        })()}
+                      </Text>
                     </View>
                   </View>
 

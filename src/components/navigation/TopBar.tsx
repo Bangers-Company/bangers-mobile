@@ -80,8 +80,16 @@ export const TopBar: React.FC = () => {
   }, [user, groupsFetched, fetchGroups]);
 
   return (
-    <View style={[styles.container, { backgroundColor: "transparent" }]}>
-      <View style={styles.content}>
+    <View style={styles.container}>
+      <View
+        style={[
+          styles.content,
+          {
+            backgroundColor: addAlpha(theme.colors.primary, 0.1),
+            borderColor: addAlpha(theme.colors.primary, 0.22),
+          },
+        ]}
+      >
         <ExpoImage
           source={require("../../../assets/images/brand/logo.svg")}
           style={styles.logoImage}
@@ -227,12 +235,20 @@ export const TopBar: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { paddingHorizontal: 16, paddingBottom: 8, zIndex: 10 },
+  container: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 6, zIndex: 10 },
   content: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    height: 48,
+    height: 50,
+    paddingHorizontal: 14,
+    borderRadius: 18,
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
   },
   logoImage: { width: 50, height: "100%" },
   rightSection: { flexDirection: "row", alignItems: "center", gap: 8 },

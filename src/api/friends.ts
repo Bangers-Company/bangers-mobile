@@ -5,12 +5,17 @@ import apiClient from "./client";
 export interface Friendship {
   id: string;
   status: "pending" | "accepted" | "rejected";
-  requested_by: string;
-  user_id_1: string;
-  user_id_2: string;
+  requested_by?: string;
+  requester_id?: string;
+  user_id?: string;
+  user_id_1?: string;
+  user_id_2?: string;
   user1?: User;
   user2?: User;
   requester?: User;
+  user?: User;
+  sender?: User;
+  from?: User;
   created_at: string;
   updated_at: string;
 }

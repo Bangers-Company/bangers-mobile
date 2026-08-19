@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { StyleSheet, View, ScrollView, Dimensions, Pressable as RNPressable } from "react-native";
+import { StyleSheet, View, ScrollView, Dimensions, Pressable as RNPressable, PanResponder } from "react-native";
 import { Text, Button, ButtonText, Pressable } from "@gluestack-ui/themed";
 import { Globe, Users, Check, Plus, Trash2, LogOut, X } from "lucide-react-native";
 import { useAppTheme } from "../../context/ThemeProvider";
@@ -73,12 +73,39 @@ export const TimetableSelectorBottomSheet: React.FC<TimetableSelectorBottomSheet
     }
   }, [visible, translateY, opacity]);
 
-  const handleDismiss = () => {
+  const handleDismiss = React.useCallback(() => {
     translateY.value = withTiming(-SCREEN_HEIGHT, { duration: 250 }, () => {
       runOnJS(onDismiss)();
     });
     opacity.value = withTiming(0, { duration: 250 });
-  };
+  }, [onDismiss, opacity, translateY]);
+
+  const panResponder = React.useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => false,
+        onMoveShouldSetPanResponder: (_, gestureState) => {
+          return gestureState.dy < -10;
+        },
+        onPanResponderMove: (_, gestureState) => {
+          if (gestureState.dy < 0) {
+            translateY.value = gestureState.dy;
+          }
+        },
+        onPanResponderRelease: (_, gestureState) => {
+          if (gestureState.dy < -50 || gestureState.vy < -0.4) {
+            handleDismiss();
+          } else {
+            translateY.value = withSpring(0, {
+              damping: 24,
+              stiffness: 120,
+              overshootClamping: true,
+            });
+          }
+        },
+      }),
+    [handleDismiss, translateY]
+  );
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
@@ -103,10 +130,11 @@ export const TimetableSelectorBottomSheet: React.FC<TimetableSelectorBottomSheet
           styles.sheet,
           {
             backgroundColor: theme.colors.surface,
-            paddingTop: top / 4 + 6,
+            paddingTop: Math.max(top + 12, 48),
           },
           animatedStyle,
         ]}
+        {...panResponder.panHandlers}
       >
         <View style={styles.header}>
           <Text style={[styles.headerTitle, { color: theme.colors.onSurface }]}>
@@ -307,7 +335,12 @@ export const TimetableSelectorBottomSheet: React.FC<TimetableSelectorBottomSheet
           </Pressable>
         </ScrollView>
 
-        <View style={styles.handleBottom} />
+        <RNPressable
+          style={{ width: "100%", paddingVertical: 10, alignItems: "center", justifyContent: "center" }}
+          onPress={handleDismiss}
+        >
+          <View style={styles.handleBottom} />
+        </RNPressable>
       </Animated.View>
     </View>
   );
@@ -324,7 +357,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    maxHeight: SCREEN_HEIGHT * 0.70,
+    maxHeight: SCREEN_HEIGHT * 0.82,
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
     paddingHorizontal: 20,

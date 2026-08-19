@@ -46,20 +46,23 @@ export const MyEventsCarousel: React.FC<MyEventsCarouselProps> = ({
       </Text>
       <Animated.ScrollView
         horizontal
+        directionalLockEnabled={true}
+        nestedScrollEnabled={true}
         showsHorizontalScrollIndicator={false}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
         snapToOffsets={snapOffsets}
         snapToAlignment="center"
-        decelerationRate={0.9}
+        decelerationRate="fast"
         disableIntervalMomentum={true}
         pagingEnabled={false}
         contentContainerStyle={{
           paddingHorizontal: (windowWidth - snapToInterval) / 2,
+          paddingTop: 6,
+          paddingBottom: 18,
         }}
         style={{
-          // @ts-ignore - Web only
-          scrollSnapType: "x mandatory",
+          overflow: "visible",
         }}
       >
         {loading ? (

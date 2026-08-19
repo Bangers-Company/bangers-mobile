@@ -4,10 +4,11 @@ import { useAuthStore } from "../store/useAuthStore";
 import { AuthResponse } from "../types/user";
 import { logger } from "../utils/logger";
 
-const API_BASE_URL = ENV.API_BASE_URL;
+const rawBaseUrl = (ENV.API_BASE_URL || "").replace(/\/+$/, "");
+const baseURL = rawBaseUrl.endsWith("/v1") ? rawBaseUrl : `${rawBaseUrl}/v1`;
 
 const apiClient = axios.create({
-  baseURL: API_BASE_URL + '/v1',
+  baseURL,
   timeout: 10000, // 10s timeout to prevent hanging requests
   headers: {
     Accept: "application/json",
@@ -47,26 +48,42 @@ export const resetRefreshPromise = () => {
  */
 apiClient.interceptors.response.use(
   (response) => {
-    // Automatically unwrap Laravel's "data" wrapper if it exists
-    if (response.data && Object.prototype.hasOwnProperty.call(response.data, "data")) {
+    // Automatically unwrap Laravel's "data" wrapper while preserving metadata like sync_timestamp, meta, links
+    if (response.data && typeof response.data === "object" && Object.prototype.hasOwnProperty.call(response.data, "data")) {
+      const { data, ...metadata } = response.data;
+      if (Array.isArray(data)) {
+        Object.assign(data, metadata);
+        return {
+          ...response,
+          data,
+        };
+      }
+      if (data && typeof data === "object") {
+        return {
+          ...response,
+          data: { ...metadata, ...data },
+        };
+      }
       return {
         ...response,
-        data: response.data.data,
+        data,
       };
     }
     return response;
   },
   async (error) => {
-    // If the request was canceled, don't log it as an error
+    // If the request was canceled or is 404 (expected missing item), don't log as system error
     if (isCancel(error)) {
       return Promise.reject(error);
     }
 
-    logger.error("API Error:", {
-      url: error.config?.url,
-      status: error.response?.status,
-      message: error.message,
-    });
+    if (error.response?.status !== 404) {
+      logger.error("API Error:", {
+        url: error.config?.url,
+        status: error.response?.status,
+        message: error.message,
+      });
+    }
 
     const originalRequest = error.config;
 
@@ -105,7 +122,12 @@ apiClient.interceptors.response.use(
         }
 
         const accessToken = await refreshPromise;
-        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        if (originalRequest.headers && typeof (originalRequest.headers as any).set === "function") {
+          (originalRequest.headers as any).set("Authorization", `Bearer ${accessToken}`);
+        } else {
+          originalRequest.headers = originalRequest.headers || {};
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        }
         return apiClient(originalRequest);
       } catch (refreshError) {
         useAuthStore.getState().logout();

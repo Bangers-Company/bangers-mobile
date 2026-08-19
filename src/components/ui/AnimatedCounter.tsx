@@ -1,13 +1,13 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, View, StyleProp, ViewStyle } from 'react-native';
 import { Text } from '@gluestack-ui/themed';
-import Animated, { 
-  useAnimatedStyle, 
-  useSharedValue, 
-  withSpring, 
-  withSequence,
+import React, { useEffect } from 'react';
+import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
+import Animated, {
   FadeIn,
-  FadeOut
+  FadeOut,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring
 } from 'react-native-reanimated';
 
 interface AnimatedCounterProps {
@@ -17,8 +17,8 @@ interface AnimatedCounterProps {
   textStyle?: StyleProp<import('react-native').TextStyle>;
 }
 
-export const AnimatedCounter: React.FC<AnimatedCounterProps> = ({ 
-  value, 
+export const AnimatedCounter: React.FC<AnimatedCounterProps> = ({
+  value,
   style,
   textStyle
 }) => {
@@ -38,7 +38,7 @@ export const AnimatedCounter: React.FC<AnimatedCounterProps> = ({
   });
 
   return (
-    <View 
+    <View
       style={[styles.container, style]}
       accessibilityLabel={`Counter value: ${value}`}
       accessibilityLiveRegion="polite"

@@ -15,6 +15,7 @@ import {
   Pressable,
 } from "@gluestack-ui/themed";
 import { useAppTheme } from "../../src/context/ThemeProvider";
+import { addAlpha } from "../../src/utils/theme";
 import { authApi } from "../../src/api/auth";
 import { PageContainer } from "../../src/components/PageContainer";
 import { useAuthStore } from "../../src/store/useAuthStore";
@@ -37,8 +38,9 @@ export default function AuthScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
-  const handleRegister = async (data: { email: string; username: string; password?: string; dob: Date }) => {
+  const handleRegister = async (data: { email: string; username: string; password?: string; dob: string }) => {
     setLoading(true);
     setError(null);
     try {
@@ -46,8 +48,10 @@ export default function AuthScreen() {
         email: data.email,
         password: data.password,
         username: data.username,
-        dob: data.dob.toISOString().split("T")[0],
+        dob: data.dob,
       });
+      const setIsJustRegistered = useAuthStore.getState().setIsJustRegistered;
+      setIsJustRegistered(true);
       setAuth(
         {
           accessToken: response.data.accessToken,
@@ -128,8 +132,21 @@ export default function AuthScreen() {
                 <Text style={[styles.subtitle, { color: theme.colors.onSurface }]}>{t("auth.login.subtitle")}</Text>
                 
                 <View style={styles.form}>
-                  <View style={styles.inputRow}>
-                    <Mail size={20} color="#888" style={{ marginRight: 10 }} />
+                  <View
+                    style={[
+                      styles.inputRow,
+                      focusedInput === "email" && {
+                        borderColor: theme.colors.primary,
+                        borderWidth: 1.5,
+                        backgroundColor: addAlpha(theme.colors.primary, 0.05),
+                      },
+                    ]}
+                  >
+                    <Mail
+                      size={20}
+                      color={focusedInput === "email" ? theme.colors.primary : "#888"}
+                      style={{ marginRight: 10 }}
+                    />
                     <RNTextInput
                       placeholder={t("auth.login.email")}
                       placeholderTextColor="#888"
@@ -137,22 +154,43 @@ export default function AuthScreen() {
                       onChangeText={setEmail}
                       autoCapitalize="none"
                       keyboardType="email-address"
+                      onFocus={() => setFocusedInput("email")}
+                      onBlur={() => setFocusedInput(null)}
                       style={[styles.rnInput, { color: theme.colors.onSurface }]}
                     />
                   </View>
 
-                  <View style={styles.inputRow}>
-                    <Lock size={20} color="#888" style={{ marginRight: 10 }} />
+                  <View
+                    style={[
+                      styles.inputRow,
+                      focusedInput === "password" && {
+                        borderColor: theme.colors.primary,
+                        borderWidth: 1.5,
+                        backgroundColor: addAlpha(theme.colors.primary, 0.05),
+                      },
+                    ]}
+                  >
+                    <Lock
+                      size={20}
+                      color={focusedInput === "password" ? theme.colors.primary : "#888"}
+                      style={{ marginRight: 10 }}
+                    />
                     <RNTextInput
                       placeholder={t("auth.login.password")}
                       placeholderTextColor="#888"
                       value={password}
                       onChangeText={setPassword}
                       secureTextEntry={!showPassword}
+                      onFocus={() => setFocusedInput("password")}
+                      onBlur={() => setFocusedInput(null)}
                       style={[styles.rnInput, { color: theme.colors.onSurface }]}
                     />
                     <Pressable onPress={() => setShowPassword(!showPassword)} style={{ padding: 4 }}>
-                      {showPassword ? <EyeOff size={20} color="#888" /> : <Eye size={20} color="#888" />}
+                      {showPassword ? (
+                        <EyeOff size={20} color={focusedInput === "password" ? theme.colors.primary : "#888"} />
+                      ) : (
+                        <Eye size={20} color={focusedInput === "password" ? theme.colors.primary : "#888"} />
+                      )}
                     </Pressable>
                   </View>
 

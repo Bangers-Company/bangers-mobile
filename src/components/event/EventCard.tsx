@@ -9,7 +9,7 @@ import {
 } from "@gluestack-ui/themed";
 import { useAppTheme } from "../../context/ThemeProvider";
 import { Event as AppEvent } from "../../types/event";
-import { resolveMediaUrl } from "../../utils/format";
+import { resolveMediaUrl, formatDateRange } from "../../utils/format";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -106,12 +106,8 @@ export const EventCard: React.FC<EventCardProps> = ({
   const theme = useAppTheme();
   const bannerUrl = resolveMediaUrl(event.banner?.url);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    });
+  const formatDate = (startDateStr: string, endDateStr?: string) => {
+    return formatDateRange(startDateStr, endDateStr);
   };
 
   if (variant === "horizontal") {
@@ -181,7 +177,7 @@ export const EventCard: React.FC<EventCardProps> = ({
             <View style={styles.featuredContent}>
               <View style={styles.dateBadge}>
                 <Text style={styles.dateText}>
-                  {formatDate(event.start_date)}
+                  {formatDate(event.start_date, event.end_date)}
                 </Text>
               </View>
               <Text style={styles.featuredTitle}>

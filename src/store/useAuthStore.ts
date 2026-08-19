@@ -19,6 +19,8 @@ interface AuthSession {
 interface AuthState {
   session: AuthSession | null;
   user: User | null;
+  isJustRegistered: boolean;
+  setIsJustRegistered: (val: boolean) => void;
   setAuth: (session: AuthSession, user: User) => void;
   setUser: (user: Partial<User>) => void;
   updateSession: (session: AuthSession) => void;
@@ -67,6 +69,8 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       session: null,
       user: null,
+      isJustRegistered: false,
+      setIsJustRegistered: (isJustRegistered) => set({ isJustRegistered }),
       setAuth: (session, user) => set({ session, user }),
       setUser: (user) =>
         set((state) => ({

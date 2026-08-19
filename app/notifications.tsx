@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { ArrowLeft, Users, Check, X, BellCheck, Bell } from "lucide-react-native";
+import { ArrowLeft, Users, Check, X, BellRing, Bell } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, View, ScrollView, RefreshControl } from "react-native";
 import {
@@ -34,7 +34,7 @@ export default function NotificationsScreen() {
   const acceptGroup = useAcceptInvitation();
   const rejectGroup = useRejectInvitation();
 
-  const groupInvites = groups.filter((g) => g.pivot?.invitation_status === "pending");
+  const groupInvites = groups.filter((g: any) => g.pivot?.invitation_status === "pending");
   const isLoading = friendLoading || groupsLoading || notifLoading;
 
   const onRefresh = async () => {
@@ -55,7 +55,7 @@ export default function NotificationsScreen() {
         </Text>
         {unreadCount > 0 ? (
           <Pressable onPress={() => markAllRead.mutate()} style={{ padding: 8 }}>
-            <BellCheck size={22} color={theme.colors.primary} />
+            <BellRing size={22} color={theme.colors.primary} />
           </Pressable>
         ) : (
           <View style={{ width: 40 }} />
@@ -133,7 +133,7 @@ export default function NotificationsScreen() {
             <Text style={[styles.emptyText, { color: theme.colors.onSurface }]}>{t("notifications.emptyFriends", "No pending friend requests")}</Text>
           ) : (
             friendRequests.map((request) => {
-              const requester = request.requester || request.user || request.sender || request.from || request;
+              const requester: any = request.requester || request.user1 || request.user2 || request.user || request.sender || request.from || request;
               const displayName = getUserDisplayName(requester);
               const username = requester?.username ? `@${requester.username}` : "";
               const avatarUrl = resolveMediaUrl(
@@ -142,7 +142,7 @@ export default function NotificationsScreen() {
                 requester?.avatar_url ||
                 requester?.avatar
               );
-              const targetUserId = requester?.id || request.requester_id || request.user_id || request.id;
+              const targetUserId = requester?.id || request.requester_id || request.user_id_1 || request.user_id || request.id;
 
               return (
                 <View key={request.id} style={styles.notificationCard}>
@@ -197,7 +197,7 @@ export default function NotificationsScreen() {
           {groupInvites.length === 0 ? (
             <Text style={[styles.emptyText, { color: theme.colors.onSurface }]}>{t("notifications.emptyGroups", "No pending group invitations")}</Text>
           ) : (
-            groupInvites.map((group) => (
+            groupInvites.map((group: any) => (
               <View key={group.id} style={styles.notificationCard}>
                 <View style={styles.userInfo}>
                   <View style={[styles.groupIcon, { backgroundColor: theme.colors.surfaceVariant }]}>

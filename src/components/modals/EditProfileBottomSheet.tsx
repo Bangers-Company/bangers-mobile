@@ -11,6 +11,7 @@ import {
   Pressable as RNPressable,
   Dimensions,
   PanResponder,
+  Keyboard,
 } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -25,6 +26,7 @@ import {
 import { useAppTheme } from "../../context/ThemeProvider";
 import { useTranslation } from "react-i18next";
 import * as ImagePicker from "expo-image-picker";
+import { DatePickerField } from "../ui/DatePickerField";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -112,6 +114,13 @@ export const EditProfileBottomSheet: React.FC<EditProfileBottomSheetProps> = ({
       animateToPos(fullPageOffset, 220);
     }
   };
+
+  useEffect(() => {
+    const hideSub = Keyboard.addListener("keyboardDidHide", () => {
+      setFocusedField(null);
+    });
+    return () => hideSub.remove();
+  }, []);
 
   useEffect(() => {
     if (visible) {
@@ -472,27 +481,11 @@ export const EditProfileBottomSheet: React.FC<EditProfileBottomSheetProps> = ({
                 </View>
 
                 {/* Date of Birth Input */}
-                <View
-                  style={[
-                    styles.inputContainer,
-                    focusedField === "dob" && {
-                      borderColor: theme.colors.primary,
-                      backgroundColor: addAlpha(theme.colors.primary, 0.05),
-                    },
-                  ]}
-                >
-                  <RNTextInput
-                    placeholder="Geboortedatum (JJJJ-MM-DD)"
-                    placeholderTextColor="#888"
-                    value={dobString}
-                    onChangeText={setDobString}
-                    onFocus={() => handleInputFocus("dob")}
-                    onBlur={() => setFocusedField(null)}
-                    keyboardType="numeric"
-                    maxLength={10}
-                    style={[styles.rnInput, { color: theme.colors.onSurface }]}
-                  />
-                </View>
+                <DatePickerField
+                  label={t("profile.edit.dob") || "Geboortedatum"}
+                  value={dobString}
+                  onChange={(iso) => setDobString(iso)}
+                />
 
                 {/* Bio Input */}
                 <View
@@ -620,8 +613,11 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   iconButton: {
-    padding: 6,
-    borderRadius: 20,
+    minWidth: 44,
+    minHeight: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -640,15 +636,15 @@ const styles = StyleSheet.create({
     bottom: -6,
     right: -12,
     flexDirection: "row",
-    backgroundColor: "rgba(0,0,0,0.65)",
+    backgroundColor: "rgba(0,0,0,0.75)",
     borderRadius: 24,
-    paddingHorizontal: 4,
-    paddingVertical: 2,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
   },
   actionButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
     marginHorizontal: 2,
@@ -668,6 +664,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 12,
+    minHeight: 50,
   },
   rnInput: {
     flex: 1,
@@ -681,6 +678,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingVertical: 16,
     borderTopWidth: 1,
+    minHeight: 52,
   },
   privacyLabel: {
     flex: 1,
@@ -693,7 +691,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     borderRadius: 16,
-    height: 50,
+    height: 52,
     justifyContent: "center",
     alignItems: "center",
   },

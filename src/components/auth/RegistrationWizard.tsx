@@ -13,7 +13,9 @@ import {
   InputField,
 } from "@gluestack-ui/themed";
 import { useAppTheme } from "../../context/ThemeProvider";
-import { Calendar, Lock, Mail, ChevronLeft, User as UserIcon } from "lucide-react-native";
+import { addAlpha } from "../../utils/theme";
+import { DatePickerField } from "../ui/DatePickerField";
+import { Lock, Mail, ChevronLeft, User as UserIcon } from "lucide-react-native";
 import Animated, {
   useAnimatedStyle,
   withTiming,
@@ -25,7 +27,7 @@ interface RegistrationData {
   email: string;
   username: string;
   password?: string;
-  dob: Date;
+  dob: string;
   agreedToPolicies: boolean;
 }
 
@@ -52,6 +54,7 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
   const [dobString, setDobString] = useState("");
   const [agreedToPolicies, setAgreedToPolicies] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
   const parsedDob = useMemo(() => {
     if (!dobString || dobString.length < 10) return undefined;
@@ -71,7 +74,12 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
       case 2: return password.length >= 8 && password === confirmPassword;
       case 3:
         if (!parsedDob) return false;
-        const age = new Date().getFullYear() - parsedDob.getFullYear();
+        const now = new Date();
+        let age = now.getFullYear() - parsedDob.getFullYear();
+        const m = now.getMonth() - parsedDob.getMonth();
+        if (m < 0 || (m === 0 && now.getDate() < parsedDob.getDate())) {
+          age--;
+        }
         return age >= 18;
       case 4: return agreedToPolicies;
       default: return false;
@@ -89,7 +97,7 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
     if (step < 4) {
       setStep(step + 1);
     } else {
-      const result = await onRegister({ email, username, password, dob: parsedDob!, agreedToPolicies });
+      const result = await onRegister({ email, username, password, dob: dobString, agreedToPolicies });
       if (result && !result.success) {
         if (result.field === 'email') setStep(0);
         else if (result.field === 'username') setStep(1);
@@ -132,8 +140,17 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
         <View style={[styles.step, { width: screenWidth - 48 }]}>
           <Text style={[styles.stepTitle, { color: theme.colors.onSurface }]}>{t("auth.register.steps.email.title")}</Text>
           <Text style={[styles.stepSubtitle, { color: theme.colors.onSurface }]}>{t("auth.register.steps.email.subtitle")}</Text>
-          <View style={styles.inputRow}>
-            <Mail size={20} color="#888" style={{ marginRight: 8 }} />
+          <View
+            style={[
+              styles.inputRow,
+              focusedInput === "reg_email" && {
+                borderColor: theme.colors.primary,
+                borderWidth: 1.5,
+                backgroundColor: addAlpha(theme.colors.primary, 0.05),
+              },
+            ]}
+          >
+            <Mail size={20} color={focusedInput === "reg_email" ? theme.colors.primary : "#888"} style={{ marginRight: 8 }} />
             <RNTextInput
               placeholder="email@example.com"
               placeholderTextColor="#888"
@@ -141,6 +158,8 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
               onChangeText={setEmail}
               autoCapitalize="none"
               keyboardType="email-address"
+              onFocus={() => setFocusedInput("reg_email")}
+              onBlur={() => setFocusedInput(null)}
               style={[styles.rnInput, { color: theme.colors.onSurface }]}
             />
           </View>
@@ -150,14 +169,25 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
         <View style={[styles.step, { width: screenWidth - 48 }]}>
           <Text style={[styles.stepTitle, { color: theme.colors.onSurface }]}>{t("auth.register.steps.username.title")}</Text>
           <Text style={[styles.stepSubtitle, { color: theme.colors.onSurface }]}>{t("auth.register.steps.username.subtitle")}</Text>
-          <View style={styles.inputRow}>
-            <UserIcon size={20} color="#888" style={{ marginRight: 8 }} />
+          <View
+            style={[
+              styles.inputRow,
+              focusedInput === "reg_username" && {
+                borderColor: theme.colors.primary,
+                borderWidth: 1.5,
+                backgroundColor: addAlpha(theme.colors.primary, 0.05),
+              },
+            ]}
+          >
+            <UserIcon size={20} color={focusedInput === "reg_username" ? theme.colors.primary : "#888"} style={{ marginRight: 8 }} />
             <RNTextInput
               placeholder={t("auth.register.usernamePlaceholder")}
               placeholderTextColor="#888"
               value={username}
               onChangeText={setUsername}
               autoCapitalize="none"
+              onFocus={() => setFocusedInput("reg_username")}
+              onBlur={() => setFocusedInput(null)}
               style={[styles.rnInput, { color: theme.colors.onSurface }]}
             />
           </View>
@@ -167,26 +197,49 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
         <View style={[styles.step, { width: screenWidth - 48 }]}>
           <Text style={[styles.stepTitle, { color: theme.colors.onSurface }]}>{t("auth.register.steps.password.title")}</Text>
           <Text style={[styles.stepSubtitle, { color: theme.colors.onSurface }]}>{t("auth.register.steps.password.subtitle")}</Text>
-          <View style={styles.inputRow}>
-            <Lock size={20} color="#888" style={{ marginRight: 8 }} />
+          <View
+            style={[
+              styles.inputRow,
+              focusedInput === "reg_password" && {
+                borderColor: theme.colors.primary,
+                borderWidth: 1.5,
+                backgroundColor: addAlpha(theme.colors.primary, 0.05),
+              },
+            ]}
+          >
+            <Lock size={20} color={focusedInput === "reg_password" ? theme.colors.primary : "#888"} style={{ marginRight: 8 }} />
             <RNTextInput
               placeholder={t("auth.login.password")}
               placeholderTextColor="#888"
               value={password}
               onChangeText={setPassword}
               secureTextEntry
+              onFocus={() => setFocusedInput("reg_password")}
+              onBlur={() => setFocusedInput(null)}
               style={[styles.rnInput, { color: theme.colors.onSurface }]}
             />
           </View>
           <PasswordStrength password={password} />
-          <View style={[styles.inputRow, { marginTop: 12 }]}>
-            <Lock size={20} color="#888" style={{ marginRight: 8 }} />
+          <View
+            style={[
+              styles.inputRow,
+              { marginTop: 12 },
+              focusedInput === "reg_confirm_password" && {
+                borderColor: theme.colors.primary,
+                borderWidth: 1.5,
+                backgroundColor: addAlpha(theme.colors.primary, 0.05),
+              },
+            ]}
+          >
+            <Lock size={20} color={focusedInput === "reg_confirm_password" ? theme.colors.primary : "#888"} style={{ marginRight: 8 }} />
             <RNTextInput
               placeholder={t("auth.login.password")}
               placeholderTextColor="#888"
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry
+              onFocus={() => setFocusedInput("reg_confirm_password")}
+              onBlur={() => setFocusedInput(null)}
               style={[styles.rnInput, { color: theme.colors.onSurface }]}
             />
           </View>
@@ -196,18 +249,11 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
         <View style={[styles.step, { width: screenWidth - 48 }]}>
           <Text style={[styles.stepTitle, { color: theme.colors.onSurface }]}>{t("auth.register.steps.birthday.title")}</Text>
           <Text style={[styles.stepSubtitle, { color: theme.colors.onSurface }]}>{t("auth.register.steps.birthday.subtitle")}</Text>
-          <View style={styles.inputRow}>
-            <Calendar size={20} color="#888" style={{ marginRight: 8 }} />
-            <RNTextInput
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor="#888"
-              value={dobString}
-              onChangeText={setDobString}
-              keyboardType="numeric"
-              maxLength={10}
-              style={[styles.rnInput, { color: theme.colors.onSurface }]}
-            />
-          </View>
+          <DatePickerField
+            value={dobString}
+            onChange={(iso) => setDobString(iso)}
+            placeholder={t("auth.register.steps.birthday.placeholder") || "Select date of birth"}
+          />
           {error && <Text style={[styles.error, { color: "#ff5252" }]}>{error}</Text>}
         </View>
 

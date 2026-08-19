@@ -1,9 +1,8 @@
 import React, { useEffect } from "react";
-import { StyleSheet, View, useWindowDimensions } from "react-native";
+import { StyleSheet, View, useWindowDimensions, Keyboard } from "react-native";
 import { useAppTheme } from "../../context/ThemeProvider";
 import Animated, {
   Easing,
-  useAnimatedKeyboard,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -20,29 +19,45 @@ export const AuthBottomSheet: React.FC<AuthBottomSheetProps> = ({
 }) => {
   const { height: screenHeight } = useWindowDimensions();
   const theme = useAppTheme();
-  const keyboard = useAnimatedKeyboard();
 
   // Initial translation (off-screen)
   const baseTranslateY = useSharedValue(screenHeight);
   const opacity = useSharedValue(0);
+  const keyboardOffset = useSharedValue(0);
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener("keyboardDidShow", (e) => {
+      keyboardOffset.value = withTiming(e.endCoordinates.height, {
+        duration: 180,
+      });
+    });
+    const hideSub = Keyboard.addListener("keyboardDidHide", () => {
+      keyboardOffset.value = withTiming(0, { duration: 180 });
+    });
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [keyboardOffset]);
 
   useEffect(() => {
     if (isOpen) {
       baseTranslateY.value = withTiming(0, {
-        duration: 500,
-        easing: Easing.out(Easing.back(0)), // Linear/Smooth out
+        duration: 400,
+        easing: Easing.out(Easing.cubic),
       });
-      opacity.value = withTiming(1, { duration: 500 });
+      opacity.value = withTiming(1, { duration: 400 });
     } else {
-      baseTranslateY.value = withTiming(screenHeight, { duration: 400 });
-      opacity.value = withTiming(0, { duration: 300 });
+      baseTranslateY.value = withTiming(screenHeight, { duration: 350 });
+      opacity.value = withTiming(0, { duration: 250 });
     }
   }, [isOpen, baseTranslateY, screenHeight, opacity]);
 
   const animatedStyle = useAnimatedStyle(() => {
-    // Subtract keyboard height (negative transform moves it UP)
     return {
-      transform: [{ translateY: baseTranslateY.value - keyboard.height.value }],
+      transform: [
+        { translateY: baseTranslateY.value - keyboardOffset.value },
+      ],
       opacity: opacity.value,
     };
   });
@@ -101,4 +116,3 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
 });
-
